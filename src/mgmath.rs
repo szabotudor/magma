@@ -3,6 +3,37 @@ pub struct Vecb<const S: usize, T> {
 }
 
 
+impl<const S: usize, T> Vecb<S, T>
+where T: Default + From<f64> + Into<f64> + std::ops::Mul<Output = T> + std::ops::AddAssign + Copy,
+    Self: std::ops::Sub<Output = Self> + std::ops::Div<Output = Self> + std::ops::DivAssign + From<T> {
+    pub fn dot(&mut self, v: &mut Self) -> T {
+        let mut res: T = T::default();
+        for i in 0..S {
+            res += self[i] * v[i];
+        }
+        res
+    }
+
+    pub fn len(&mut self) -> T {
+        f64::sqrt(self.clone().dot(self).into()).into()
+    }
+
+    pub fn distance_to(&mut self, v: &mut Self) -> T {
+        (*v - *self).len()
+    }
+
+    pub fn normalize(&mut self) -> &mut Self {
+        let len = Vecb::<S, T>::from(self.len());
+        *self /= len;
+        self
+    }
+
+    pub fn normalized(&mut self) -> Self {
+        *self / Vecb::<S, T>::from(self.len())
+    }
+}
+
+
 impl<const S: usize, T> std::ops::Index<usize> for Vecb<S, T> {
     type Output = T;
 
@@ -48,8 +79,6 @@ where T: std::ops::AddAssign + Copy{
         res
     }
 }
-
-
 impl<const S: usize, T> std::ops::Sub for Vecb<S, T>
 where T: std::ops::SubAssign + Copy{
     type Output = Self;
@@ -62,8 +91,6 @@ where T: std::ops::SubAssign + Copy{
         res
     }
 }
-
-
 impl<const S: usize, T> std::ops::Mul for Vecb<S, T>
 where T: std::ops::MulAssign + Copy{
     type Output = Self;
@@ -76,8 +103,6 @@ where T: std::ops::MulAssign + Copy{
         res
     }
 }
-
-
 impl<const S: usize, T> std::ops::Div for Vecb<S, T>
 where T: std::ops::DivAssign + Copy{
     type Output = Self;
@@ -92,9 +117,46 @@ where T: std::ops::DivAssign + Copy{
 }
 
 
+impl<const S: usize, T> std::ops::AddAssign for Vecb<S, T>
+where T: Into<Self>,
+    Self: std::ops::Add<Output = Self> + Clone {
+    fn add_assign(&mut self, rhs: Self) {
+        (*self) = self.clone() + rhs.into();
+    }
+}
+impl<const S: usize, T> std::ops::SubAssign for Vecb<S, T>
+where T: Into<Self>,
+    Self: std::ops::Sub<Output = Self> + Clone {
+    fn sub_assign(&mut self, rhs: Self) {
+        (*self) = self.clone() - rhs.into();
+    }
+}
+impl<const S: usize, T> std::ops::MulAssign for Vecb<S, T>
+where T: Into<Self>,
+    Self: std::ops::Mul<Output = Self> + Clone {
+    fn mul_assign(&mut self, rhs: Self) {
+        (*self) = self.clone() * rhs.into();
+    }
+}
+impl<const S: usize, T> std::ops::DivAssign for Vecb<S, T>
+where T: Into<Self>,
+    Self: std::ops::Div<Output = Self> + Clone {
+    fn div_assign(&mut self, rhs: Self) {
+        (*self) = self.clone() / rhs.into();
+    }
+}
+
+
 impl<const S: usize, T> From<[T; S]> for Vecb<S, T> {
     fn from(value: [T; S]) -> Self {
         Vecb { data: value }
+    }
+}
+
+
+impl<const S: usize, T: Copy> From<T> for Vecb<S, T> {
+    fn from(value: T) -> Self {
+        Vecb { data: [value; S]}
     }
 }
 
@@ -144,6 +206,7 @@ macro_rules! Vector {
         Vecb::from(data)
     }};
 }
+
 pub(crate) use Vector;
 
 pub type Vec2f32 = Vecb<2, f32>;

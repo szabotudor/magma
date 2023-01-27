@@ -17,6 +17,16 @@ mod tests {
     use super::*;
 
     #[test]
+    fn vectors() {
+        let mut v: mgmath::Vec2f64 = Vector!(1.0, 1.0);
+        println!("Normalized without assign: {}", v.normalized());
+        println!("After: {}\n", v);
+
+        println!("Normalized with assign: {}", v.normalize());
+        println!("After {}", v);
+    }
+
+    #[test]
     fn opengl() {
         let mut window = video::MgmWindow::new(Vector!(800, 600), Some("Window Title"));
         window.set_clear_color(Vector!(0.1, 0.2, 0.3, 1.0));
