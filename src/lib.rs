@@ -1,11 +1,15 @@
 pub mod enums;
 
+pub mod memory;
+
 #[allow(dead_code)]
 pub mod mgmath;
 
 #[allow(dead_code)]
 #[allow(unused_imports)]
 pub mod video;
+
+pub mod mesh;
 
 #[allow(dead_code)]
 #[allow(unused_imports)]
@@ -15,6 +19,13 @@ pub mod rng;
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn memory_test() {
+        let mut b = memory::Block::<f32>::new(16).unwrap();
+        b[10] = 16.4;
+        println!("{}", b[10]);
+    }
 
     #[test]
     fn vectors() {
@@ -28,8 +39,12 @@ mod tests {
 
     #[test]
     fn opengl() {
-        let mut window = video::MgmWindow::new(Vector!(800, 600), Some("Window Title"));
-        window.set_clear_color(Vector!(0.1, 0.2, 0.3, 1.0));
+        let mut window = video::MgmWindow::new(
+            Vector!(800, 600),
+            "OpenGL Test",
+            enums::VideoBackendType::OpenGL
+        );
+        window.set_clear_color(Vector!(0.18, 0.19, 0.22, 1.0));
         while window.is_open() {
             window.clear();
             window.update();
