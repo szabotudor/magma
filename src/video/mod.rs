@@ -7,6 +7,43 @@ use self::backends::VideoBackend;
 use super::mgmath::*;
 
 
+pub struct VertexArrayComponentCreateInfo {
+    pub num_elem: usize,
+    pub name: String
+}
+
+
+pub struct VertexArrayCreateInfo {
+    vert_data: *const f32,
+    num_verts: usize,
+    components: Vec<VertexArrayComponentCreateInfo>,
+    stride_size: usize
+}
+
+
+impl VertexArrayCreateInfo {
+    /// Create a new vertex array info struct\
+    /// 
+    /// `vert_data` -> Pointer to vertex data\
+    /// `num_verts` -> Total number of elements in the vert_data pointer
+    pub fn new(vert_data: *const f32, num_verts: usize) -> Self {
+        VertexArrayCreateInfo {
+            vert_data,
+            num_verts,
+            components: Vec::new(),
+            stride_size: 0
+        }
+    }
+
+    pub fn add_component_info(&mut self, comp: VertexArrayComponentCreateInfo) {
+        self.stride_size += comp.num_elem;
+        self.components.append(&mut vec![comp]);
+    }
+}
+
+
+
+
 pub struct MgmWindow {
     resolution: Vec2u32,
     title: String,
@@ -33,24 +70,16 @@ impl MgmWindow {
     /// - Default backend set to opengl
     /// - Whatever backend set, you must use apropriate shaders. (OpenGL backend only accepts OpenGL shaders)
     /// - 
-    pub fn new(res: Vec2u32, title: Option<&str>) -> Self {
-        let t: &str;
-        if title == None {
-            t = "Window";
-        }
-        else {
-            t = title.unwrap();
-        }
-
+    pub fn new(res: Vec2u32, title: &str, backend: crate::enums::VideoBackendType) -> Self {
         let sdl_context = sdl2::init().unwrap();
         let sdl_video_subsystem = sdl_context.video().unwrap();
-        let sdl_window = backends::VideoBackend::create_opengl_window(&sdl_video_subsystem, res, t);
+        let sdl_window = backends::VideoBackend::create_window(&sdl_video_subsystem, res, title, backend);
 
         let backend = backends::VideoBackend::create_opengl(&sdl_video_subsystem, &sdl_window);
 
         MgmWindow {
             resolution: res,
-            title: t.to_string(),
+            title: title.to_string(),
             is_open: true,
             sdl_context,
             sdl_video_subsystem,
