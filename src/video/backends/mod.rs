@@ -16,6 +16,14 @@ pub struct VideoBackend {
 
 
 impl VideoBackend {
+    pub fn new(sdl_video_subsystem: &sdl2::VideoSubsystem, window: &sdl2::video::Window, backend_type: VideoBackendType) -> Self {
+        match backend_type {
+            VideoBackendType::OpenGL => {
+                Self::create_opengl(sdl_video_subsystem, window)
+            }
+        }
+    }
+    
     pub fn create_window(sdl_video_subsystem: &sdl2::VideoSubsystem,
     res: mgmath::Vec2u32,
     title: &str,

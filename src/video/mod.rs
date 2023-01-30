@@ -33,12 +33,12 @@ impl MgmWindow {
     /// - Default backend set to opengl
     /// - Whatever backend set, you must use apropriate shaders. (OpenGL backend only accepts OpenGL shaders)
     /// - 
-    pub fn new(res: Vec2u32, title: &str, backend: crate::enums::VideoBackendType) -> Self {
+    pub fn new(res: Vec2u32, title: &str, backend_type: crate::enums::VideoBackendType) -> Self {
         let sdl_context = sdl2::init().unwrap();
         let sdl_video_subsystem = sdl_context.video().unwrap();
-        let sdl_window = backends::VideoBackend::create_window(&sdl_video_subsystem, res, title, backend);
+        let sdl_window = backends::VideoBackend::create_window(&sdl_video_subsystem, res, title, backend_type);
 
-        let backend = backends::VideoBackend::create_opengl(&sdl_video_subsystem, &sdl_window);
+        let backend = backends::VideoBackend::new(&sdl_video_subsystem, &sdl_window, backend_type);
 
         MgmWindow {
             resolution: res,
