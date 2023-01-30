@@ -2,6 +2,8 @@ use crate::mgmath;
 use super::super::enums::*;
 
 mod opengl;
+pub mod vertex_array_info;
+use vertex_array_info::*;
 
 
 pub struct VideoBackend {
@@ -57,7 +59,7 @@ impl VideoBackend {
         }
     }
 
-    pub fn mesh_data(&mut self, mesh: MeshID, data: crate::video::VertexArrayCreateInfo) {
+    pub fn mesh_data(&mut self, mesh: MeshID, data: VertexArrayCreateInfo) {
         match self.backend_type {
             VideoBackendType::OpenGL => {
                 self.opengl_mesh_data(mesh, data);

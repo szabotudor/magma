@@ -1,5 +1,5 @@
 use super::video::*;
-use crate::video::backends;
+use crate::video::backends::vertex_array_info::*;
 extern crate alloc;
 
 

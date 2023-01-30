@@ -1,4 +1,5 @@
 use std::os::raw::c_void;
+use crate::video::backends::vertex_array_info::*;
 
 use super::*;
 
@@ -66,7 +67,7 @@ impl VideoBackend {
         (self.opengl_meshes.len() - 1) as isize
     }
 
-    pub(in crate::video::backends) fn opengl_mesh_data(&mut self, mesh: MeshID, data: crate::video::VertexArrayCreateInfo) {
+    pub(in crate::video::backends) fn opengl_mesh_data(&mut self, mesh: MeshID, data: VertexArrayCreateInfo) {
         let (vao, vbo, _ebo) = (
             self.opengl_meshes[mesh as usize].vao,
             self.opengl_meshes[mesh as usize].vbo,
