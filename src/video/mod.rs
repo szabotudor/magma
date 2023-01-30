@@ -11,10 +11,6 @@ pub struct MgmWindow {
     resolution: Vec2u32,
     title: String,
     is_open: bool,
-    
-    sdl_context: sdl2::Sdl,
-    sdl_video_subsystem: sdl2::VideoSubsystem,
-    sdl_window: sdl2::video::Window,
 
     pub backend: backends::VideoBackend,
 
@@ -34,19 +30,12 @@ impl MgmWindow {
     /// - Whatever backend set, you must use apropriate shaders. (OpenGL backend only accepts OpenGL shaders)
     /// - 
     pub fn new(res: Vec2u32, title: &str, backend_type: crate::enums::VideoBackendType) -> Self {
-        let sdl_context = sdl2::init().unwrap();
-        let sdl_video_subsystem = sdl_context.video().unwrap();
-        let sdl_window = backends::VideoBackend::create_window(&sdl_video_subsystem, res, title, backend_type);
-
-        let backend = backends::VideoBackend::new(&sdl_video_subsystem, &sdl_window, backend_type);
+        let backend = backends::VideoBackend::new(res, title, backend_type);
 
         MgmWindow {
             resolution: res,
             title: title.to_string(),
             is_open: true,
-            sdl_context,
-            sdl_video_subsystem,
-            sdl_window,
             backend,
             clear_color: Vector!(0.0, 0.0, 0.0, 1.0)
         }
@@ -80,7 +69,7 @@ impl MgmWindow {
     /// Poll all events and process them\
     /// Swap buffers (this can also be done on the backend)
     pub fn update(&mut self) {
-        let mut events = self.sdl_context.event_pump().unwrap();
+        let mut events = self.backend.sdl_context.event_pump().unwrap();
         for event in events.poll_iter() {
             match event {
                 sdl2::event::Event::Quit { .. } => {
@@ -89,7 +78,7 @@ impl MgmWindow {
                 _ => { }
             }
         }
-        self.backend.swap(&self.sdl_window);
+        self.backend.swap();
     }
 
     /// Close the window

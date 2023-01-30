@@ -16,16 +16,11 @@ impl VideoBackend {
         sdl_video_subsystem.window(title, res[0], res[1]).opengl().build().unwrap()
     }
 
-    pub fn create_opengl(sdl_video_subsystem: &sdl2::VideoSubsystem, window: &sdl2::video::Window) -> Self {
-        gl::load_with(|s| sdl_video_subsystem.gl_get_proc_address(s) as *const _);
-        let gl_context = window.gl_create_context().unwrap();
-        window.gl_make_current(&gl_context).unwrap();
-        VideoBackend {
-            backend_type: VideoBackendType::OpenGL,
-            opengl_context: Some(window.gl_create_context().unwrap()),
-            opengl_clear_buffer_mask: gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT,
-            opengl_meshes: Vec::new()
-        }
+    pub fn create_opengl(&mut self) {
+        gl::load_with(|s| self.sdl_video_subsystem.gl_get_proc_address(s) as *const _);
+        self.opengl_context = Some(self.sdl_window.gl_create_context().unwrap());
+        self.sdl_window.gl_make_current(self.opengl_context.as_ref().unwrap()).unwrap();
+        self.opengl_clear_buffer_mask = gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT;
     }
 
     pub(in crate::video::backends) fn opengl_set_clear_color(&mut self, color: mgmath::Vec4f32) {
@@ -45,8 +40,8 @@ impl VideoBackend {
         }
     }
 
-    pub(in crate::video::backends) fn opengl_swap(&mut self, window: &sdl2::video::Window) {
-        window.gl_swap_window();
+    pub(in crate::video::backends) fn opengl_swap(&mut self) {
+        self.sdl_window.gl_swap_window();
     }
 
     pub(in crate::video::backends) fn opengl_init_new_mesh(&mut self) -> MeshID {

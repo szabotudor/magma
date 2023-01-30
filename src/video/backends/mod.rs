@@ -1,4 +1,4 @@
-use crate::mgmath;
+use crate::mgmath::{self, Vec2u32};
 use super::super::enums::*;
 
 mod opengl;
@@ -9,6 +9,10 @@ use vertex_array_info::*;
 pub struct VideoBackend {
     backend_type: VideoBackendType,
 
+    pub(in crate::video) sdl_context: sdl2::Sdl,
+    pub(in crate::video) sdl_video_subsystem: sdl2::VideoSubsystem,
+    pub(in crate::video) sdl_window: sdl2::video::Window,
+
     opengl_context: Option<sdl2::video::GLContext>,
     pub opengl_clear_buffer_mask: u32,
     opengl_meshes: Vec<opengl::OpenGLMesh>
@@ -16,12 +20,26 @@ pub struct VideoBackend {
 
 
 impl VideoBackend {
-    pub fn new(sdl_video_subsystem: &sdl2::VideoSubsystem, window: &sdl2::video::Window, backend_type: VideoBackendType) -> Self {
+    pub fn new(res: Vec2u32, title: &str, backend_type: VideoBackendType) -> Self {
+        let sdl_context = sdl2::init().unwrap();
+        let sdl_video_subsystem = sdl_context.video().unwrap();
+        let sdl_window = Self::create_window(&sdl_video_subsystem, res, title, backend_type);
+
+        let mut vb = Self {
+            backend_type,
+            sdl_context,
+            sdl_video_subsystem,
+            sdl_window,
+            opengl_context: None,
+            opengl_clear_buffer_mask: 0u32,
+            opengl_meshes: Vec::new()
+        };
         match backend_type {
             VideoBackendType::OpenGL => {
-                Self::create_opengl(sdl_video_subsystem, window)
+                vb.create_opengl();
             }
         }
+        vb
     }
     
     pub fn create_window(sdl_video_subsystem: &sdl2::VideoSubsystem,
@@ -51,10 +69,10 @@ impl VideoBackend {
         }
     }
 
-    pub fn swap(&mut self, window: &sdl2::video::Window) {
+    pub fn swap(&mut self) {
         match self.backend_type {
             VideoBackendType::OpenGL => {
-                self.opengl_swap(window);
+                self.opengl_swap();
             }
         }
     }
