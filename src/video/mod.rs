@@ -3,10 +3,10 @@
 /// - Vulkan (todo)
 pub mod backends;
 
-use self::backends::VideoBackend;
 use super::mgmath::*;
 
 
+#[allow(dead_code)]
 pub struct MgmWindow {
     resolution: Vec2u32,
     title: String,
@@ -29,7 +29,7 @@ impl MgmWindow {
     /// - Default backend set to opengl
     /// - Whatever backend set, you must use apropriate shaders. (OpenGL backend only accepts OpenGL shaders)
     /// - 
-    pub fn new(res: Vec2u32, title: &str, backend_type: crate::enums::VideoBackendType) -> Self {
+    pub fn new(res: Vec2u32, title: &str, backend_type: backends::VideoBackendType) -> Self {
         let backend = backends::VideoBackend::new(res, title, backend_type);
 
         MgmWindow {

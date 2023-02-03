@@ -1,6 +1,3 @@
-use std::os::raw::c_void;
-use crate::video::backends::vertex_array_info::*;
-
 use super::*;
 
 
@@ -10,20 +7,43 @@ pub(in crate::video::backends) struct OpenGLMesh {
     ebo: gl::types::GLuint
 }
 
+pub(in crate::video::backends) struct OpenGLShader {
+    shaders_uninit: Vec<u32>,
+    program: u32
+}
 
-impl VideoBackend {
-    pub fn create_opengl_window(sdl_video_subsystem: &sdl2::VideoSubsystem, res: mgmath::Vec2u32, title: &str) -> sdl2::video::Window {
+
+pub struct VideoBackendOpenGL {
+    pub(in crate::video::backends) context: Option<sdl2::video::GLContext>,
+    pub clear_buffer_mask: u32,
+    pub(in crate::video::backends) meshes: Vec<opengl::OpenGLMesh>,
+    pub(in crate::video::backends) shaders: Vec<opengl::OpenGLShader>
+}
+
+
+impl VideoBackendOpenGL {
+    pub(in crate::video::backends) fn new() -> Self {
+        VideoBackendOpenGL {
+            context: None,
+            clear_buffer_mask: 0u32,
+            meshes: Vec::new(),
+            shaders: Vec::new()
+        }
+    }
+
+    pub(in crate::video::backends) fn create_window(sdl_video_subsystem: &sdl2::VideoSubsystem, res: mgmath::Vec2u32, title: &str) -> sdl2::video::Window {
+        sdl_video_subsystem.gl_attr().set_context_version(4, 6);
         sdl_video_subsystem.window(title, res[0], res[1]).opengl().build().unwrap()
     }
 
-    pub fn create_opengl(&mut self) {
-        gl::load_with(|s| self.sdl_video_subsystem.gl_get_proc_address(s) as *const _);
-        self.opengl_context = Some(self.sdl_window.gl_create_context().unwrap());
-        self.sdl_window.gl_make_current(self.opengl_context.as_ref().unwrap()).unwrap();
-        self.opengl_clear_buffer_mask = gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT;
+    pub(in crate::video::backends) fn init(&mut self, sdl_video_subsystem: &sdl2::VideoSubsystem, sdl_window: &sdl2::video::Window) {
+        gl::load_with(|s| sdl_video_subsystem.gl_get_proc_address(s) as *const _);
+        self.context = Some(sdl_window.gl_create_context().unwrap());
+        sdl_window.gl_make_current(self.context.as_ref().unwrap()).unwrap();
+        self.clear_buffer_mask = gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT;
     }
 
-    pub(in crate::video::backends) fn opengl_set_clear_color(&mut self, color: mgmath::Vec4f32) {
+    pub(in crate::video::backends) fn set_clear_color(&mut self, color: mgmath::Vec4f32) {
         unsafe {
             gl::ClearColor(
                 color[0],
@@ -34,17 +54,13 @@ impl VideoBackend {
         }
     }
 
-    pub(in crate::video::backends) fn opengl_clear(&mut self) {
+    pub(in crate::video::backends) fn clear(&mut self) {
         unsafe {
-            gl::Clear(self.opengl_clear_buffer_mask);
+            gl::Clear(self.clear_buffer_mask);
         }
     }
 
-    pub(in crate::video::backends) fn opengl_swap(&mut self) {
-        self.sdl_window.gl_swap_window();
-    }
-
-    pub(in crate::video::backends) fn opengl_init_new_mesh(&mut self) -> MeshID {
+    pub(in crate::video::backends) fn new_mesh(&mut self) -> MeshID {
         let (mut vao, mut vbo, mut ebo) = (0u32, 0u32, 0u32);
 
         unsafe {
@@ -54,19 +70,19 @@ impl VideoBackend {
             gl::GenBuffers(1, &mut ebo);
         }
 
-        self.opengl_meshes.append(&mut vec![OpenGLMesh{
-            vao: vao,
-            vbo: vbo,
-            ebo: ebo
-        }]);
-        (self.opengl_meshes.len() - 1) as isize
+        self.meshes.push(OpenGLMesh {
+            vao,
+            vbo,
+            ebo
+        });
+        (self.meshes.len() - 1) as isize
     }
 
-    pub(in crate::video::backends) fn opengl_mesh_data(&mut self, mesh: MeshID, data: VertexArrayCreateInfo) {
+    pub(in crate::video::backends) fn mesh_data(&mut self, mesh: MeshID, data: VertexArrayCreateInfo) {
         let (vao, vbo, _ebo) = (
-            self.opengl_meshes[mesh as usize].vao,
-            self.opengl_meshes[mesh as usize].vbo,
-            self.opengl_meshes[mesh as usize].ebo
+            self.meshes[mesh as usize].vao,
+            self.meshes[mesh as usize].vbo,
+            self.meshes[mesh as usize].ebo
         );
         unsafe {
             gl::BindVertexArray(vao);
@@ -88,8 +104,29 @@ impl VideoBackend {
                     (data.stride_size * std::mem::size_of::<f32>()) as i32,
                     start_pointer as *const _
                 );
+                gl::EnableVertexAttribArray(c as u32);
                 start_pointer += data.components[c].num_elem * std::mem::size_of::<f32>();
             }
+        }
+    }
+
+    pub(in crate::video::backends) fn new_shader(&mut self) -> ShaderID {
+        let shader = unsafe { gl::CreateProgram() };
+        self.shaders.push(OpenGLShader {
+            shaders_uninit: Vec::new(),
+            program: shader
+        });
+        (self.shaders.len() - 1) as isize
+    }
+
+    pub(in crate::video::backends) fn shader_add_source(&mut self, shader_id: ShaderID, shader_type: crate::shader::ShaderType, source: &str) {
+        let id = shader_id as usize;
+        unsafe {
+            gl::UseProgram(self.shaders[id].program);
+            let shader = gl::CreateShader(shader_type as u32);
+            gl::ShaderSource(shader, 1, &(source as *const str as *const i8), 0 as *const i32);
+            gl::CompileShader(shader);
+            self.shaders[id].shaders_uninit.push(shader);
         }
     }
 }

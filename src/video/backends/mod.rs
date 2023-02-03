@@ -1,9 +1,21 @@
 use crate::mgmath::{self, Vec2u32};
-use super::super::enums::*;
 
 mod opengl;
 pub mod vertex_array_info;
 use vertex_array_info::*;
+
+
+pub enum VideoBackendType {
+    OpenGL
+}
+impl Clone for VideoBackendType {
+    fn clone(&self) -> Self {
+        match self {
+            Self::OpenGL => Self::OpenGL,
+        }
+    }
+}
+impl Copy for VideoBackendType { }
 
 
 pub struct VideoBackend {
@@ -13,9 +25,7 @@ pub struct VideoBackend {
     pub(in crate::video) sdl_video_subsystem: sdl2::VideoSubsystem,
     pub(in crate::video) sdl_window: sdl2::video::Window,
 
-    opengl_context: Option<sdl2::video::GLContext>,
-    pub opengl_clear_buffer_mask: u32,
-    opengl_meshes: Vec<opengl::OpenGLMesh>
+    pub opengl: opengl::VideoBackendOpenGL
 }
 
 
@@ -30,13 +40,11 @@ impl VideoBackend {
             sdl_context,
             sdl_video_subsystem,
             sdl_window,
-            opengl_context: None,
-            opengl_clear_buffer_mask: 0u32,
-            opengl_meshes: Vec::new()
+            opengl: opengl::VideoBackendOpenGL::new()
         };
         match backend_type {
             VideoBackendType::OpenGL => {
-                vb.create_opengl();
+                vb.opengl.init(&vb.sdl_video_subsystem, &vb.sdl_window);
             }
         }
         vb
@@ -48,7 +56,7 @@ impl VideoBackend {
     backend: VideoBackendType) -> sdl2::video::Window {
         match backend {
             VideoBackendType::OpenGL => {
-                Self::create_opengl_window(sdl_video_subsystem, res, title)
+                opengl::VideoBackendOpenGL::create_window(sdl_video_subsystem, res, title)
             }
         }
     }
@@ -56,7 +64,7 @@ impl VideoBackend {
     pub fn set_clear_color(&mut self, color: mgmath::Vec4f32) {
         match self.backend_type {
             VideoBackendType::OpenGL => {
-                self.opengl_set_clear_color(color);
+                self.opengl.set_clear_color(color);
             }
         }
     }
@@ -64,7 +72,7 @@ impl VideoBackend {
     pub fn clear(&mut self) {
         match self.backend_type {
             VideoBackendType::OpenGL => {
-                self.opengl_clear();
+                self.opengl.clear();
             }
         }
     }
@@ -72,7 +80,7 @@ impl VideoBackend {
     pub fn swap(&mut self) {
         match self.backend_type {
             VideoBackendType::OpenGL => {
-                self.opengl_swap();
+                self.sdl_window.gl_swap_window();
             }
         }
     }
@@ -80,7 +88,7 @@ impl VideoBackend {
     pub fn new_mesh(&mut self) -> MeshID {
         match self.backend_type {
             VideoBackendType::OpenGL => {
-                self.opengl_init_new_mesh()
+                self.opengl.new_mesh()
             }
         }
     }
@@ -88,7 +96,23 @@ impl VideoBackend {
     pub fn mesh_data(&mut self, mesh: MeshID, data: VertexArrayCreateInfo) {
         match self.backend_type {
             VideoBackendType::OpenGL => {
-                self.opengl_mesh_data(mesh, data);
+                self.opengl.mesh_data(mesh, data);
+            }
+        }
+    }
+
+    pub fn new_shader(&mut self) -> ShaderID {
+        match self.backend_type {
+            VideoBackendType::OpenGL => {
+                self.opengl.new_shader()
+            }
+        }
+    }
+
+    pub fn shader_add_source(&mut self, shader_id: ShaderID, shader_type: crate::shader::ShaderType, source: &str) {
+        match self.backend_type {
+            VideoBackendType::OpenGL => {
+                self.opengl.shader_add_source(shader_id, shader_type, source);
             }
         }
     }
@@ -96,3 +120,4 @@ impl VideoBackend {
 
 
 pub type MeshID = isize;
+pub type ShaderID = isize;
