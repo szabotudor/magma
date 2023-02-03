@@ -108,6 +108,10 @@ impl<T> Block<T> {
             );
         }
     }
+
+    pub fn ptr(&mut self) -> *const T {
+        self.data
+    }
 }
 
 
