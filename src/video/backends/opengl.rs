@@ -4,7 +4,9 @@ use super::*;
 pub(in crate::video::backends) struct OpenGLMesh {
     vao: gl::types::GLuint,
     vbo: gl::types::GLuint,
-    ebo: gl::types::GLuint
+    ebo: gl::types::GLuint,
+    num_elem: i32,
+    use_ebo: bool
 }
 
 pub(in crate::video::backends) struct OpenGLShader {
@@ -73,20 +75,24 @@ impl VideoBackendOpenGL {
         self.meshes.push(OpenGLMesh {
             vao,
             vbo,
-            ebo
+            ebo,
+            num_elem: 0,
+            use_ebo: false
         });
         (self.meshes.len() - 1) as isize
     }
 
     pub(in crate::video::backends) fn mesh_data(&mut self, mesh: MeshID, data: VertexArrayCreateInfo) {
+        let id = mesh as usize;
         let (vao, vbo, _ebo) = (
-            self.meshes[mesh as usize].vao,
-            self.meshes[mesh as usize].vbo,
-            self.meshes[mesh as usize].ebo
+            self.meshes[id].vao,
+            self.meshes[id].vbo,
+            self.meshes[id].ebo
         );
+        self.meshes[id].use_ebo = false;
         unsafe {
             gl::BindVertexArray(vao);
-            gl::BindBuffer(gl::VERTEX_ARRAY, vbo);
+            gl::BindBuffer(gl::ARRAY_BUFFER, vbo);
             gl::BufferData(
                 gl::ARRAY_BUFFER,
                 (data.num_verts * std::mem::size_of::<f32>()) as isize,
@@ -108,13 +114,21 @@ impl VideoBackendOpenGL {
                 start_pointer += data.components[c].num_elem * std::mem::size_of::<f32>();
             }
         }
+        self.meshes[id].num_elem = (data.num_verts / data.stride_size) as i32;
+    }
+
+    pub(in crate::video::backends) fn draw_mesh(&mut self, mesh: MeshID) {
+        let id = mesh as usize;
+        unsafe {
+            gl::BindVertexArray(self.meshes[id].vao);
+            gl::DrawArrays(gl::TRIANGLES, 0, self.meshes[id].num_elem);
+        }
     }
 
     pub(in crate::video::backends) fn new_shader(&mut self) -> ShaderID {
-        let shader = unsafe { gl::CreateProgram() };
         self.shaders.push(OpenGLShader {
             shaders_uninit: Vec::new(),
-            program: shader
+            program: unsafe { gl::CreateProgram() }
         });
         (self.shaders.len() - 1) as isize
     }
@@ -127,6 +141,30 @@ impl VideoBackendOpenGL {
             gl::ShaderSource(shader, 1, &(source as *const str as *const i8), 0 as *const i32);
             gl::CompileShader(shader);
             self.shaders[id].shaders_uninit.push(shader);
+
+            let mut info = crate::memory::Block::<i8>::new(512).unwrap();
+            gl::GetShaderInfoLog(shader, 512, 0 as *mut i32, info.ptr() as *mut i8);
+            println!("{}", std::ffi::CStr::from_ptr(info.ptr()).to_str().unwrap());
+        }
+    }
+
+    pub(in crate::video::backends) fn link_shader(&mut self, shader_id: ShaderID) {
+        let id = shader_id as usize;
+        unsafe {
+            for s in &self.shaders[id].shaders_uninit {
+                gl::AttachShader(self.shaders[id].program, *s);
+            }
+            gl::LinkProgram(self.shaders[id].program);
+            
+            let mut info = crate::memory::Block::<i8>::new(512).unwrap();
+            gl::GetProgramInfoLog(self.shaders[id].program, 512, 0 as *mut i32, info.ptr() as *mut i8);
+            println!("{}", std::ffi::CStr::from_ptr(info.ptr()).to_str().unwrap());
+        }
+    }
+
+    pub(in crate::video::backends) fn make_shader_current(&mut self, shader_id: ShaderID) {
+        unsafe {
+            gl::UseProgram(self.shaders[shader_id as usize].program);
         }
     }
 }

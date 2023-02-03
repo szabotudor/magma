@@ -101,6 +101,14 @@ impl VideoBackend {
         }
     }
 
+    pub fn draw_mesh(&mut self, mesh: MeshID) {
+        match self.backend_type {
+            VideoBackendType::OpenGL => {
+                self.opengl.draw_mesh(mesh);
+            }
+        }
+    }
+
     pub fn new_shader(&mut self) -> ShaderID {
         match self.backend_type {
             VideoBackendType::OpenGL => {
@@ -113,6 +121,22 @@ impl VideoBackend {
         match self.backend_type {
             VideoBackendType::OpenGL => {
                 self.opengl.shader_add_source(shader_id, shader_type, source);
+            }
+        }
+    }
+
+    pub fn link_shader(&mut self, shader_id: ShaderID) {
+        match self.backend_type {
+            VideoBackendType::OpenGL => {
+                self.opengl.link_shader(shader_id);
+            }
+        }
+    }
+
+    pub fn make_shader_current(&mut self, shader_id: ShaderID) {
+        match self.backend_type {
+            VideoBackendType::OpenGL => {
+                self.opengl.make_shader_current(shader_id);
             }
         }
     }
