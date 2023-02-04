@@ -4,9 +4,7 @@ extern crate alloc;
 
 
 pub struct Mesh {
-    backend: *mut backends::VideoBackend,
-    mesh_id: backends::MeshID,
-    shader: *mut crate::shader::Shader
+    mesh: Box<dyn backends::BackendMesh>
 }
 
 
@@ -14,11 +12,9 @@ impl Mesh {
     /// Create a new empty mesh compatible with the given backend\
     /// 
     /// `backend` -> Reference to the backend to use
-    pub fn new(backend: *const backends::VideoBackend, shader: *const crate::shader::Shader) -> Self {
+    pub fn new(backend: &mut backends::VideoBackend) -> Self {
         Mesh {
-            backend: backend as *mut backends::VideoBackend,
-            mesh_id: -1,
-            shader: shader as *mut crate::shader::Shader
+            mesh: backend.new_mesh()
         }
     }
 
@@ -26,18 +22,11 @@ impl Mesh {
     /// 
     /// `vertex_array_components_create_info` -> Info about how to send vertex info to be drawn
     pub fn manual_load_vertices(&mut self, vertex_array_components_create_info: VertexArrayCreateInfo) {
-        unsafe {
-            if self.mesh_id == -1 {
-                self.mesh_id = (*self.backend).new_mesh();
-            }
-            (*self.backend).mesh_data(self.mesh_id, vertex_array_components_create_info);
-        }
+        self.mesh.data(vertex_array_components_create_info);
     }
 
-    pub fn draw(&mut self) {
-        unsafe {
-            (*self.shader).make_current();
-            (*self.backend).draw_mesh(self.mesh_id);
-        }
+    pub fn draw(&mut self, shader: &mut crate::shader::Shader) {
+        shader.make_current();
+        self.mesh.draw();
     }
 }

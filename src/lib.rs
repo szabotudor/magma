@@ -60,26 +60,26 @@ mod tests {
         );
         window.set_clear_color(Vector!(0.18, 0.19, 0.22, 1.0));
 
-        let mut shader = shader::Shader::new(&window.backend);
+        let mut shader = shader::Shader::new(&mut window.backend);
         shader.add_source(vertex_shader, shader::ShaderType::VERTEX);
         shader.add_source(fragment_shader, shader::ShaderType::FRAGMENT);
         shader.link();
 
-        let mut mesh = mesh::Mesh::new(&window.backend, &shader);
-        let vac_info = video::backends::vertex_array_info::VertexArrayComponentCreateInfo {
-            name: "vertices".to_string(),
-            num_elem: 3
-        };
+        let mut mesh = mesh::Mesh::new(&mut window.backend);
         let mut va_info = video::backends::vertex_array_info::VertexArrayCreateInfo::new(
             vertices.as_ptr(),
             vertices.len()
         );
-        va_info.add_component_info(vac_info);
+        va_info.add_component_info(video::backends::vertex_array_info::VertexArrayComponentCreateInfo{
+            num_elem: 3,
+            name: "vertices".to_string()
+        });
         mesh.manual_load_vertices(va_info);
+
 
         while window.is_open() {
             window.clear();
-            mesh.draw();
+            mesh.draw(&mut shader);
             window.update();
         }
     }

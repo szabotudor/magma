@@ -8,8 +8,7 @@ pub enum ShaderType {
 
 
 pub struct Shader {
-    backend: *mut backends::VideoBackend,
-    shader_id: backends::ShaderID,
+    shader: Box<dyn backends::BackendShader>,
     linked: bool
 }
 
@@ -19,10 +18,9 @@ impl Shader {
     /// The shader source must be compatible with the selected backend (GLES for OpenGL, SPIR-V for Vulkant etc)\
     /// 
     /// `backend` -> Reference to the backend to use
-    pub fn new(backend: *const backends::VideoBackend) -> Self {
+    pub fn new(backend: &mut backends::VideoBackend) -> Self {
         Shader {
-            backend: backend as *mut backends::VideoBackend,
-            shader_id: -1,
+            shader: backend.new_shader(),
             linked: false
         }
     }
@@ -32,17 +30,12 @@ impl Shader {
     /// `source` -> The source for the shader\
     /// `shader_type` -> The type of the shader (ShaderType::VERTEX or ShaderType::FRAGMENT)
     pub fn add_source(&mut self, source: &str, shader_type: ShaderType) {
-        unsafe {
-            if self.shader_id == -1 {
-                self.shader_id = (*self.backend).new_shader();
-            }
-            (*self.backend).shader_add_source(self.shader_id, shader_type, source);
-        }
+        self.shader.add_source(source, shader_type);
     }
 
     /// Link the shader, so it can be used
     pub fn link(&mut self) {
-        unsafe { (*self.backend).link_shader(self.shader_id) };
+        self.shader.link();
         self.linked = true;
     }
 
@@ -51,6 +44,6 @@ impl Shader {
         if !self.linked {
             self.link();
         }
-        unsafe { (*self.backend).make_shader_current(self.shader_id) };
+        self.shader.make_current();
     }
 }

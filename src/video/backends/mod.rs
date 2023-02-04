@@ -85,63 +85,32 @@ impl VideoBackend {
         }
     }
 
-    pub fn new_mesh(&mut self) -> MeshID {
+    pub fn new_mesh(&mut self) -> Box<dyn BackendMesh> {
         match self.backend_type {
             VideoBackendType::OpenGL => {
-                self.opengl.new_mesh()
+                Box::new(opengl::OpenGLMesh::new())
             }
         }
     }
 
-    pub fn mesh_data(&mut self, mesh: MeshID, data: VertexArrayCreateInfo) {
+    pub fn new_shader(&mut self) -> Box<dyn BackendShader> {
         match self.backend_type {
             VideoBackendType::OpenGL => {
-                self.opengl.mesh_data(mesh, data);
-            }
-        }
-    }
-
-    pub fn draw_mesh(&mut self, mesh: MeshID) {
-        match self.backend_type {
-            VideoBackendType::OpenGL => {
-                self.opengl.draw_mesh(mesh);
-            }
-        }
-    }
-
-    pub fn new_shader(&mut self) -> ShaderID {
-        match self.backend_type {
-            VideoBackendType::OpenGL => {
-                self.opengl.new_shader()
-            }
-        }
-    }
-
-    pub fn shader_add_source(&mut self, shader_id: ShaderID, shader_type: crate::shader::ShaderType, source: &str) {
-        match self.backend_type {
-            VideoBackendType::OpenGL => {
-                self.opengl.shader_add_source(shader_id, shader_type, source);
-            }
-        }
-    }
-
-    pub fn link_shader(&mut self, shader_id: ShaderID) {
-        match self.backend_type {
-            VideoBackendType::OpenGL => {
-                self.opengl.link_shader(shader_id);
-            }
-        }
-    }
-
-    pub fn make_shader_current(&mut self, shader_id: ShaderID) {
-        match self.backend_type {
-            VideoBackendType::OpenGL => {
-                self.opengl.make_shader_current(shader_id);
+                Box::new(opengl::OpenGLShader::new())
             }
         }
     }
 }
 
 
-pub type MeshID = isize;
-pub type ShaderID = isize;
+pub trait BackendMesh {
+    fn data(&mut self, data: VertexArrayCreateInfo);
+    fn draw(&mut self);
+}
+
+
+pub trait BackendShader {
+    fn add_source(&mut self, source: &str, shader_type: crate::shader::ShaderType);
+    fn link(&mut self);
+    fn make_current(&mut self);
+}
