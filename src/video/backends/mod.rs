@@ -114,3 +114,16 @@ pub trait BackendShader {
     fn link(&mut self);
     fn make_current(&mut self);
 }
+
+
+#[allow(dead_code)]
+enum DrawUsage {
+    STATIC,
+    DYNAMIC,
+    STREAM
+}
+#[allow(unused)]
+enum DrawMode {
+    FILL,
+    LINE
+}
