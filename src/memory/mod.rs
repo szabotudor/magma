@@ -36,6 +36,14 @@ impl<T> Block<T> {
         }
     }
 
+    pub fn from_ptr(ptr: *const T, len: usize) -> Result<Self, String> {
+        let res = Self::new(len);
+        if len != 0 {
+            unsafe { ptr.copy_to(res.as_ref().unwrap().data as *mut T, len) };
+        }
+        res
+    }
+
     /// Allocate a new block of memory on the heap, initialized with `0`\
     /// 
     /// `len` -> The number of elements of type `T` to fit into the block\
@@ -79,12 +87,12 @@ impl<T> Block<T> {
     }
 
     /// Returns the length of the block (number of elements of type `T`)
-    pub fn len(&mut self) -> usize {
+    pub fn len(&self) -> usize {
         self.len
     }
 
     /// Returns the size of the block in bytes
-    pub fn size(&mut self) -> usize {
+    pub fn size(&self) -> usize {
         self.len * std::mem::size_of::<T>()
     }
 
@@ -100,7 +108,7 @@ impl<T> Block<T> {
     /// The number of elements that will be copied will be the lowest of `self.len` and `to.len`
     /// 
     /// `to` -> The block to copy the data to
-    pub fn copy_to(&mut self, to: &mut Self) {
+    pub fn copy_to(&self, to: &mut Self) {
         unsafe {
             self.data.copy_to(
                 to.data as *mut T,
@@ -109,8 +117,12 @@ impl<T> Block<T> {
         }
     }
 
-    pub fn ptr(&mut self) -> *const T {
+    pub fn as_ptr(&self) -> *const T {
         self.data
+    }
+
+    pub fn has_data(&self) -> bool {
+        self.data != (0 as *const T)
     }
 }
 
