@@ -6,7 +6,9 @@ pub(in crate::video::backends) struct OpenGLMesh {
     vbo: gl::types::GLuint,
     ebo: gl::types::GLuint,
     num_elem: i32,
-    use_ebo: bool
+    use_ebo: bool,
+    draw_usage: DrawUsage,
+    //draw_mode: DrawMode
 }
 impl OpenGLMesh {
     pub fn new() -> Self {
@@ -24,20 +26,27 @@ impl OpenGLMesh {
             vbo,
             ebo,
             num_elem: 0,
-            use_ebo: false
+            use_ebo: false,
+            draw_usage: DrawUsage::STATIC,
+            //draw_mode: DrawMode::FILL
         }
     }
 }
 impl BackendMesh for OpenGLMesh {
     fn data(&mut self, data: VertexArrayCreateInfo) {
+        let draw_usage = match self.draw_usage {
+            DrawUsage::STATIC => gl::STATIC_DRAW,
+            DrawUsage::DYNAMIC => gl::DYNAMIC_DRAW,
+            DrawUsage::STREAM => gl::STREAM_DRAW
+        };
         unsafe {
             gl::BindVertexArray(self.vao);
             gl::BindBuffer(gl::ARRAY_BUFFER, self.vbo);
             gl::BufferData(
                 gl::ARRAY_BUFFER,
                 (data.num_verts * std::mem::size_of::<f32>()) as isize,
-                data.vert_data as *const _,
-                gl::STATIC_DRAW
+                data.vert_data.as_ptr() as *const _,
+                draw_usage
             );
             let mut start_pointer = 0usize;
             for c in 0..data.components.len() {
@@ -52,14 +61,34 @@ impl BackendMesh for OpenGLMesh {
                 gl::EnableVertexAttribArray(c as u32);
                 start_pointer += data.components[c].num_elem * std::mem::size_of::<f32>();
             }
+
+            if data.elem_data.has_data() {
+                gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, self.ebo);
+                gl::BufferData(
+                    gl::ELEMENT_ARRAY_BUFFER,
+                    (data.num_elem * std::mem::size_of::<u32>()) as isize,
+                    data.elem_data.as_ptr() as *const _,
+                    draw_usage
+                );
+                self.num_elem = data.num_elem as i32;
+                self.use_ebo = true;
+            }
+            else {
+                self.num_elem = (data.num_verts / data.stride_size) as i32;
+            }
         }
-        self.num_elem = (data.num_verts / data.stride_size) as i32;
     }
 
     fn draw(&mut self) {
         unsafe {
-            gl::BindVertexArray(self.vao);
-            gl::DrawArrays(gl::TRIANGLES, 0, self.num_elem);
+            if self.use_ebo {
+                gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, self.ebo);
+                gl::DrawElements(gl::TRIANGLES, self.num_elem, gl::UNSIGNED_INT, 0 as *const _);
+            }
+            else {
+                gl::BindVertexArray(self.vao);
+                gl::DrawArrays(gl::TRIANGLES, 0, self.num_elem);
+            }
         }
     }
 }
@@ -86,9 +115,9 @@ impl BackendShader for OpenGLShader {
             gl::CompileShader(shader);
             self.shaders_uninit.push(shader);
 
-            let mut info = crate::memory::Block::<i8>::new(512).unwrap();
-            gl::GetShaderInfoLog(shader, 512, 0 as *mut i32, info.ptr() as *mut i8);
-            println!("{}", std::ffi::CStr::from_ptr(info.ptr()).to_str().unwrap());
+            let info = crate::memory::Block::<i8>::new(512).unwrap();
+            gl::GetShaderInfoLog(shader, 512, 0 as *mut i32, info.as_ptr() as *mut i8);
+            println!("{}", std::ffi::CStr::from_ptr(info.as_ptr()).to_str().unwrap());
         }
     }
 
@@ -99,9 +128,9 @@ impl BackendShader for OpenGLShader {
             }
             gl::LinkProgram(self.program);
 
-            let mut info = crate::memory::Block::<i8>::new(512).unwrap();
-            gl::GetProgramInfoLog(self.program, 512, 0 as *mut i32, info.ptr() as *mut i8);
-            println!("{}", std::ffi::CStr::from_ptr(info.ptr()).to_str().unwrap());
+            let info = crate::memory::Block::<i8>::new(512).unwrap();
+            gl::GetProgramInfoLog(self.program, 512, 0 as *mut i32, info.as_ptr() as *mut i8);
+            println!("{}", std::ffi::CStr::from_ptr(info.as_ptr()).to_str().unwrap());
         }
     }
 

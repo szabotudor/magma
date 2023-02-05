@@ -50,7 +50,12 @@ mod tests {
         let vertices = [
             -0.5f32, -0.5, 0.0,
             0.5, -0.5, 0.0,
-            0.0, 0.5, 0.0
+            0.5, 0.5, 0.0,
+            -0.5, 0.5, 0.0
+        ];
+        let elements = [
+            0, 1, 2,
+            2, 3, 0
         ];
 
         let mut window = video::MgmWindow::new(
@@ -68,7 +73,9 @@ mod tests {
         let mut mesh = mesh::Mesh::new(&mut window.backend);
         let mut va_info = video::backends::vertex_array_info::VertexArrayCreateInfo::new(
             vertices.as_ptr(),
-            vertices.len()
+            vertices.len(),
+            elements.as_ptr(),
+            elements.len()
         );
         va_info.add_component_info(video::backends::vertex_array_info::VertexArrayComponentCreateInfo{
             num_elem: 3,
