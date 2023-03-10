@@ -131,6 +131,11 @@ impl BackendShader for OpenGLShader {
             let info = crate::memory::Block::<i8>::new(512).unwrap();
             gl::GetProgramInfoLog(self.program, 512, 0 as *mut i32, info.as_ptr() as *mut i8);
             println!("{}", std::ffi::CStr::from_ptr(info.as_ptr()).to_str().unwrap());
+
+            for s in &self.shaders_uninit {
+                gl::DeleteShader(*s);
+            }
+            self.shaders_uninit.clear();
         }
     }
 
