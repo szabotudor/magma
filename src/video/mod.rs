@@ -62,7 +62,7 @@ impl MgmWindow {
     /// - `Alt + F4`
     /// - The X button on the window (not the X key on the keyboard)
     /// - Using the `close()` function
-    pub fn is_open(&mut self) -> bool {
+    pub fn is_open(&self) -> bool {
         self.is_open
     }
 

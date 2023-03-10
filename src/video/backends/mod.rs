@@ -85,7 +85,7 @@ impl VideoBackend {
         }
     }
 
-    pub fn new_mesh(&mut self) -> Box<dyn BackendMesh> {
+    pub fn new_mesh(&self) -> Box<dyn BackendMesh> {
         match self.backend_type {
             VideoBackendType::OpenGL => {
                 Box::new(opengl::OpenGLMesh::new())
@@ -93,7 +93,7 @@ impl VideoBackend {
         }
     }
 
-    pub fn new_shader(&mut self) -> Box<dyn BackendShader> {
+    pub fn new_shader(&self) -> Box<dyn BackendShader> {
         match self.backend_type {
             VideoBackendType::OpenGL => {
                 Box::new(opengl::OpenGLShader::new())

@@ -6,7 +6,7 @@ pub struct Vecb<const S: usize, T> {
 impl<const S: usize, T> Vecb<S, T>
 where T: Default + From<f64> + Into<f64> + std::ops::Mul<Output = T> + std::ops::AddAssign + Copy,
     Self: std::ops::Sub<Output = Self> + std::ops::Div<Output = Self> + std::ops::DivAssign + From<T> {
-    pub fn dot(&mut self, v: &mut Self) -> T {
+    pub fn dot(&self, v: &Self) -> T {
         let mut res: T = T::default();
         for i in 0..S {
             res += self[i] * v[i];
@@ -14,11 +14,11 @@ where T: Default + From<f64> + Into<f64> + std::ops::Mul<Output = T> + std::ops:
         res
     }
 
-    pub fn len(&mut self) -> T {
+    pub fn len(&self) -> T {
         f64::sqrt(self.clone().dot(self).into()).into()
     }
 
-    pub fn distance_to(&mut self, v: &mut Self) -> T {
+    pub fn distance_to(&self, v: &Self) -> T {
         (*v - *self).len()
     }
 
@@ -28,7 +28,7 @@ where T: Default + From<f64> + Into<f64> + std::ops::Mul<Output = T> + std::ops:
         self
     }
 
-    pub fn normalized(&mut self) -> Self {
+    pub fn normalized(&self) -> Self {
         *self / Vecb::<S, T>::from(self.len())
     }
 }
@@ -156,7 +156,7 @@ impl<const S: usize, T> From<[T; S]> for Vecb<S, T> {
 
 impl<const S: usize, T: Copy> From<T> for Vecb<S, T> {
     fn from(value: T) -> Self {
-        Vecb { data: [value; S]}
+        Vecb { data: [value; S] }
     }
 }
 

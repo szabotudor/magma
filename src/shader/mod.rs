@@ -18,7 +18,7 @@ impl Shader {
     /// The shader source must be compatible with the selected backend (GLES for OpenGL, SPIR-V for Vulkant etc)\
     /// 
     /// `backend` -> Reference to the backend to use
-    pub fn new(backend: &mut backends::VideoBackend) -> Self {
+    pub fn new(backend: &backends::VideoBackend) -> Self {
         Shader {
             shader: backend.new_shader(),
             linked: false
