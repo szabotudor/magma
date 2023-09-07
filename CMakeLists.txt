@@ -12,6 +12,7 @@ set(CMAKE_C_STANDARD_REQUIRED TRUE)
 
 add_subdirectory(${CMAKE_SOURCE_DIR}/mgmcommon)
 add_subdirectory(${CMAKE_SOURCE_DIR}/mgmwin)
+add_subdirectory(${CMAKE_SOURCE_DIR}/backends)
 add_subdirectory(${CMAKE_SOURCE_DIR}/mgmlib)
 
 add_executable(
