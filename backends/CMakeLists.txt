@@ -8,12 +8,14 @@ add_library(
     backend_OpenGL MODULE
         ${BACKENDS_SOURCE_DIR}/backend_OpenGL/backend_OpenGL.cpp
         ${BACKENDS_SOURCE_DIR}/backend_OpenGL/glad/src/glad.c
+        ${MGMCOMMON_SOURCE_DIR}/platform/platform_opengl.cpp
 )
 target_include_directories(
     backend_OpenGL
         PUBLIC
             ${BACKENDS_SOURCE_DIR}/backend_OpenGL/glad/include
             ${MGMCOMMON_SOURCE_DIR}/include
+            ${MGMCOMMON_SOURCE_DIR}/platform
             ${MGMWIN_SOURCE_DIR}/include
 )
 target_link_libraries(backend_OpenGL mgmcommon)

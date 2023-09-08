@@ -1,4 +1,5 @@
 #include "glad/glad.h"
+#include "platform.hpp"
 #if defined(__linux__)
 #include <dlfcn.h>
 #include "EGL/egl.h"
@@ -15,15 +16,7 @@
 namespace mgm {
     struct BackendData {
         bool init = false;
-        struct EGL {
-            EGLint* attrib = nullptr;
-            EGLint* context_attrib = nullptr;
-            EGLDisplay display{};
-            EGLConfig config{};
-            EGLint num_configs{};
-            EGLSurface surface{};
-            EGLContext context{};
-        } egl{};
+        OpenGLPlatform* platform;
         struct Viewport {
             vec2i32 pos{}, size{};
         } viewport{};
@@ -65,7 +58,7 @@ namespace mgm {
     }
 
     extern "C" void swap_buffers(BackendData* data) {
-        eglSwapBuffers(data->egl.display, data->egl.surface);
+        data->platform->swap_buffers();
     }
 
 
@@ -167,72 +160,17 @@ namespace mgm {
     //====================================
 
     extern "C" void init_backend(BackendData* data, void* native_display, uint32_t native_window) {
-        data->init = true;
-        
-        data->egl.display = eglGetDisplay(native_display);
-        if (!eglInitialize(data->egl.display, nullptr, nullptr)) {
-            log.error("Failed to initialize EGL");
-            return;
-        }
+        data->platform = new OpenGLPlatform{false, native_display, native_window};
+        data->platform->create_context(4, 6);
+        data->platform->make_current();
 
-        eglBindAPI(EGL_OPENGL_API);
-
-        data->egl.attrib = new EGLint[] {
-            EGL_RED_SIZE, 8,
-            EGL_GREEN_SIZE, 8,
-            EGL_BLUE_SIZE, 8,
-            EGL_ALPHA_SIZE, 8,
-            EGL_DEPTH_SIZE, 24,
-            EGL_STENCIL_SIZE, 8,
-            EGL_RENDERABLE_TYPE, EGL_OPENGL_BIT,
-            EGL_NONE
-        };
-
-        if (!eglChooseConfig(data->egl.display, data->egl.attrib, &data->egl.config, 1, &data->egl.num_configs)) {
-            log.error("Failed to find suitable EGL/OpenGL configuration");
-            return;
-        }
-
-        if (data->egl.num_configs != 1) {
-            log.error("Failed to find a compatible EGL configuration");
-            return;
-        }
-
-        data->egl.context_attrib = new EGLint[] {
-            EGL_CONTEXT_MAJOR_VERSION, 4,
-            EGL_CONTEXT_MINOR_VERSION, 6,
-            EGL_NONE
-        };
-
-        data->egl.context = eglCreateContext(data->egl.display, data->egl.config, EGL_NO_CONTEXT, data->egl.context_attrib);
-        if (!data->egl.context) {
-            log.error("Failed to create OpenGL context");
-            return;
-        }
-
-        data->egl.surface = eglCreateWindowSurface(data->egl.display, data->egl.config, native_window, nullptr);
-        if (!data->egl.surface) {
-            log.error("Failed to create window surface");
-            return;
-        }
-
-        if (!eglMakeCurrent(data->egl.display, data->egl.surface, data->egl.surface, data->egl.context)) {
-            log.error("Failed to make context current");
-        }
-
-        gladLoadGLLoader((GLADloadproc)eglGetProcAddress);
+        gladLoadGLLoader((GLADloadproc)OpenGLPlatform::proc_address_getter);
 
         log.log("Initialized OpenGL Backend");
         data->init = true;
     }
 
     extern "C" void destroy_backend(BackendData* data) {
-        eglDestroySurface(data->egl.display, data->egl.surface);
-        eglDestroyContext(data->egl.display, data->egl.context);
-        eglTerminate(data->egl.display);
-
-        delete[] data->egl.attrib;
-        data->egl.attrib = nullptr;
         log.log("Destroyed OpenGL Backend");
         data->init = false;
     }

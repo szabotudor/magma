@@ -13,6 +13,7 @@ target_include_directories(
     mgmcommon
         PUBLIC
             ${MGMCOMMON_SOURCE_DIR}/include
+            ${MGMCOMMON_SOURCE_DIR}/platform
 )
 
 if (UNIX AND NOT APPLE)
