@@ -1,16 +1,8 @@
 #include "glad/glad.h"
 #include "platform.hpp"
-#if defined(__linux__)
-#include <dlfcn.h>
-#include "EGL/egl.h"
-#endif
 
 #include "logging.hpp"
 #include "mgmath.hpp"
-
-#include <cstdint>
-#include <iostream>
-#include <string>
 
 
 namespace mgm {
