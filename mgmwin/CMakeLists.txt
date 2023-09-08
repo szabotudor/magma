@@ -3,9 +3,25 @@ project(mgmwin C CXX)
 set(MGMWIN_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR} CACHE INTERNAL "mgmwin library path")
 
 
+if(UNIX AND NOT APPLE)
+    if (NOT USE_WAYLAND)
+        list(APPEND platform_sources
+            ${MGMWIN_SOURCE_DIR}/platform/platform_x11.cpp
+        )
+    else()
+        list(APPEND platform_sources
+            ${MGMWIN_SOURCE_DIR}/platform/platform_wayland.cpp
+        )
+    endif()
+elseif(WIN32)
+    list(APPEND platform_sources
+        ${MGMWIN_SOURCE_DIR}/platform/platform_windows.cpp
+    )
+endif()
+
 add_library(
-    mgmwin 
-        ${MGMWIN_SOURCE_DIR}/src/mgmwin.cpp
+    mgmwin
+        ${platform_sources}
 )
 
 target_include_directories(

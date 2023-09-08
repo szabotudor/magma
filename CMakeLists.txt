@@ -10,6 +10,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 set(CMAKE_C_STANDARD 17)
 set(CMAKE_C_STANDARD_REQUIRED TRUE)
 
+if (UNIX AND NOT APPLE)
+    option(USE_WAYLAND "If true, will compile with wayland instead of X11" OFF)
+endif()
+
 add_subdirectory(${CMAKE_SOURCE_DIR}/mgmcommon)
 add_subdirectory(${CMAKE_SOURCE_DIR}/mgmwin)
 add_subdirectory(${CMAKE_SOURCE_DIR}/backends)

@@ -4,19 +4,30 @@ set(BACKENDS_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR} CACHE INTERNAL "backends lib
 list(APPEND CMAKE_MODULE_PATH ${BACKENDS_SOURCE_DIR})
 
 
+if(UNIX)
+    list(APPEND platform_sources
+        ${BACKENDS_SOURCE_DIR}/backend_OpenGL/platform/platform_unix.cpp
+    )
+elseif(WIN32)
+    list(APPEND platform_sources
+        ${BACKENDS_SOURCE_DIR}/backend_OpenGL/platform/platform_windows.cpp
+    )
+endif()
+
 add_library(
     backend_OpenGL MODULE
         ${BACKENDS_SOURCE_DIR}/backend_OpenGL/backend_OpenGL.cpp
         ${BACKENDS_SOURCE_DIR}/backend_OpenGL/glad/src/glad.c
-        ${MGMCOMMON_SOURCE_DIR}/platform/platform_opengl.cpp
+        ${platform_sources}
 )
 target_include_directories(
     backend_OpenGL
         PUBLIC
             ${BACKENDS_SOURCE_DIR}/backend_OpenGL/glad/include
             ${MGMCOMMON_SOURCE_DIR}/include
-            ${MGMCOMMON_SOURCE_DIR}/platform
             ${MGMWIN_SOURCE_DIR}/include
+        PRIVATE
+            ${BACKENDS_SOURCE_DIR}/backend_OpenGL/platform
 )
 target_link_libraries(backend_OpenGL mgmcommon)
 

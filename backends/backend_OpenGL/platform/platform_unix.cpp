@@ -1,8 +1,6 @@
-#include "platform_opengl.hpp"
+#include "platform.hpp"
 
-#if defined(__linux__)
 #include "EGL/egl.h"
-#endif
 
 
 namespace mgm {

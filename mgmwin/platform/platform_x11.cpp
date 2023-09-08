@@ -1,19 +1,11 @@
 #include "mgmwin.hpp"
 
-#include "logging.hpp"
-
-#if defined(__linux__)
-#include <X11/X.h>
+#include "X11/X.h"
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
-#elif defined(WIN32)
-#endif
-#include <string>
-
 
 
 namespace mgm {
-    #if defined(__linux__)
     struct MgmWindow::WindowData {
         Display* display = nullptr;
         Screen* screen = nullptr;
@@ -227,12 +219,4 @@ namespace mgm {
         close();
         delete data;
     }
-
-
-
-    #elif defined(_WIN32)
-    struct MgmWindow::WindowData {
-        
-    }
-    #endif
 }
