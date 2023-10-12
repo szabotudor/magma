@@ -1,5 +1,5 @@
 #include "glad/glad.h"
-#include "platform.hpp"
+#include "backend_OpenGL.hpp"
 
 #include "logging.hpp"
 #include "mgmath.hpp"
@@ -26,7 +26,7 @@ namespace mgm {
         mat4f transform{};
         Shader* shader = nullptr;
     };
-    logging log{"backend_OpenGL"};
+    Logging log{"backend_OpenGL"};
 
 
 

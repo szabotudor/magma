@@ -1,4 +1,4 @@
-#include "platform.hpp"
+#include "backend_OpenGL.hpp"
 
 #include "EGL/egl.h"
 

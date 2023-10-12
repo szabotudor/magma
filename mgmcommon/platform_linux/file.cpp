@@ -5,7 +5,7 @@
 
 
 namespace mgm {
-    std::string MgmFile::exe_dir() {
+    std::string FileIO::exe_dir() {
         char buffer[PATH_MAX];
         ssize_t count = readlink("/proc/self/exe", buffer, sizeof(buffer));
         std::string executablePath(buffer, (count > 0) ? count : 0);

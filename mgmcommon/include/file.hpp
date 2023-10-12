@@ -3,7 +3,7 @@
 
 
 namespace mgm {
-    class MgmFile {
+    class FileIO {
         public:
 
         static std::string exe_dir();

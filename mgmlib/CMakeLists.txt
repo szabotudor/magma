@@ -1,23 +1,28 @@
 cmake_minimum_required(VERSION 3.26.0)
 project(mgmlib C CXX)
-set(MGMLIB_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR} CACHE INTERNAL "mgmlib library path")
-list(APPEND CMAKE_MODULE_PATH ${MGMLIB_SOURCE_DIR})
 
-
+if(UNIX AND NOT APPLE)
+    set(
+        PLATFORM_SOURCES
+            ${CMAKE_CURRENT_SOURCE_DIR}/platform_linux/dloader.cpp
+    )
+endif()
 
 add_library(
     mgmlib 
-        ${MGMLIB_SOURCE_DIR}/src/mgmlib.cpp
-        ${MGMLIB_SOURCE_DIR}/src/dloader.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/mgmlib.cpp
+        ${PLATFORM_SOURCES}
 )
 
+get_target_property(MGMCOMMON_INCLUDE_DIRS mgmcommon INTERFACE_INCLUDE_DIRECTORIES)
+get_target_property(MGMWIN_INCLUDE_DIRS mgmwin INTERFACE_INCLUDE_DIRECTORIES)
 target_include_directories(
     mgmlib
         PUBLIC
-            ${MGMLIB_SOURCE_DIR}/include
+            ${CMAKE_CURRENT_SOURCE_DIR}/include
         PRIVATE
-            ${MGMLIB_SOURCE_DIR}/src
-            ${MGMCOMMON_SOURCE_DIR}
-            ${MGMWIN_SOURCE_DIR}/include
+            ${CMAKE_CURRENT_SOURCE_DIR}/src
+            ${MGMCOMMON_INCLUDE_DIRS}
+            ${MGMWIN_INCLUDE_DIRS}
 )
 target_link_libraries(mgmlib mgmcommon)

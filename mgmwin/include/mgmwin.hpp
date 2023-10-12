@@ -21,7 +21,7 @@ namespace mgm {
         bool _should_close = false, _is_open = false;
         uint32_t _allow_resize = 0, _allow_close = 1;
         
-        logging log;
+        Logging log;
 
         public:
         MgmWindow(const MgmWindow&) = delete;
@@ -36,7 +36,6 @@ namespace mgm {
 
         /**
          * @brief Open the window if it's closed, or reopen it with the new information if it's already opened
-         * 
          */
         void open(const char* name = "Window", vec2i32 pos = vec2i32(-1, -1), vec2u32 size = vec2u32(800, 600), Mode mode = Mode::NORMAL);
 

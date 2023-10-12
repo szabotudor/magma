@@ -1,4 +1,5 @@
 #include "dloader.hpp"
+#include "logging.hpp"
 #include "mgmath.hpp"
 #include "mgmlib.hpp"
 #include "mgmwin.hpp"
@@ -6,6 +7,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
+#include <stdexcept>
 
 
 namespace mgm {
@@ -39,6 +41,7 @@ namespace mgm {
     
     
     MgmGraphics::MgmGraphics(const char* backend_path) {
+        log = new Logging{"Graphics"};
         if (backend_path != nullptr)
             load_backend(backend_path);
     }
@@ -52,7 +55,7 @@ namespace mgm {
             unload_backend();
         lib = new DLoader(path);
         if (!lib->is_loaded()) {
-            log.error("Failed to load backend");
+            log->error("Failed to load backend");
             return;
         }
 
@@ -72,7 +75,7 @@ namespace mgm {
 
         data = funcs.alloc_backend_data();
 
-        log.log("Loaded backend");
+        log->log("Loaded backend");
     }
 
     void MgmGraphics::unload_backend() {
@@ -84,17 +87,21 @@ namespace mgm {
         lib = nullptr;
         memset(&funcs, 0, sizeof(funcs));
 
-        log.log("Unloaded backend");
+        log->log("Unloaded backend");
     }
     
     void MgmGraphics::connect_to_window(MgmWindow& window) {
+        if (lib == nullptr)
+            throw std::runtime_error("Tried to connect uninitialized graphics to window");
         funcs.init_backend(data, window.get_native_display(), window.get_native_window());
-        log.log("Connected graphics to window");
+        log->log("Connected graphics to window");
     }
 
     void MgmGraphics::disconnect_window() {
+        if (!window_connected)
+            return;
         funcs.destroy_backend(data);
-        log.log("Disconnected window");
+        log->log("Disconnected window");
     }
 
     MgmGraphics::Shader MgmGraphics::make_shader_from_source(const char* vert, const char* frag) {
@@ -102,6 +109,7 @@ namespace mgm {
     }
 
     MgmGraphics::~MgmGraphics() {
+        disconnect_window();
         unload_backend();
     }
 }

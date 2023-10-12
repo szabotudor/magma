@@ -1,33 +1,34 @@
 cmake_minimum_required(VERSION 3.26.0)
 project(backends C CXX)
-set(BACKENDS_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR} CACHE INTERNAL "backends library path")
-list(APPEND CMAKE_MODULE_PATH ${BACKENDS_SOURCE_DIR})
 
 
 if(UNIX)
-    list(APPEND platform_sources
-        ${BACKENDS_SOURCE_DIR}/backend_OpenGL/platform/platform_unix.cpp
+    list(APPEND PLATFORM_SOURCES
+        ${CMAKE_CURRENT_SOURCE_DIR}/backend_OpenGL/platform_unix/backend_OpenGL.cpp
     )
 elseif(WIN32)
-    list(APPEND platform_sources
-        ${BACKENDS_SOURCE_DIR}/backend_OpenGL/platform/platform_windows.cpp
+    list(APPEND PLATFORM_SOURCES
+        ${CMAKE_CURRENT_SOURCE_DIR}/backend_OpenGL/platform_windows/backend_OpenGL.cpp
     )
 endif()
 
 add_library(
     backend_OpenGL MODULE
-        ${BACKENDS_SOURCE_DIR}/backend_OpenGL/backend_OpenGL.cpp
-        ${BACKENDS_SOURCE_DIR}/backend_OpenGL/glad/src/glad.c
-        ${platform_sources}
+        ${CMAKE_CURRENT_SOURCE_DIR}/backend_OpenGL/backend_OpenGL.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/backend_OpenGL/glad/src/glad.c
+        ${PLATFORM_SOURCES}
 )
+
+get_target_property(MGMCOMMON_INCLUDE_DIRS mgmcommon INTERFACE_INCLUDE_DIRECTORIES)
+get_target_property(MGMWIN_INCLUDE_DIRS mgmwin INTERFACE_INCLUDE_DIRECTORIES)
 target_include_directories(
     backend_OpenGL
         PUBLIC
-            ${BACKENDS_SOURCE_DIR}/backend_OpenGL/glad/include
-            ${MGMCOMMON_SOURCE_DIR}/include
-            ${MGMWIN_SOURCE_DIR}/include
+            ${CMAKE_CURRENT_SOURCE_DIR}/backend_OpenGL/glad/include
+            ${MGMCOMMON_INCLUDE_DIRS}
+            ${MGMWIN_INCLUDE_DIRS}
         PRIVATE
-            ${BACKENDS_SOURCE_DIR}/backend_OpenGL/platform
+            ${CMAKE_CURRENT_SOURCE_DIR}/backend_OpenGL/platform_unix
 )
 target_link_libraries(backend_OpenGL mgmcommon)
 

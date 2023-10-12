@@ -1,35 +1,36 @@
 cmake_minimum_required(VERSION 3.26.0)
 project(mgmwin C CXX)
-set(MGMWIN_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR} CACHE INTERNAL "mgmwin library path")
 
 
 if(UNIX AND NOT APPLE)
     if (NOT USE_WAYLAND)
-        list(APPEND platform_sources
-            ${MGMWIN_SOURCE_DIR}/platform/platform_x11.cpp
+        set(PLATFORM_SOURCES
+            ${CMAKE_CURRENT_SOURCE_DIR}/platform_x11/mgmwin.cpp
         )
     else()
-        list(APPEND platform_sources
-            ${MGMWIN_SOURCE_DIR}/platform/platform_wayland.cpp
+        set(PLATFORM_SOURCES
+            ${CMAKE_CURRENT_SOURCE_DIR}/platform_wayland/mgmwin.cpp
         )
     endif()
 elseif(WIN32)
-    list(APPEND platform_sources
-        ${MGMWIN_SOURCE_DIR}/platform/platform_windows.cpp
+    set(PLATFORM_SOURCES
+        ${CMAKE_CURRENT_SOURCE_DIR}/platform_windows/mgmwin.cpp
     )
 endif()
 
 add_library(
     mgmwin
-        ${platform_sources}
+        ${PLATFORM_SOURCES}
 )
+
+get_target_property(MGMCOMMON_INCLUDE_DIRS mgmcommon INTERFACE_INCLUDE_DIRECTORIES)
 
 target_include_directories(
     mgmwin
         PUBLIC
-            ${MGMWIN_SOURCE_DIR}/include
+            ${CMAKE_CURRENT_SOURCE_DIR}/include
         PRIVATE
-            ${MGMCOMMON_SOURCE_DIR}/include
+            ${MGMCOMMON_INCLUDE_DIRS}
 )
 if (UNIX AND NOT APPLE)
     target_link_options(mgmwin PUBLIC -lX11)

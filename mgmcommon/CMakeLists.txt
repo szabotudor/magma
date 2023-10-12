@@ -1,28 +1,29 @@
 cmake_minimum_required(VERSION 3.26.0)
 project(mgmcommon C CXX)
-set(MGMCOMMON_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR} CACHE INTERNAL "mgmcommon library path")
 
 
-if(UNIX)
-    list(APPEND platform_sources
-        ${MGMCOMMON_SOURCE_DIR}/platform/platform_unix.cpp
+if(UNIX AND NOT APPLE)
+    set(
+        PLATFORM_SOURCES
+            ${CMAKE_CURRENT_SOURCE_DIR}/platform_linux/file.cpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/platform_stdio_compatible/logging.cpp
     )
 elseif(WIN32)
-    list(APPEND platform_sources
-        ${MGMCOMMON_SOURCE_DIR}/platform/platform_windows.cpp
+    set(
+        PLATFORM_SOURCES
     )
 endif()
 
 add_library(
     mgmcommon
-        ${MGMCOMMON_SOURCE_DIR}/src/logging.cpp
-        ${platform_sources}
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/logging.cpp
+        ${PLATFORM_SOURCES}
 )
 
 target_include_directories(
     mgmcommon
         PUBLIC
-            ${MGMCOMMON_SOURCE_DIR}/include
+            ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
 if (UNIX AND NOT APPLE)

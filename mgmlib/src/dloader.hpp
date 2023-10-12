@@ -5,13 +5,11 @@
 
 namespace mgm {
     class DLoader {
-        #if defined(__linux__)
         void* lib = nullptr;
-        #endif
 
         char* path = nullptr;
         size_t pathlen = 0;
-        logging log{"dloader"};
+        Logging log{"dloader"};
 
         void* void_sym(const char* sym_name);
 

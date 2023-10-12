@@ -8,7 +8,6 @@
 
 
 namespace mgm {
-    #if defined(__linux__)
     void* DLoader::void_sym(const char* sym_name) {
         return dlsym(lib, sym_name);
     }
@@ -65,7 +64,7 @@ namespace mgm {
         log.log("Trying to load dynamic library from \"", file_path, "\"");
         if (is_loaded()) unload();
 
-        lib = dlopen(file_path, RTLD_LAZY);
+        lib = dlopen((FileIO::exe_dir() + "/" + file_path).c_str(), RTLD_LAZY);
         if (lib == nullptr) {
             log.error(dlerror());
             return;
@@ -98,5 +97,4 @@ namespace mgm {
     DLoader::~DLoader() {
         unload();
     }
-    #endif
 }

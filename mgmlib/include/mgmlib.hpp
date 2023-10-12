@@ -1,20 +1,23 @@
 #pragma once
 #include "mgmath.hpp"
-#include "mgmwin.hpp"
-#include "logging.hpp"
 
 #include <cstdint>
 
 
 namespace mgm {
+    class MgmWindow;
+    class Logging;
+    class DLoader;
+    
     class MgmGraphics {
         struct DShader;
         struct DMesh;
 
-        struct DLoader* lib = nullptr;
+        DLoader* lib = nullptr;
         struct BackendData* data = nullptr;
+        bool window_connected = false;
 
-        logging log{"graphics"};
+        Logging* log = nullptr;
 
         struct BackendFunctions {
             using __alloc_backend_data = BackendData*(*)();
