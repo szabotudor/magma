@@ -8,7 +8,11 @@ namespace mgm {
     MagmaEngineMainLoop::MagmaEngineMainLoop() {
         window = new MgmWindow{};
         graphics = new MgmGraphics{};
+#if defined(__linux__)
         graphics->load_backend("shared/libbackend_OpenGL.so");
+#elif defined(WIN32)
+        graphics->load_backend("shared/backend_OpenGL.dll");
+#endif
         graphics->connect_to_window(*window);
     }
 
