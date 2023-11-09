@@ -4,6 +4,12 @@
 #include "logging.hpp"
 #include "mgmath.hpp"
 
+#if !defined(WIN32)
+#define EXPORT extern "C"
+#else
+#define EXPORT extern "C" __declspec(dllexport)
+#endif
+
 
 namespace mgm {
     struct BackendData {
@@ -34,22 +40,22 @@ namespace mgm {
     // Backend "big" graphics functions
     //==================================
 
-    extern "C" void viewport(BackendData* data, const vec2i32& pos, const vec2i32& size) {
+    EXPORT void viewport(BackendData* data, const vec2i32& pos, const vec2i32& size) {
         data->viewport.pos = pos;
         data->viewport.size = size;
         glViewport(pos.x(), pos.y(), size.x(), size.y());
     }
 
-    extern "C" void clear_color(BackendData* data, const vec4f& color) {
+    EXPORT void clear_color(BackendData* data, const vec4f& color) {
         data->clear_color = color;
         glClearColor(color.x(), color.y(), color.z(), color.w());
     }
 
-    extern "C" void clear(BackendData* data) {
+    EXPORT void clear(BackendData* data) {
         glClear(data->clear_mask);
     }
 
-    extern "C" void swap_buffers(BackendData* data) {
+    EXPORT void swap_buffers(BackendData* data) {
         data->platform->swap_buffers();
     }
 
@@ -92,7 +98,7 @@ namespace mgm {
 
         return 0;
     }
-    extern "C" Shader* make_shader(const void* vert_data, const void* frag_data, bool precompiled) {
+    EXPORT Shader* make_shader(const void* vert_data, const void* frag_data, bool precompiled) {
         if (precompiled) {
             log.error("Precompiled shaders not supported yet");
             return nullptr;
@@ -125,13 +131,13 @@ namespace mgm {
         return shader;
     }
 
-    extern "C" void destroy_shader(Shader* shader) {
+    EXPORT void destroy_shader(Shader* shader) {
         glDeleteProgram(shader->prog);
         log.log("Destroyed shader", std::to_string(shader->prog).c_str());
         shader->prog = 0;
     }
 
-    extern "C" Mesh* make_mesh(Shader* shader) {
+    EXPORT Mesh* make_mesh(Shader* shader) {
         Mesh* mesh = new Mesh();
 
         glGenBuffers(2, &mesh->vbo);
@@ -139,7 +145,7 @@ namespace mgm {
         return mesh;
     }
 
-    extern "C" void mesh_data(Mesh* mesh, void* data, uint64_t size) {
+    EXPORT void mesh_data(Mesh* mesh, void* data, uint64_t size) {
         glBindBuffer(GL_ARRAY_BUFFER, mesh->vbo);
         glBufferData(GL_ARRAY_BUFFER, size, data, GL_STATIC_DRAW);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -151,8 +157,8 @@ namespace mgm {
     // Backend initialization and freeing
     //====================================
 
-    extern "C" void init_backend(BackendData* data, void* native_display, uint32_t native_window) {
-        data->platform = new OpenGLPlatform{false, native_display, native_window};
+    EXPORT void init_backend(BackendData* data, struct NativeWindow* native_window) {
+        data->platform = new OpenGLPlatform{false, native_window};
         data->platform->create_context(4, 6);
         data->platform->make_current();
 
@@ -162,17 +168,17 @@ namespace mgm {
         data->init = true;
     }
 
-    extern "C" void destroy_backend(BackendData* data) {
+    EXPORT void destroy_backend(BackendData* data) {
         log.log("Destroyed OpenGL Backend");
         data->init = false;
     }
 
-    extern "C" BackendData* alloc_backend_data() {
+    EXPORT BackendData* alloc_backend_data() {
         BackendData* data = new BackendData{};
         return data;
     }
 
-    extern "C" void free_backend_data(BackendData*& data) {
+    EXPORT void free_backend_data(BackendData*& data) {
         if (data->init)
             destroy_backend(data);
         delete[] data;
