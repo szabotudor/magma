@@ -23,7 +23,7 @@ namespace mgm {
             using __alloc_backend_data = BackendData*(*)();
             using __free_backend_data = void(*)(BackendData*& data);
 
-            using __init_backend = void(*)(BackendData* data, void* native_display, uint32_t native_window);
+            using __init_backend = void(*)(BackendData* data, struct NativeWindow* native_window);
             using __destroy_backend = void(*)(BackendData* data);
 
             using __viewport = void(*)(BackendData* data, const vec2i32& pos, const vec2i32& size);
@@ -143,14 +143,14 @@ namespace mgm {
          * @brief Clear the screen to the selected solid color
          */
         inline void clear() {
-            funcs.swap_buffers(data);
+            funcs.clear(data);
         }
 
         /**
          * @brief Swap window buffers (present buffer)
          */
         inline void swap_buffers() {
-            funcs.clear(data);
+            funcs.swap_buffers(data);
         }
 
         /**
