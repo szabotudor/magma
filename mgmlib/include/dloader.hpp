@@ -14,9 +14,9 @@ namespace mgm {
         void* void_sym(const char* sym_name);
 
         public:
-        DLoader(const DLoader&);
+        DLoader(const DLoader&) = delete;
         DLoader(DLoader&&);
-        DLoader& operator=(const DLoader&);
+        DLoader& operator=(const DLoader&) = delete;
         DLoader& operator=(DLoader&&);
 
         DLoader(const char* file_path = nullptr);
@@ -49,7 +49,7 @@ namespace mgm {
         /**
          * @brief Check if any library is loaded
          */
-        bool is_loaded();
+        bool is_loaded() const { return lib != nullptr; }
 
         ~DLoader();
     };
