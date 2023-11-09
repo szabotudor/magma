@@ -15,6 +15,7 @@ namespace mgm {
         private:
         struct WindowData;
         WindowData* data = nullptr;
+        struct NativeWindow* native_window_data_copy = nullptr;
         Mode window_mode = Mode::NORMAL, nonfullscreen_window_mode = Mode::NORMAL;
         vec2u32 window_size{}, min_size{}, max_size{};
         vec2i32 window_pos{};
@@ -29,8 +30,7 @@ namespace mgm {
         MgmWindow& operator=(const MgmWindow&) = delete;
         MgmWindow& operator=(MgmWindow&&) = delete;
 
-        void* get_native_display();
-        uint32_t get_native_window();
+        NativeWindow* get_native_window();
 
         MgmWindow(const char* name = "Window", vec2i32 pos = vec2i32(-1, -1), vec2u32 size = vec2u32(800, 600), Mode mode = Mode::NORMAL);
 
@@ -49,7 +49,7 @@ namespace mgm {
         /**
          * @brief Get the window mode
          */
-        inline Mode get_mode() { return window_mode; }
+        inline Mode get_mode() const { return window_mode; }
 
         /**
          * @brief Allow or block resizing the window
@@ -61,7 +61,7 @@ namespace mgm {
         /**
          * @brief Check if resizing the window is allowed
          */
-        bool get_allow_resize() { return _allow_resize; }
+        bool get_allow_resize() const { return _allow_resize; }
 
         /**
          * @brief Allow or block closing the window
@@ -74,7 +74,7 @@ namespace mgm {
         /**
          * @brief Check if closing the window is allowed
          */
-        bool get_allow_close() { return _allow_close; }
+        bool get_allow_close() const { return _allow_close; }
 
         /**
          * @brief Set the size of the window
@@ -103,7 +103,7 @@ namespace mgm {
         /**
          * @brief Check if the window is still open
          */
-        inline bool is_open() { return _is_open; }
+        inline bool is_open() const { return _is_open; }
 
         ~MgmWindow();
     };
