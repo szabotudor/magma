@@ -20,15 +20,16 @@ add_library(
 )
 
 get_target_property(MGMCOMMON_INCLUDE_DIRS mgmcommon INTERFACE_INCLUDE_DIRECTORIES)
-get_target_property(MGMWIN_INCLUDE_DIRS mgmwin INTERFACE_INCLUDE_DIRECTORIES)
+get_target_property(MGMWIN_INCLUDE_DIRS mgmwin INCLUDE_DIRECTORIES)
 target_include_directories(
     backend_OpenGL
         PUBLIC
             ${CMAKE_CURRENT_SOURCE_DIR}/backend_OpenGL/glad/include
+            ${CMAKE_CURRENT_SOURCE_DIR}/backend_OpenGL/include
             ${MGMCOMMON_INCLUDE_DIRS}
             ${MGMWIN_INCLUDE_DIRS}
         PRIVATE
-            ${CMAKE_CURRENT_SOURCE_DIR}/backend_OpenGL/platform_unix
+            ${MGMWIN_PRIVATE_INCLUDE_DIRS}
 )
 target_link_libraries(backend_OpenGL mgmcommon)
 

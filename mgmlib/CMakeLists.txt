@@ -6,6 +6,11 @@ if(UNIX AND NOT APPLE)
         PLATFORM_SOURCES
             ${CMAKE_CURRENT_SOURCE_DIR}/platform_linux/dloader.cpp
     )
+elseif(WIN32)
+    set(
+        PLATFORM_SOURCES
+            ${CMAKE_CURRENT_SOURCE_DIR}/platform_windows/dloader.cpp
+    )
 endif()
 
 add_library(

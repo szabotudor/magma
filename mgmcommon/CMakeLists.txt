@@ -6,12 +6,19 @@ if(UNIX AND NOT APPLE)
     set(
         PLATFORM_SOURCES
             ${CMAKE_CURRENT_SOURCE_DIR}/platform_linux/file.cpp
-            ${CMAKE_CURRENT_SOURCE_DIR}/platform_stdio_compatible/logging.cpp
     )
 elseif(WIN32)
     set(
         PLATFORM_SOURCES
+            ${CMAKE_CURRENT_SOURCE_DIR}/platform_windows/file.cpp
     )
+endif()
+
+if(NOT STDIO_COMPATIBLE)
+    list(APPEND
+        PLATFORM_SOURCES
+            ${CMAKE_CURRENT_SOURCE_DIR}/platform_stdio_compatible/logging.cpp
+        )
 endif()
 
 add_library(
