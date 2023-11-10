@@ -13,43 +13,14 @@ namespace mgm {
     }
 
 
-    DLoader::DLoader(const DLoader& dl) {
-        pathlen = dl.pathlen;
-        path = new char[pathlen];
-        memcpy(path, dl.path, pathlen);
-        lib = dlopen(path, RTLD_LAZY);
-        if (lib == nullptr) {
-            log.error(dlerror());
-            return;
-        }
-    }
-
     DLoader::DLoader(DLoader&& dl) {
         lib = dl.lib;
         dl.lib = nullptr;
-
-        path = dl.path;
-        dl.path = nullptr;
-    }
-
-    DLoader& DLoader::operator=(const DLoader& dl) {
-        pathlen = dl.pathlen;
-        path = new char[pathlen];
-        memcpy(path, dl.path, pathlen);
-        lib = dlopen(path, RTLD_LAZY);
-        if (lib == nullptr) {
-            log.error(dlerror());
-            return *this;
-        }
-        return *this;
     }
 
     DLoader& DLoader::operator=(DLoader&& dl) {
         lib = dl.lib;
         dl.lib = nullptr;
-
-        path = dl.path;
-        dl.path = nullptr;
 
         return *this;
     }
@@ -70,28 +41,16 @@ namespace mgm {
             return;
         }
 
-        pathlen = strlen(file_path) + 1;
-        path = new char[pathlen];
-        memcpy(path, file_path, pathlen);
-
         log.log("Loaded dynamic library");
     }
 
     void DLoader::unload() {
-        log.log("Trying to unload dynamic library from \"", path, "\"");
         if (!is_loaded()) return;
 
         dlclose(lib);
         lib = nullptr;
 
-        delete[] path;
-        path = nullptr;
-
         log.log("Unloaded dynamic library");
-    }
-
-    bool DLoader::is_loaded() {
-        return lib != nullptr;
     }
 
     DLoader::~DLoader() {

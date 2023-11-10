@@ -7,8 +7,6 @@ namespace mgm {
     class DLoader {
         void* lib = nullptr;
 
-        char* path = nullptr;
-        size_t pathlen = 0;
         Logging log{"dloader"};
 
         void* void_sym(const char* sym_name);
