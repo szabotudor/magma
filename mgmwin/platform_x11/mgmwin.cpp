@@ -36,14 +36,6 @@ namespace mgm {
     }
 
 
-    void* MgmWindow::get_native_display() {
-        return data->display;
-    }
-
-    uint32_t MgmWindow::get_native_window() {
-        return data->window;
-    }
-
     MgmWindow::MgmWindow(const char* name, vec2i32 pos, vec2u32 size, Mode mode):
     log{(std::string("Window \"") + name + '\"').c_str()} {
         open(name, pos, size, mode);
