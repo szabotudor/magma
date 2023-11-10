@@ -9,28 +9,24 @@ namespace mgm {
 		HWND window{};
 	};
 
+
+	thread_local MgmWindow* updating_window = nullptr;
+
 	LRESULT CALLBACK window_proc(HWND h_window, UINT u_msg, WPARAM w_param, LPARAM l_param) {
-		// const auto* create_struct = reinterpret_cast<CREATESTRUCT*>(l_param);
-		// MgmWindow* window = nullptr;
-		// if (create_struct != nullptr && w_param == 0)
-		// 	window = static_cast<MgmWindow*>(create_struct->lpCreateParams);
 		switch (u_msg) {
 			case WM_SIZE: {
 				const vec2u32 size{LOWORD(l_param), HIWORD(l_param)};
-				break;
+				return LRESULT{};
 			}
-			case WM_DESTROY: {
-				break;
+			case WM_CLOSE: {
+				if (updating_window != nullptr)
+					updating_window->set_should_close_next_update();
+				return LRESULT{};
 			}
 			default: {
-				break;
+				return DefWindowProc(h_window, u_msg, w_param, l_param);
 			}
 		}
-		return DefWindowProc(h_window, u_msg, w_param, l_param);
-	}
-
-	NativeWindow* MgmWindow::get_native_window() {
-		return native_window_data_copy;
 	}
 
 	MgmWindow::MgmWindow(const char* name, vec2i32 pos, vec2u32 size, Mode mode) : log{std::string("Window ") + name} {
@@ -44,6 +40,7 @@ namespace mgm {
 		native_window_data_copy = new NativeWindow{};
 
 		WNDCLASS wc{};
+		wc.style = CS_OWNDC;
 		wc.lpfnWndProc = window_proc;
 		wc.hInstance = data->hinstance;
 		wc.lpszClassName = "MgmWindowClass";
@@ -81,7 +78,7 @@ namespace mgm {
 	}
 
 	void MgmWindow::close() {
-		if (_is_open)
+		if (!_is_open)
 			return;
 
 		CloseWindow(data->window);
@@ -90,9 +87,23 @@ namespace mgm {
 		delete native_window_data_copy;
 		native_window_data_copy = nullptr;
 		_is_open = false;
+
+		log.log("Closed Window");
 	}
 
 	void MgmWindow::update() {
+		updating_window = this;
+		MSG msg;
+        while (PeekMessage(&msg, data->window, 0, 0, PM_REMOVE)) {
+            if (msg.message == WM_CLOSE)
+                _should_close = true;
+            TranslateMessage(&msg);
+            DispatchMessage(&msg);
+        }
+		updating_window = nullptr;
+
+		if (_should_close)
+			close();
 	}
 
 	MgmWindow::~MgmWindow() {

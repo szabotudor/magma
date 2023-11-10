@@ -30,7 +30,7 @@ namespace mgm {
         MgmWindow& operator=(const MgmWindow&) = delete;
         MgmWindow& operator=(MgmWindow&&) = delete;
 
-        NativeWindow* get_native_window();
+        NativeWindow* get_native_window() { return native_window_data_copy; }
 
         MgmWindow(const char* name = "Window", vec2i32 pos = vec2i32(-1, -1), vec2u32 size = vec2u32(800, 600), Mode mode = Mode::NORMAL);
 
@@ -89,6 +89,11 @@ namespace mgm {
          * @param pos The new position
          */
         void set_position(vec2i32 pos);
+
+        /**
+         * @brief Make the window close the next time it updates
+         */
+        void set_should_close_next_update() { _should_close = true; }
 
         /**
          * @brief Force close the window
