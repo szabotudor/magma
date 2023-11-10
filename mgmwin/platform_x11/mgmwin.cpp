@@ -1,20 +1,8 @@
 #include "mgmwin.hpp"
-
-#include "X11/X.h"
-#include <X11/Xlib.h>
-#include <X11/Xutil.h>
+#include "native_window.hpp"
 
 
 namespace mgm {
-    struct MgmWindow::WindowData {
-        Display* display = nullptr;
-        Screen* screen = nullptr;
-        int screenid = 0;
-        Window window{};
-        Atom wm_destroy{}, wm_hints{};
-        uint32_t functions = 0x0;
-    };
-
     constexpr uint32_t WM_HINT_FUNCTIONS = 0x1,
         WM_HINT_BORDER = 0x2,
         WM_HINT_INPUT_MODE = 0x3,
@@ -45,7 +33,7 @@ namespace mgm {
         if (_is_open)
             close();
 
-        data = new WindowData();
+        data = new NativeWindow{};
         data->display = XOpenDisplay(nullptr);
         if (!data->display) {
             log.error("Could not open X display");
@@ -158,6 +146,15 @@ namespace mgm {
         mgmwin_xwindow_hints(data->display, data->window, data->wm_hints, &hints);
     }
 
+    void MgmWindow::set_allow_maximize(const bool allow) {
+        set_allow_resize(allow);
+        _allow_maximize = allow;
+    }
+
+    void MgmWindow::set_allow_minimize(const bool allow) {
+        log.error("X11 doesn't support blocking/allowing minimization");
+    }
+
     void MgmWindow::set_size(vec2u32 size) {
         XResizeWindow(data->display, data->window, size.x(), size.y());
         if (window_mode != Mode::FULLSCREEN)
@@ -182,7 +179,8 @@ namespace mgm {
         XCloseDisplay(data->display);
         _is_open = false;
         log.log("Closed window");
-        memset(data, 0, sizeof(WindowData));
+        delete data;
+        data = nullptr;
     }
 
     void MgmWindow::update() {

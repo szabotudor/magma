@@ -7,6 +7,9 @@ if(UNIX AND NOT APPLE)
         set(PLATFORM_SOURCES
             ${CMAKE_CURRENT_SOURCE_DIR}/platform_x11/mgmwin.cpp
         )
+        set(PLATFORM_INCLUDE_DIRS
+            ${CMAKE_CURRENT_SOURCE_DIR}/platform_x11
+        )
     else()
         set(PLATFORM_SOURCES
             ${CMAKE_CURRENT_SOURCE_DIR}/platform_wayland/mgmwin.cpp
