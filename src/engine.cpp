@@ -6,7 +6,7 @@
 
 namespace mgm {
     MagmaEngineMainLoop::MagmaEngineMainLoop() {
-        window = new MgmWindow{};
+        window = new MgmWindow{"Hello", {}, vec2u32{800, 600}, MgmWindow::Mode::NORMAL};
         graphics = new MgmGraphics{};
 #if defined(__linux__)
         graphics->load_backend("shared/libbackend_OpenGL.so");
@@ -14,6 +14,7 @@ namespace mgm {
         graphics->load_backend("shared/backend_OpenGL.dll");
 #endif
         graphics->connect_to_window(*window);
+        graphics->clear_color(vec4f{0.1f, 0.2f, 0.3f, 1.0f});
     }
 
     void MagmaEngineMainLoop::tick(float delta) {

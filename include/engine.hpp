@@ -6,10 +6,10 @@ namespace mgm {
     class MgmGraphics;
 
     class MagmaEngineMainLoop {
+        public:
         MgmWindow* window = nullptr;
         MgmGraphics* graphics = nullptr;
 
-        public:
 
         MagmaEngineMainLoop();
 
