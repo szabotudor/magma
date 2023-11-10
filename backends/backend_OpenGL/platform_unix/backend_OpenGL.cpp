@@ -1,10 +1,12 @@
 #include "backend_OpenGL.hpp"
+#include "native_window.hpp"
 
 #include "EGL/egl.h"
 
 
 namespace mgm {
     struct OpenGLPlatform::BackendData {
+        bool is_opengl_es = false;
         bool init = false;
         EGLint* attrib = nullptr;
         EGLint* context_attrib = nullptr;
@@ -15,19 +17,24 @@ namespace mgm {
         EGLContext context{};
     };
 
-    void* OpenGLPlatform::proc_address_getter = (void*)eglGetProcAddress;
+    void* OpenGLPlatform::proc_address_getter(const char* name) {
+        return (void*)eglGetProcAddress(name);
+    }
 
 
-    OpenGLPlatform::OpenGLPlatform(bool is_opengl_es, void* native_display, uint32_t native_window) {
+    OpenGLPlatform::OpenGLPlatform(bool is_opengl_es) {
         data = new BackendData{};
+        data->is_opengl_es = is_opengl_es;
+    }
 
-        data->display = eglGetDisplay(native_display);
+    void OpenGLPlatform::create_context(int ver_major, int ver_minor, struct NativeWindow* native_window) {
+        data->display = eglGetDisplay(native_window->display);
         if (!eglInitialize(data->display, nullptr, nullptr)) {
             log.error("Failed to initialize EGL");
             return;
         }
 
-        if (is_opengl_es)
+        if (data->is_opengl_es)
             eglBindAPI(EGL_OPENGL_ES_API);
         else
             eglBindAPI(EGL_OPENGL_API);
@@ -53,16 +60,14 @@ namespace mgm {
             return;
         }
 
-        data->surface = eglCreateWindowSurface(data->display, data->config, native_window, nullptr);
+        data->surface = eglCreateWindowSurface(data->display, data->config, native_window->window, nullptr);
         if (!data->surface) {
             log.error("Failed to create window surface");
             return;
         }
 
         data->init = true;
-    }
 
-    void OpenGLPlatform::create_context(int ver_major, int ver_minor) {
         data->context_attrib = new EGLint[] {
             EGL_CONTEXT_MAJOR_VERSION, ver_major,
             EGL_CONTEXT_MINOR_VERSION, ver_minor,
@@ -82,11 +87,11 @@ namespace mgm {
         }
     }
 
-    void OpenGLPlatform::swap_buffers() {
+    void OpenGLPlatform::swap_buffers() const {
         eglSwapBuffers(data->display, data->surface);
     }
 
-    bool OpenGLPlatform::is_init() {
+    bool OpenGLPlatform::is_init() const {
         return data->init;
     }
 
