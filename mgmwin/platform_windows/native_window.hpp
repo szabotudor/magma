@@ -4,6 +4,7 @@
 
 namespace mgm {
     struct NativeWindow {
+        HINSTANCE hinstance{};
 	    HWND window{};
     };
 }
