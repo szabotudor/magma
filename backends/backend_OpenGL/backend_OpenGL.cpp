@@ -158,11 +158,14 @@ namespace mgm {
     //====================================
 
     EXPORT void init_backend(BackendData* data, struct NativeWindow* native_window) {
-        data->platform = new OpenGLPlatform{false, native_window};
-        data->platform->create_context(4, 6);
+        data->platform = new OpenGLPlatform{false};
+        data->platform->create_context(4, 6, native_window);
         data->platform->make_current();
 
-        gladLoadGLLoader((GLADloadproc)OpenGLPlatform::proc_address_getter);
+        if (!gladLoadGLLoader((GLADloadproc)OpenGLPlatform::proc_address_getter)) {
+	        log.error("Could not load GLAD");
+            return;
+        }
 
         log.log("Initialized OpenGL Backend");
         data->init = true;
