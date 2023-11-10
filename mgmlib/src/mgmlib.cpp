@@ -93,7 +93,7 @@ namespace mgm {
     void MgmGraphics::connect_to_window(MgmWindow& window) {
         if (lib == nullptr)
             throw std::runtime_error("Tried to connect uninitialized graphics to window");
-        funcs.init_backend(data, window.get_native_display(), window.get_native_window());
+        funcs.init_backend(data, window.get_native_window());
         log->log("Connected graphics to window");
     }
 
