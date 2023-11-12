@@ -1,5 +1,6 @@
 #pragma once
 #include "mgmath.hpp"
+#include "logging.hpp"
 
 #include <cstdint>
 #include <vector>
@@ -25,7 +26,7 @@ namespace mgm {
         struct BackendData* data = nullptr;
         bool window_connected = false;
 
-        Logging* log = nullptr;
+        Logging log;
 
         struct BackendFunctions {
             using __alloc_backend_data = BackendData*(*)();
@@ -46,6 +47,25 @@ namespace mgm {
             using __destroy_mesh = void(*)(Mesh* mesh);
             using __draw = void(*)(const Mesh* mesh, const Shader* shader);
 
+            using __find_uniform = uint32_t(*)(const Shader* shader, const char* name);
+
+            using __uniform_f = void(*)(const Shader* shader, const uint32_t uniform_id, const float& f);
+            using __uniform_d = void(*)(const Shader* shader, const uint32_t uniform_id, const double& d);
+            using __uniform_u = void(*)(const Shader* shader, const uint32_t uniform_id, const uint32_t& u);
+            using __uniform_i = void(*)(const Shader* shader, const uint32_t uniform_id, const int32_t& i);
+            using __uniform_vec2f = void(*)(const Shader* shader, const uint32_t uniform_id, const vec2f& v);
+            using __uniform_vec3f = void(*)(const Shader* shader, const uint32_t uniform_id, const vec3f& v);
+            using __uniform_vec4f = void(*)(const Shader* shader, const uint32_t uniform_id, const vec4f& v);
+            using __uniform_vec2d = void(*)(const Shader* shader, const uint32_t uniform_id, const vec2d& v);
+            using __uniform_vec3d = void(*)(const Shader* shader, const uint32_t uniform_id, const vec3d& v);
+            using __uniform_vec4d = void(*)(const Shader* shader, const uint32_t uniform_id, const vec4d& v);
+            using __uniform_vec2u = void(*)(const Shader* shader, const uint32_t uniform_id, const vec2u32& v);
+            using __uniform_vec3u = void(*)(const Shader* shader, const uint32_t uniform_id, const vec3u32& v);
+            using __uniform_vec4u = void(*)(const Shader* shader, const uint32_t uniform_id, const vec4u32& v);
+            using __uniform_vec2i = void(*)(const Shader* shader, const uint32_t uniform_id, const vec2i32& v);
+            using __uniform_vec3i = void(*)(const Shader* shader, const uint32_t uniform_id, const vec3i32& v);
+            using __uniform_vec4i = void(*)(const Shader* shader, const uint32_t uniform_id, const vec4i32& v);
+
             __alloc_backend_data alloc_backend_data = nullptr;
             __free_backend_data free_backend_data = nullptr;
 
@@ -62,6 +82,25 @@ namespace mgm {
             __make_mesh make_mesh = nullptr;
             __destroy_mesh destroy_mesh = nullptr;
             __draw draw = nullptr;
+
+            __find_uniform find_uniform = nullptr;
+
+            __uniform_f uniform_f = nullptr;
+            __uniform_d uniform_d = nullptr;
+            __uniform_u uniform_u = nullptr;
+            __uniform_i uniform_i = nullptr;
+            __uniform_vec2f uniform_vec2f = nullptr;
+            __uniform_vec3f uniform_vec3f = nullptr;
+            __uniform_vec4f uniform_vec4f = nullptr;
+            __uniform_vec2d uniform_vec2d = nullptr;
+            __uniform_vec3d uniform_vec3d = nullptr;
+            __uniform_vec4d uniform_vec4d = nullptr;
+            __uniform_vec2u uniform_vec2u = nullptr;
+            __uniform_vec3u uniform_vec3u = nullptr;
+            __uniform_vec4u uniform_vec4u = nullptr;
+            __uniform_vec2i uniform_vec2i = nullptr;
+            __uniform_vec3i uniform_vec3i = nullptr;
+            __uniform_vec4i uniform_vec4i = nullptr;
         } funcs{};
 
         std::vector<Mesh*> meshes{};
@@ -199,5 +238,23 @@ namespace mgm {
         void draw(const MeshHandle mesh, const ShaderHandle shader) const {
             funcs.draw(meshes[mesh], shaders[shader]);
         }
+
+        uint32_t find_uniform(const ShaderHandle shader, const char* name) {
+            return funcs.find_uniform(shaders[shader], name);
+        }
+
+        template<typename T>
+        void uniform_data(const ShaderHandle shader, const uint32_t uiniform_id, const T& value);
+
+        template<typename T>
+        void uniform_data(const ShaderHandle shader, const char* uniform_name, const T& value) {
+            const auto uniform_id = find_uniform(shader, uniform_name);
+            uniform_data(shader, uniform_id, value);
+        }
     };
+
+    template<typename T>
+    void MgmGraphics::uniform_data(const ShaderHandle shader, const uint32_t uiniform_id, const T &value) {
+        log.error("Uniform type not supported");
+    }
 }

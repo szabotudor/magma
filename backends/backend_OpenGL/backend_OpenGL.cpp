@@ -129,13 +129,101 @@ namespace mgm {
         return shader;
     }
 
+    EXPORT uint32_t find_uniform(const Shader* shader, const char* name) {
+        const auto res = glGetUniformLocation(shader->prog, name);
+        if (res == -1)
+            log.error("No uniform with this name");
+        return (uint32_t)res;
+    }
+
+    EXPORT void uniform_f(const Shader* shader, const uint32_t uniform_id, const float& f) {
+        glUseProgram(shader->prog);
+        glUniform1f(uniform_id, f);
+        glUseProgram(0);
+    }
+    EXPORT void uniform_d(const Shader* shader, const uint32_t uniform_id, const double& d) {
+        glUseProgram(shader->prog);
+        glUniform1d(uniform_id, d);
+        glUseProgram(0);
+    }
+    EXPORT void uniform_u(const Shader* shader, const uint32_t uniform_id, const uint32_t& u) {
+        glUseProgram(shader->prog);
+        glUniform1ui(uniform_id, u);
+        glUseProgram(0);
+    }
+    EXPORT void uniform_i(const Shader* shader, const uint32_t uniform_id, const int32_t& i) {
+        glUseProgram(shader->prog);
+        glUniform1i(uniform_id, i);
+        glUseProgram(0);
+    }
+    EXPORT void uniform_vec2f(const Shader* shader, const uint32_t uniform_id, const vec2f& v) {
+        glUseProgram(shader->prog);
+        glUniform2f(uniform_id, v.x(), v.y());
+        glUseProgram(0);
+    }
+    EXPORT void uniform_vec3f(const Shader* shader, const uint32_t uniform_id, const vec3f& v) {
+        glUseProgram(shader->prog);
+        glUniform3f(uniform_id, v.x(), v.y(), v.z());
+        glUseProgram(0);
+    }
+    EXPORT void uniform_vec4f(const Shader* shader, const uint32_t uniform_id, const vec4f& v) {
+        glUseProgram(shader->prog);
+        glUniform4f(uniform_id, v.x(), v.y(), v.z(), v.w());
+        glUseProgram(0);
+    }
+    EXPORT void uniform_vec2d(const Shader* shader, const uint32_t uniform_id, const vec2d& v) {
+        glUseProgram(shader->prog);
+        glUniform2d(uniform_id, v.x(), v.y());
+        glUseProgram(0);
+    }
+    EXPORT void uniform_vec3d(const Shader* shader, const uint32_t uniform_id, const vec3d& v) {
+        glUseProgram(shader->prog);
+        glUniform3d(uniform_id, v.x(), v.y(), v.z());
+        glUseProgram(0);
+    }
+    EXPORT void uniform_vec4d(const Shader* shader, const uint32_t uniform_id, const vec4d& v) {
+        glUseProgram(shader->prog);
+        glUniform4d(uniform_id, v.x(), v.y(), v.z(), v.w());
+        glUseProgram(0);
+    }
+    EXPORT void uniform_vec2u(const Shader* shader, const uint32_t uniform_id, const vec2u32& v) {
+        glUseProgram(shader->prog);
+        glUniform2ui(uniform_id, v.x(), v.y());
+        glUseProgram(0);
+    }
+    EXPORT void uniform_vec3u(const Shader* shader, const uint32_t uniform_id, const vec3u32& v) {
+        glUseProgram(shader->prog);
+        glUniform3ui(uniform_id, v.x(), v.y(), v.z());
+        glUseProgram(0);
+    }
+    EXPORT void uniform_vec4u(const Shader* shader, const uint32_t uniform_id, const vec4u32& v) {
+        glUseProgram(shader->prog);
+        glUniform4ui(uniform_id, v.x(), v.y(), v.z(), v.w());
+        glUseProgram(0);
+    }
+    EXPORT void uniform_vec2i(const Shader* shader, const uint32_t uniform_id, const vec2i32& v) {
+        glUseProgram(shader->prog);
+        glUniform2i(uniform_id, v.x(), v.y());
+        glUseProgram(0);
+    }
+    EXPORT void uniform_vec3i(const Shader* shader, const uint32_t uniform_id, const vec3i32& v) {
+        glUseProgram(shader->prog);
+        glUniform3i(uniform_id, v.x(), v.y(), v.z());
+        glUseProgram(0);
+    }
+    EXPORT void uniform_vec4i(const Shader* shader, const uint32_t uniform_id, const vec4i32& v) {
+        glUseProgram(shader->prog);
+        glUniform4i(uniform_id, v.x(), v.y(), v.z(), v.w());
+        glUseProgram(0);
+    }
+
     EXPORT void destroy_shader(Shader* shader) {
         glDeleteProgram(shader->prog);
         delete shader;
     }
 
     template<typename T>
-    void make_vbo(const T* data, const uint32_t num_per_point, const GLenum gl_data_type, const bool normalized, uint32_t data_len,
+    void make_buffer(const T* data, const uint32_t num_per_point, const GLenum gl_data_type, const bool normalized, uint32_t data_len,
                     GLuint& vbo, const GLenum gl_buffer_type, uint32_t attrib_array_id, GLenum draw_mode) {
         glGenBuffers(1, &vbo);
         glBindBuffer(gl_buffer_type, vbo);
@@ -158,33 +246,34 @@ namespace mgm {
         glGenVertexArrays(1, &mesh->vao);
         glBindVertexArray(mesh->vao);
 
-        make_vbo(
+        make_buffer(
             verts, 3, GL_FLOAT, false, num_verts, 
             mesh->verts, GL_ARRAY_BUFFER, 0, GL_STATIC_DRAW
         );
 
-        if (normals) make_vbo(
+        if (normals) make_buffer(
             normals, 3, GL_FLOAT, true, num_verts, 
             mesh->normals, GL_ARRAY_BUFFER, 1, GL_STATIC_DRAW
         );
 
-        if (colors) make_vbo(
+        if (colors) make_buffer(
             colors, 4, GL_FLOAT, false, num_verts, 
             mesh->colors, GL_ARRAY_BUFFER, 2, GL_STATIC_DRAW
         );
 
-        if (tex_coords) make_vbo(
+        if (tex_coords) make_buffer(
             tex_coords, 2, GL_FLOAT, false, num_verts, 
             mesh->tex_coords, GL_ARRAY_BUFFER, 3, GL_STATIC_DRAW
         );
 
-        if (indices) make_vbo(
+        if (indices) make_buffer(
             indices, 1, GL_UNSIGNED_INT, false, num_indices,
             mesh->ebo, GL_ELEMENT_ARRAY_BUFFER, (uint32_t)-1, GL_STATIC_DRAW
         );
 
         glBindVertexArray(0);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
         return mesh;
     }
