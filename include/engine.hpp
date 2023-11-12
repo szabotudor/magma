@@ -22,10 +22,8 @@ namespace mgm {
 
         /**
          * @brief Runs once per frame, after the tic fucntion
-         * 
-         * @param delta Delta time for framerate (in seconds)
          */
-        void draw(float delta);
+        void draw();
 
         /**
          * @brief Check if the engine is running
