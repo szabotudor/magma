@@ -28,9 +28,8 @@ namespace mgm {
     };
 
     struct Mesh {
-        GLuint vbo = 0, ebo = 0, vao = 0;
-        mat4f transform{};
-        Shader* shader = nullptr;
+        GLuint verts = -1, normals = -1, colors = -1, tex_coords = -1,
+            ebo = -1, vao = -1;
     };
     Logging log{"backend_OpenGL"};
 
@@ -100,10 +99,10 @@ namespace mgm {
     }
     EXPORT Shader* make_shader(const void* vert_data, const void* frag_data, bool precompiled) {
         if (precompiled) {
-            log.error("Precompiled shaders not supported yet");
+            log.error("Precompiled shaders not supported in OpenGL");
             return nullptr;
         }
-        Shader* shader = new Shader();
+        Shader* shader = new Shader{};
 
         shader->prog = glCreateProgram();
         shader->vert = glCreateShader(GL_VERTEX_SHADER);
@@ -127,28 +126,89 @@ namespace mgm {
         shader->vert = 0;
         shader->frag = 0;
 
-        log.log("Created shader", std::to_string(shader->prog).c_str());
         return shader;
     }
 
     EXPORT void destroy_shader(Shader* shader) {
         glDeleteProgram(shader->prog);
-        log.log("Destroyed shader", std::to_string(shader->prog).c_str());
-        shader->prog = 0;
+        delete shader;
     }
 
-    EXPORT Mesh* make_mesh(Shader* shader) {
-        Mesh* mesh = new Mesh();
+    template<typename T>
+    void make_vbo(const T* data, const uint32_t num_per_point, const GLenum gl_data_type, const bool normalized, uint32_t data_len,
+                    GLuint& vbo, const GLenum gl_buffer_type, uint32_t attrib_array_id, GLenum draw_mode) {
+        glGenBuffers(1, &vbo);
+        glBindBuffer(gl_buffer_type, vbo);
+        glBufferData(gl_buffer_type, data_len * sizeof(T), data, draw_mode);
+        if (attrib_array_id != (uint32_t)-1) {
+            glVertexAttribPointer(attrib_array_id, num_per_point, gl_data_type, normalized, sizeof(T), nullptr);
+            glEnableVertexAttribArray(attrib_array_id);
+        }
+    }
 
-        glGenBuffers(2, &mesh->vbo);
+    EXPORT Mesh* make_mesh(const vec3f* verts, const vec3f* normals, const vec4f* colors, const vec2f* tex_coords, const uint32_t num_verts,
+                            const uint32_t* indices, const uint32_t num_indices) {
+        if (!verts) {
+            log.error("Mesh must contain vertices");
+            return nullptr;
+        }
+
+        Mesh* mesh = new Mesh{};
+
+        glGenVertexArrays(1, &mesh->vao);
+        glBindVertexArray(mesh->vao);
+
+        make_vbo(
+            verts, 3, GL_FLOAT, false, num_verts, 
+            mesh->verts, GL_ARRAY_BUFFER, 0, GL_STATIC_DRAW
+        );
+
+        if (normals) make_vbo(
+            normals, 3, GL_FLOAT, true, num_verts, 
+            mesh->normals, GL_ARRAY_BUFFER, 1, GL_STATIC_DRAW
+        );
+
+        if (colors) make_vbo(
+            colors, 4, GL_FLOAT, false, num_verts, 
+            mesh->colors, GL_ARRAY_BUFFER, 2, GL_STATIC_DRAW
+        );
+
+        if (tex_coords) make_vbo(
+            tex_coords, 2, GL_FLOAT, false, num_verts, 
+            mesh->tex_coords, GL_ARRAY_BUFFER, 3, GL_STATIC_DRAW
+        );
+
+        if (indices) make_vbo(
+            indices, 1, GL_UNSIGNED_INT, false, num_indices,
+            mesh->ebo, GL_ELEMENT_ARRAY_BUFFER, (uint32_t)-1, GL_STATIC_DRAW
+        );
+
+        glBindVertexArray(0);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
 
         return mesh;
     }
+    
+    EXPORT void destroy_mesh(Mesh* mesh) {
+        glDeleteVertexArrays(1, &mesh->vao);
 
-    EXPORT void mesh_data(Mesh* mesh, void* data, uint64_t size) {
-        glBindBuffer(GL_ARRAY_BUFFER, mesh->vbo);
-        glBufferData(GL_ARRAY_BUFFER, size, data, GL_STATIC_DRAW);
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        if (mesh->verts != (GLuint)-1) glDeleteBuffers(1, &mesh->verts);
+        if (mesh->normals != (GLuint)-1) glDeleteBuffers(1, &mesh->normals);
+        if (mesh->colors != (GLuint)-1) glDeleteBuffers(1, &mesh->colors);
+        if (mesh->tex_coords != (GLuint)-1) glDeleteBuffers(1, &mesh->tex_coords);
+
+        glDeleteBuffers(1, &mesh->ebo);
+
+        delete mesh;
+    }
+
+    EXPORT void draw(const Mesh* mesh, const Shader* shader) {
+        glBindVertexArray(mesh->vao);
+        glUseProgram(shader->prog);
+        glDrawArrays(GL_TRIANGLES, 0, 3);
+
+        glBindVertexArray(0);
+        glUseProgram(0);
     }
 
 

@@ -2,6 +2,7 @@
 #include "mgmath.hpp"
 
 #include <cstdint>
+#include <vector>
 
 
 namespace mgm {
@@ -10,9 +11,16 @@ namespace mgm {
     class DLoader;
     
     class MgmGraphics {
-        struct DShader;
-        struct DMesh;
+        struct Shader;
+        struct Mesh;
 
+        public:
+        using ShaderHandle = uint32_t;
+        using MeshHandle = uint32_t;
+        static constexpr auto bad_shader = (ShaderHandle)-1;
+        static constexpr auto bad_mesh = (MeshHandle)-1;
+
+        private:
         DLoader* lib = nullptr;
         struct BackendData* data = nullptr;
         bool window_connected = false;
@@ -31,8 +39,12 @@ namespace mgm {
             using __clear = void(*)(BackendData* data);
             using __swap_buffers = void(*)(BackendData* data);
 
-            using __make_shader = DShader*(*)(const void* vert_data, const void* frag_data, bool precompiled);
-            using __destroy_shader = void(*)(DShader* shader);
+            using __make_shader = Shader*(*)(const void* vert_data, const void* frag_data, bool precompiled);
+            using __destroy_shader = void(*)(Shader* shader);
+            using __make_mesh = Mesh*(*)(const vec3f* verts, const vec3f* normals, const vec4f* colors, const vec2f* tex_coords, const uint32_t num_verts,
+                const uint32_t* indices, const uint32_t num_indices);
+            using __destroy_mesh = void(*)(Mesh* mesh);
+            using __draw = void(*)(const Mesh* mesh, const Shader* shader);
 
             __alloc_backend_data alloc_backend_data = nullptr;
             __free_backend_data free_backend_data = nullptr;
@@ -47,28 +59,15 @@ namespace mgm {
 
             __make_shader make_shader = nullptr;
             __destroy_shader destroy_shader = nullptr;
+            __make_mesh make_mesh = nullptr;
+            __destroy_mesh destroy_mesh = nullptr;
+            __draw draw = nullptr;
         } funcs{};
 
-        public:
-        class Shader {
-            DShader* shader = nullptr;
-
-            struct BackendFunctions {
-                MgmGraphics::BackendFunctions::__destroy_shader destroy_shader = nullptr;
-            } funcs;
-            
-            public:
-            Shader(const Shader&) = delete;
-            Shader(Shader&&);
-            Shader& operator=(const Shader&) = delete;
-            Shader& operator=(Shader&&);
-
-            Shader(DShader* native_shader, MgmGraphics& graphics);
-
-            DShader* get_native_shader();
-
-            ~Shader();
-        };
+        std::vector<Mesh*> meshes{};
+        std::vector<MeshHandle> deleted_meshes{};
+        std::vector<Shader*> shaders{};
+        std::vector<ShaderHandle> deleted_shaders{};
 
         public:
         MgmGraphics(const MgmGraphics&) = delete;
@@ -158,8 +157,47 @@ namespace mgm {
          * 
          * @param vert Source for vertex shader
          * @param frag Source for fragment shader
-         * @return The shader
+         * @return A handle to the shader
          */
-        Shader make_shader_from_source(const char* vert, const char* frag);
+        ShaderHandle make_shader_from_source(const char* vert, const char* frag);
+
+        /**
+         * @brief Destroy a shader
+         * 
+         * @param shader handle to the shader
+         */
+        void destroy_shader(const ShaderHandle shader);
+
+        /**
+         * @brief Create a mesh from raw data
+         * 
+         * @param verts Array of vertices
+         * @param normals Array of normals or nullptr
+         * @param colors Array of vertex colors or nullptr
+         * @param tex_coords Array of vertex texture coordinates or nullptr
+         * @param num_verts Number of points (point is collection of verts, normals, colors, tex_coords)
+         * @param indices Array of indices, or nullptr
+         * @param num_indices Number of indices in the array
+         * @return A handle to the shader
+         */
+        MeshHandle make_mesh(const vec3f* verts, const vec3f* normals, const vec4f* colors, const vec2f* tex_coords, const uint32_t num_verts,
+                            const uint32_t* indices, const uint32_t num_indices);
+
+        /**
+         * @brief Destroy a mesh
+         * 
+         * @param mesh A handle to the mesh to destroy
+         */
+        void destroy_mesh(const MeshHandle mesh);
+
+        /**
+         * @brief Draw a mesh, using a shader
+         * 
+         * @param mesh Mesh to draw
+         * @param shader The shader to use
+         */
+        void draw(const MeshHandle mesh, const ShaderHandle shader) const {
+            funcs.draw(meshes[mesh], shaders[shader]);
+        }
     };
 }
