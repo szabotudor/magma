@@ -46,7 +46,7 @@ namespace mgm {
     MagmaEngineMainLoop::~MagmaEngineMainLoop() {
         graphics->destroy_shader(0);
         graphics->destroy_mesh(0);
-        graphics->disconnect_window();
+        graphics->disconnect_from_window();
         delete graphics;
         delete window;
     }

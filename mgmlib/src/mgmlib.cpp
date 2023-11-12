@@ -89,7 +89,7 @@ namespace mgm {
         log.log("Connected graphics to window");
     }
 
-    void MgmGraphics::disconnect_window() {
+    void MgmGraphics::disconnect_from_window() {
         if (!window_connected)
             return;
         funcs.destroy_backend(data);
@@ -97,7 +97,7 @@ namespace mgm {
     }
 
     MgmGraphics::~MgmGraphics() {
-        disconnect_window();
+        disconnect_from_window();
         unload_backend();
     }
 

@@ -154,7 +154,7 @@ namespace mgm {
         /**
          * @brief Disconnect the window the backend it connected to (THIS WILL UNLOAD THE BACKEND)
          */
-        void disconnect_window();
+        void disconnect_from_window();
 
         ~MgmGraphics();
 
