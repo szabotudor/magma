@@ -1,7 +1,7 @@
 #include "dloader.hpp"
 #include "logging.hpp"
 #include "mgmath.hpp"
-#include "mgmlib.hpp"
+#include "mgmgfx.hpp"
 #include "mgmwin.hpp"
 
 #include <cstdlib>

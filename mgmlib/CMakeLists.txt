@@ -15,7 +15,7 @@ endif()
 
 add_library(
     mgmlib 
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/mgmlib.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/mgmgfx.cpp
         ${PLATFORM_SOURCES}
 )
 

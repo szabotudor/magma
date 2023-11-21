@@ -1,6 +1,6 @@
 #include "engine.hpp"
 #include "file.hpp"
-#include "mgmlib.hpp"
+#include "mgmgfx.hpp"
 #include "mgmwin.hpp"
 
 
