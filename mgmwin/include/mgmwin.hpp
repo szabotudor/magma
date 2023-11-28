@@ -98,6 +98,11 @@ namespace mgm {
         bool get_allow_minimize() const { return _allow_maximize; }
 
         /**
+         * @brief Get the size of the window
+         */
+        vec2u32 get_size() const { return window_size; }
+
+        /**
          * @brief Set the size of the window
          * 
          * @param size The new size
