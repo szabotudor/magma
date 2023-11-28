@@ -36,14 +36,23 @@ namespace mgm {
         lib->sym("destroy_backend", &funcs.destroy_backend);
 
         lib->sym("viewport", &funcs.viewport);
+        lib->sym("get_viewport", &funcs.get_viewport);
+        lib->sym("scissor", &funcs.scissor);
         lib->sym("clear_color", &funcs.clear_color);
         lib->sym("clear", &funcs.clear);
+        lib->sym("enable_blending", &funcs.enable_blending);
+        lib->sym("disable_blending", &funcs.disable_blending);
+        lib->sym("is_blending_enabled", &funcs.is_blending_enabled);
         lib->sym("swap_buffers", &funcs.swap_buffers);
 
         lib->sym("make_shader", &funcs.make_shader);
         lib->sym("destroy_shader", &funcs.destroy_shader);
         lib->sym("make_mesh", &funcs.make_mesh);
+        lib->sym("change_mesh_data", &funcs.change_mesh_data);
+        lib->sym("change_mesh_indices", &funcs.change_mesh_indices);
         lib->sym("destroy_mesh", &funcs.destroy_mesh);
+        lib->sym("make_texture", &funcs.make_texture);
+        lib->sym("destroy_texture", &funcs.destroy_texture);
         lib->sym("draw", &funcs.draw);
 
         lib->sym("find_uniform", &funcs.find_uniform);
@@ -64,6 +73,7 @@ namespace mgm {
         lib->sym("uniform_vec2i", &funcs.uniform_vec2i);
         lib->sym("uniform_vec3i", &funcs.uniform_vec3i);
         lib->sym("uniform_vec4i", &funcs.uniform_vec4i);
+        lib->sym("uniform_mat4f", &funcs.uniform_mat4f);
 
         data = funcs.alloc_backend_data();
 
@@ -86,6 +96,7 @@ namespace mgm {
         if (lib == nullptr)
             throw std::runtime_error("Tried to connect uninitialized graphics to window");
         funcs.init_backend(data, window.get_native_window());
+        viewport(vec2i32{0, 0}, {static_cast<int>(window.get_size().x()), static_cast<int>(window.get_size().y())});
         log.log("Connected graphics to window");
     }
 
@@ -102,20 +113,25 @@ namespace mgm {
     }
 
 
+    template<typename T, typename TH>
+    TH push_back_on(T* const pp, std::vector<T*>& v_pp, std::vector<TH>& deleted_v_pp) {
+        if (!deleted_v_pp.empty()) {
+            const auto p = deleted_v_pp.back();
+            v_pp[p] = pp;
+            deleted_v_pp.pop_back();
+            return p;
+        }
+        v_pp.emplace_back(pp);
+        return (TH)(v_pp.size() - 1);
+    }
+
     MgmGraphics::ShaderHandle MgmGraphics::make_shader_from_source(const char* vert, const char* frag) {
-        const auto sp = funcs.make_shader(vert, frag, false);
+        const auto sp = funcs.make_shader(data, vert, frag, false);
         if (sp == nullptr) {
             log.error("Failed to create shader");
             return bad_shader;
         }
-        if (!deleted_shaders.empty()) {
-            const auto s = deleted_shaders.back();
-            shaders[s] = sp;
-            deleted_shaders.pop_back();
-            return s;
-        }
-        shaders.emplace_back(sp);
-        return (ShaderHandle)(shaders.size() - 1);
+        return push_back_on(sp, shaders, deleted_shaders);
     }
 
     void MgmGraphics::destroy_shader(const MgmGraphics::ShaderHandle shader) {
@@ -136,14 +152,16 @@ namespace mgm {
             log.error("Failed to create mesh");
             return bad_mesh;
         }
-        if (!deleted_meshes.empty()) {
-            const auto m = deleted_meshes.back();
-            meshes[m] = mp;
-            deleted_meshes.pop_back();
-            return m;
-        }
-        meshes.emplace_back(mp);
-        return (MeshHandle)(meshes.size() - 1);
+        return push_back_on(mp, meshes, deleted_meshes);
+    }
+
+    void MgmGraphics::change_mesh_data(const MeshHandle mesh, const vec3f* verts, const vec3f* normals,
+                                    const vec4f* colors, const vec2f* tex_coords, const uint32_t num_verts) {
+        funcs.change_mesh_data(meshes[mesh], verts, normals, colors, tex_coords, num_verts);
+    }
+
+    void MgmGraphics::change_mesh_indices(const MeshHandle mesh, const uint32_t* indices, const uint32_t num_indices) {
+        funcs.change_mesh_indices(meshes[mesh], indices, num_indices);
     }
 
     void MgmGraphics::destroy_mesh(const MeshHandle mesh) {
@@ -155,6 +173,26 @@ namespace mgm {
         funcs.destroy_mesh(meshes[mesh]);
         meshes[mesh] = nullptr;
         deleted_meshes.emplace_back(mesh);
+    }
+
+    MgmGraphics::TextureHandle MgmGraphics::make_texture(const uint8_t* data, const vec2u32 size, const bool use_alpha, const bool use_mipmaps) {
+        const auto tp = funcs.make_texture(data, size, use_alpha, use_mipmaps);
+        if (tp == nullptr) {
+            log.error("Failed to create texture");
+            return bad_texture;
+        }
+        return push_back_on(tp, textures, deleted_textures);
+    }
+
+    void MgmGraphics::destroy_texture(const TextureHandle texture) {
+        if (textures[texture] == nullptr) {
+            log.error("Cannot destroy texture, it doesn't exist");
+            return;
+        }
+
+        funcs.destroy_texture(textures[texture]);
+        textures[texture] = nullptr;
+        deleted_textures.emplace_back(texture);
     }
 
     template<>
@@ -220,5 +258,9 @@ namespace mgm {
     template<>
     void MgmGraphics::uniform_data(const ShaderHandle shader, const uint32_t uniform_id, const vec4i32& value) {
         funcs.uniform_vec4i(shaders[shader], uniform_id, value);
+    }
+    template<>
+    void MgmGraphics::uniform_data(const ShaderHandle shader, const uint32_t uniform_id, const mat4f& value) {
+        funcs.uniform_mat4f(shaders[shader], uniform_id, value);
     }
 }

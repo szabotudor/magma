@@ -20,17 +20,25 @@ namespace mgm {
         } viewport{};
         vec4f clear_color{};
         GLbitfield clear_mask = GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT;
+        GLuint current_shader = 0;
     };
 
     struct Shader {
+        BackendData* base_data = nullptr;
         GLuint prog = 0;
-        GLuint vert = 0, frag = 0;
     };
 
     struct Mesh {
         GLuint verts = -1, normals = -1, colors = -1, tex_coords = -1,
             ebo = -1, vao = -1;
+        uint32_t num_verts{};
+        uint32_t num_indices{};
     };
+
+    struct Texture {
+        GLuint texture = 0;
+    };
+
     Logging log{"backend_OpenGL"};
 
 
@@ -45,6 +53,14 @@ namespace mgm {
         glViewport(pos.x(), pos.y(), size.x(), size.y());
     }
 
+    EXPORT vec<2, vec2i32> get_viewport(BackendData* data) {
+        return {data->viewport.pos, data->viewport.size};
+    }
+
+    EXPORT void scissor(BackendData* data, const vec2i32& pos, const vec2i32& size) {
+        glScissor(pos.x(), pos.y(), size.x(), size.y());
+    }
+
     EXPORT void clear_color(BackendData* data, const vec4f& color) {
         data->clear_color = color;
         glClearColor(color.x(), color.y(), color.z(), color.w());
@@ -53,6 +69,10 @@ namespace mgm {
     EXPORT void clear(BackendData* data) {
         glClear(data->clear_mask);
     }
+
+    EXPORT void enable_blending(BackendData* data) { glEnable(GL_BLEND); }
+    EXPORT void disable_blending(BackendData* data) { glDisable(GL_BLEND); }
+    EXPORT bool is_blending_enabled(BackendData* data) { return glIsEnabled(GL_BLEND); }
 
     EXPORT void swap_buffers(BackendData* data) {
         data->platform->swap_buffers();
@@ -97,7 +117,7 @@ namespace mgm {
 
         return 0;
     }
-    EXPORT Shader* make_shader(const void* vert_data, const void* frag_data, bool precompiled) {
+    EXPORT Shader* make_shader(BackendData* data, const void* vert_data, const void* frag_data, bool precompiled) {
         if (precompiled) {
             log.error("Precompiled shaders not supported in OpenGL");
             return nullptr;
@@ -105,15 +125,15 @@ namespace mgm {
         Shader* shader = new Shader{};
 
         shader->prog = glCreateProgram();
-        shader->vert = glCreateShader(GL_VERTEX_SHADER);
-        shader->frag = glCreateShader(GL_FRAGMENT_SHADER);
+        GLuint vert = glCreateShader(GL_VERTEX_SHADER);
+        GLuint frag = glCreateShader(GL_FRAGMENT_SHADER);
 
-        glShaderSource(shader->vert, 1, (const char**)&vert_data, NULL);
-        glShaderSource(shader->frag, 1, (const char**)&frag_data, NULL);
+        glShaderSource(vert, 1, (const char**)&vert_data, NULL);
+        glShaderSource(frag, 1, (const char**)&frag_data, NULL);
 
         int error_state = 0;
-        error_state += compile_shader(shader->vert, shader->prog);
-        error_state += compile_shader(shader->frag, shader->prog);
+        error_state += compile_shader(vert, shader->prog);
+        error_state += compile_shader(frag, shader->prog);
         error_state += link_program(shader->prog);
 
         if (error_state) {
@@ -121,10 +141,10 @@ namespace mgm {
             return nullptr;
         }
 
-        glDeleteShader(shader->vert);
-        glDeleteShader(shader->frag);
-        shader->vert = 0;
-        shader->frag = 0;
+        glDeleteShader(vert);
+        glDeleteShader(frag);
+
+        shader->base_data = data;
 
         return shader;
     }
@@ -137,84 +157,89 @@ namespace mgm {
     }
 
     EXPORT void uniform_f(const Shader* shader, const uint32_t uniform_id, const float& f) {
-        glUseProgram(shader->prog);
+        if (shader->base_data->current_shader != shader->prog)
+            glUseProgram(shader->prog);
         glUniform1f(uniform_id, f);
-        glUseProgram(0);
     }
     EXPORT void uniform_d(const Shader* shader, const uint32_t uniform_id, const double& d) {
-        glUseProgram(shader->prog);
+        if (shader->base_data->current_shader != shader->prog)
+            glUseProgram(shader->prog);
         glUniform1d(uniform_id, d);
-        glUseProgram(0);
     }
     EXPORT void uniform_u(const Shader* shader, const uint32_t uniform_id, const uint32_t& u) {
-        glUseProgram(shader->prog);
+        if (shader->base_data->current_shader != shader->prog)
+            glUseProgram(shader->prog);
         glUniform1ui(uniform_id, u);
-        glUseProgram(0);
     }
     EXPORT void uniform_i(const Shader* shader, const uint32_t uniform_id, const int32_t& i) {
-        glUseProgram(shader->prog);
+        if (shader->base_data->current_shader != shader->prog)
+            glUseProgram(shader->prog);
         glUniform1i(uniform_id, i);
-        glUseProgram(0);
     }
     EXPORT void uniform_vec2f(const Shader* shader, const uint32_t uniform_id, const vec2f& v) {
-        glUseProgram(shader->prog);
+        if (shader->base_data->current_shader != shader->prog)
+            glUseProgram(shader->prog);
         glUniform2f(uniform_id, v.x(), v.y());
-        glUseProgram(0);
     }
     EXPORT void uniform_vec3f(const Shader* shader, const uint32_t uniform_id, const vec3f& v) {
-        glUseProgram(shader->prog);
+        if (shader->base_data->current_shader != shader->prog)
+            glUseProgram(shader->prog);
         glUniform3f(uniform_id, v.x(), v.y(), v.z());
-        glUseProgram(0);
     }
     EXPORT void uniform_vec4f(const Shader* shader, const uint32_t uniform_id, const vec4f& v) {
-        glUseProgram(shader->prog);
+        if (shader->base_data->current_shader != shader->prog)
+            glUseProgram(shader->prog);
         glUniform4f(uniform_id, v.x(), v.y(), v.z(), v.w());
-        glUseProgram(0);
     }
     EXPORT void uniform_vec2d(const Shader* shader, const uint32_t uniform_id, const vec2d& v) {
-        glUseProgram(shader->prog);
+        if (shader->base_data->current_shader != shader->prog)
+            glUseProgram(shader->prog);
         glUniform2d(uniform_id, v.x(), v.y());
-        glUseProgram(0);
     }
     EXPORT void uniform_vec3d(const Shader* shader, const uint32_t uniform_id, const vec3d& v) {
-        glUseProgram(shader->prog);
+        if (shader->base_data->current_shader != shader->prog)
+            glUseProgram(shader->prog);
         glUniform3d(uniform_id, v.x(), v.y(), v.z());
-        glUseProgram(0);
     }
     EXPORT void uniform_vec4d(const Shader* shader, const uint32_t uniform_id, const vec4d& v) {
-        glUseProgram(shader->prog);
+        if (shader->base_data->current_shader != shader->prog)
+            glUseProgram(shader->prog);
         glUniform4d(uniform_id, v.x(), v.y(), v.z(), v.w());
-        glUseProgram(0);
     }
     EXPORT void uniform_vec2u(const Shader* shader, const uint32_t uniform_id, const vec2u32& v) {
-        glUseProgram(shader->prog);
+        if (shader->base_data->current_shader != shader->prog)
+            glUseProgram(shader->prog);
         glUniform2ui(uniform_id, v.x(), v.y());
-        glUseProgram(0);
     }
     EXPORT void uniform_vec3u(const Shader* shader, const uint32_t uniform_id, const vec3u32& v) {
-        glUseProgram(shader->prog);
+        if (shader->base_data->current_shader != shader->prog)
+            glUseProgram(shader->prog);
         glUniform3ui(uniform_id, v.x(), v.y(), v.z());
-        glUseProgram(0);
     }
     EXPORT void uniform_vec4u(const Shader* shader, const uint32_t uniform_id, const vec4u32& v) {
-        glUseProgram(shader->prog);
+        if (shader->base_data->current_shader != shader->prog)
+            glUseProgram(shader->prog);
         glUniform4ui(uniform_id, v.x(), v.y(), v.z(), v.w());
-        glUseProgram(0);
     }
     EXPORT void uniform_vec2i(const Shader* shader, const uint32_t uniform_id, const vec2i32& v) {
-        glUseProgram(shader->prog);
+        if (shader->base_data->current_shader != shader->prog)
+            glUseProgram(shader->prog);
         glUniform2i(uniform_id, v.x(), v.y());
-        glUseProgram(0);
     }
     EXPORT void uniform_vec3i(const Shader* shader, const uint32_t uniform_id, const vec3i32& v) {
-        glUseProgram(shader->prog);
+        if (shader->base_data->current_shader != shader->prog)
+            glUseProgram(shader->prog);
         glUniform3i(uniform_id, v.x(), v.y(), v.z());
-        glUseProgram(0);
     }
     EXPORT void uniform_vec4i(const Shader* shader, const uint32_t uniform_id, const vec4i32& v) {
-        glUseProgram(shader->prog);
+        if (shader->base_data->current_shader != shader->prog)
+            glUseProgram(shader->prog);
         glUniform4i(uniform_id, v.x(), v.y(), v.z(), v.w());
-        glUseProgram(0);
+    }
+    EXPORT void uniform_mat4f(const Shader* shader, const uint32_t uniform_id, const mat4f& m) {
+        if (shader->base_data->current_shader != shader->prog)
+            glUseProgram(shader->prog);
+        glUniformMatrix4fv(uniform_id, 1, false, (const float*)&m);
     }
 
     EXPORT void destroy_shader(Shader* shader) {
@@ -224,9 +249,9 @@ namespace mgm {
 
     template<typename T>
     void make_buffer(const T* data, const uint32_t num_per_point, const GLenum gl_data_type, const bool normalized, uint32_t data_len,
-                    GLuint& vbo, const GLenum gl_buffer_type, uint32_t attrib_array_id, GLenum draw_mode) {
-        glGenBuffers(1, &vbo);
-        glBindBuffer(gl_buffer_type, vbo);
+                    GLuint& buff, const GLenum gl_buffer_type, uint32_t attrib_array_id, GLenum draw_mode) {
+        glGenBuffers(1, &buff);
+        glBindBuffer(gl_buffer_type, buff);
         glBufferData(gl_buffer_type, data_len * sizeof(T), data, draw_mode);
         if (attrib_array_id != (uint32_t)-1) {
             glVertexAttribPointer(attrib_array_id, num_per_point, gl_data_type, normalized, sizeof(T), nullptr);
@@ -271,11 +296,66 @@ namespace mgm {
             mesh->ebo, GL_ELEMENT_ARRAY_BUFFER, (uint32_t)-1, GL_STATIC_DRAW
         );
 
+        mesh->num_verts = num_verts;
+        mesh->num_indices = num_indices;
+
         glBindVertexArray(0);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
         return mesh;
+    }
+
+    EXPORT void change_mesh_data(Mesh* mesh, const vec3f* verts, const vec3f* normals, const vec4f* colors, const vec2f* tex_coords, const uint32_t num_verts) {
+        if (mesh->verts != (GLuint)-1) glDeleteBuffers(1, &mesh->verts);
+        if (mesh->normals != (GLuint)-1) glDeleteBuffers(1, &mesh->normals);
+        if (mesh->colors != (GLuint)-1) glDeleteBuffers(1, &mesh->colors);
+        if (mesh->tex_coords != (GLuint)-1) glDeleteBuffers(1, &mesh->tex_coords);
+
+        glBindVertexArray(mesh->vao);
+
+        make_buffer(
+            verts, 3, GL_FLOAT, false, num_verts,
+            mesh->verts, GL_ARRAY_BUFFER, 0, GL_STATIC_DRAW
+        );
+
+        if (normals) make_buffer(
+            normals, 3, GL_FLOAT, true, num_verts,
+            mesh->normals, GL_ARRAY_BUFFER, 1, GL_STATIC_DRAW
+        );
+
+        if (colors) make_buffer(
+            colors, 4, GL_FLOAT, false, num_verts,
+            mesh->colors, GL_ARRAY_BUFFER, 2, GL_STATIC_DRAW
+        );
+
+        if (tex_coords) make_buffer(
+            tex_coords, 2, GL_FLOAT, false, num_verts,
+            mesh->tex_coords, GL_ARRAY_BUFFER, 3, GL_STATIC_DRAW
+        );
+
+        mesh->num_verts = num_verts;
+
+        glBindVertexArray(0);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    }
+
+    EXPORT void change_mesh_indices(Mesh* mesh, const uint32_t* indices, const uint32_t num_indices) {
+        if (mesh->ebo != (GLuint)-1) glDeleteBuffers(1, &mesh->ebo);
+
+        glBindVertexArray(mesh->vao);
+
+        if (indices) make_buffer(
+            indices, 1, GL_UNSIGNED_INT, false, num_indices,
+            mesh->ebo, GL_ELEMENT_ARRAY_BUFFER, (uint32_t)-1, GL_STATIC_DRAW
+        );
+
+        mesh->num_indices = num_indices;
+
+        glBindVertexArray(0);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     }
     
     EXPORT void destroy_mesh(Mesh* mesh) {
@@ -286,18 +366,57 @@ namespace mgm {
         if (mesh->colors != (GLuint)-1) glDeleteBuffers(1, &mesh->colors);
         if (mesh->tex_coords != (GLuint)-1) glDeleteBuffers(1, &mesh->tex_coords);
 
-        glDeleteBuffers(1, &mesh->ebo);
+        if (mesh->ebo != (GLuint)-1) glDeleteBuffers(1, &mesh->ebo);
 
         delete mesh;
     }
 
-    EXPORT void draw(const Mesh* mesh, const Shader* shader) {
+    EXPORT Texture* make_texture(const uint8_t* data, const vec2u32 size, const bool use_alpha, const bool use_mipmaps) {
+        Texture* res = new Texture{};
+        glCreateTextures(GL_TEXTURE_2D, 1, &res->texture);
+        glBindTexture(GL_TEXTURE_2D, res->texture);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+        if (use_mipmaps)
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
+        else
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        if (use_alpha)
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, size.x(), size.y(), 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+        else
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, size.x(), size.y(), 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+
+        if (use_mipmaps)
+            glGenerateMipmap(GL_TEXTURE_2D);
+
+        glBindTexture(GL_TEXTURE_2D, 0);
+        return res;
+    }
+
+    EXPORT void destroy_texture(Texture* texture) {
+        glDeleteTextures(1, &texture->texture);
+        delete texture;
+    }
+
+    EXPORT void draw(const Mesh* mesh, const Shader* shader, const Texture* const* textures, const uint32_t num_textures) {
+        if (shader->base_data->current_shader != shader->prog)
+            glUseProgram(shader->prog);
+
+        for (uint32_t i = 0; i < num_textures; i++) {
+            glActiveTexture(GL_TEXTURE0 + i);
+            glBindTexture(GL_TEXTURE_2D, textures[i]->texture);
+        }
+
         glBindVertexArray(mesh->vao);
-        glUseProgram(shader->prog);
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+        if (mesh->num_indices)
+            glDrawElements(GL_TRIANGLES, mesh->num_indices, GL_UNSIGNED_INT, 0);
+        else
+            glDrawArrays(GL_TRIANGLES, 0, mesh->num_verts);
 
         glBindVertexArray(0);
-        glUseProgram(0);
     }
 
 
@@ -316,6 +435,8 @@ namespace mgm {
             return;
         }
 
+        glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE);
+        glEnable(GL_SCISSOR_TEST);
         log.log("Initialized OpenGL Backend");
         data->init = true;
     }
