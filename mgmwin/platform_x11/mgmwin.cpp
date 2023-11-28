@@ -1,5 +1,7 @@
 #include "mgmwin.hpp"
+#include "mgmath.hpp"
 #include "native_window.hpp"
+#include <X11/X.h>
 
 
 namespace mgm {
@@ -195,6 +197,12 @@ namespace mgm {
                     if (event.xclient.data.l[0] == data->wm_destroy)
                         _should_close = true;
                     break;
+                }
+                case ConfigureNotify: {
+                    if (event.xconfigure.width != window_size.x()
+                        | event.xconfigure.height != window_size.y()) {
+                        window_size = vec2u32{(uint32_t)event.xconfigure.width, (uint32_t)event.xconfigure.height};
+                    }
                 }
                 default:
                     break;
