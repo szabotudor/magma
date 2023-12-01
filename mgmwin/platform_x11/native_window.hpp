@@ -2,6 +2,7 @@
 #include "X11/X.h"
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
+#include <chrono>
 #include <cstdint>
 
 
@@ -13,5 +14,6 @@ namespace mgm {
         Window window{};
         Atom wm_destroy{}, wm_hints{};
         uint32_t functions = 0x0;
+        std::chrono::steady_clock::time_point last_mouse_query_time{};
     };
 }
