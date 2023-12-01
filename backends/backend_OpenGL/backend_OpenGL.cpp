@@ -29,8 +29,8 @@ namespace mgm {
     };
 
     struct Mesh {
-        GLuint verts = -1, normals = -1, colors = -1, tex_coords = -1,
-            ebo = -1, vao = -1;
+        GLuint verts = static_cast<GLuint>(-1), normals = static_cast<GLuint>(-1), colors = static_cast<GLuint>(-1), tex_coords = static_cast<GLuint>(-1),
+            ebo = static_cast<GLuint>(-1), vao = static_cast<GLuint>(-1);
         uint32_t num_verts{};
         uint32_t num_indices{};
     };
@@ -53,8 +53,8 @@ namespace mgm {
         glViewport(pos.x(), pos.y(), size.x(), size.y());
     }
 
-    EXPORT vec<2, vec2i32> get_viewport(BackendData* data) {
-        return {data->viewport.pos, data->viewport.size};
+    EXPORT void get_viewport(BackendData* data, vec<2, vec2i32>& ret) {
+        ret = {data->viewport.pos, data->viewport.size};
     }
 
     EXPORT void scissor(BackendData* data, const vec2i32& pos, const vec2i32& size) {

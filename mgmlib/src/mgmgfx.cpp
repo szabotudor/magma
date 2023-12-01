@@ -196,71 +196,71 @@ namespace mgm {
     }
 
     template<>
-    void MgmGraphics::uniform_data(const ShaderHandle shader, const uint32_t uniform_id, const float& value) {
+    void MgmGraphics::uniform_data<float>(const ShaderHandle shader, const uint32_t uniform_id, const float& value) {
         funcs.uniform_f(shaders[shader], uniform_id, value);
     }
     template<>
-    void MgmGraphics::uniform_data(const ShaderHandle shader, const uint32_t uniform_id, const double& value) {
+    void MgmGraphics::uniform_data<double>(const ShaderHandle shader, const uint32_t uniform_id, const double& value) {
         funcs.uniform_d(shaders[shader], uniform_id, value);
     }
     template<>
-    void MgmGraphics::uniform_data(const ShaderHandle shader, const uint32_t uniform_id, const uint32_t& value) {
+    void MgmGraphics::uniform_data<uint32_t>(const ShaderHandle shader, const uint32_t uniform_id, const uint32_t& value) {
         funcs.uniform_u(shaders[shader], uniform_id, value);
     }
     template<>
-    void MgmGraphics::uniform_data(const ShaderHandle shader, const uint32_t uniform_id, const int32_t& value) {
+    void MgmGraphics::uniform_data<int32_t>(const ShaderHandle shader, const uint32_t uniform_id, const int32_t& value) {
         funcs.uniform_i(shaders[shader], uniform_id, value);
     }
     template<>
-    void MgmGraphics::uniform_data(const ShaderHandle shader, const uint32_t uniform_id, const vec2f& value) {
+    void MgmGraphics::uniform_data<vec2f>(const ShaderHandle shader, const uint32_t uniform_id, const vec2f& value) {
         funcs.uniform_vec2f(shaders[shader], uniform_id, value);
     }
     template<>
-    void MgmGraphics::uniform_data(const ShaderHandle shader, const uint32_t uniform_id, const vec3f& value) {
+    void MgmGraphics::uniform_data<vec3f>(const ShaderHandle shader, const uint32_t uniform_id, const vec3f& value) {
         funcs.uniform_vec3f(shaders[shader], uniform_id, value);
     }
     template<>
-    void MgmGraphics::uniform_data(const ShaderHandle shader, const uint32_t uniform_id, const vec4f& value) {
+    void MgmGraphics::uniform_data<vec4f>(const ShaderHandle shader, const uint32_t uniform_id, const vec4f& value) {
         funcs.uniform_vec4f(shaders[shader], uniform_id, value);
     }
     template<>
-    void MgmGraphics::uniform_data(const ShaderHandle shader, const uint32_t uniform_id, const vec2d& value) {
+    void MgmGraphics::uniform_data<vec2d>(const ShaderHandle shader, const uint32_t uniform_id, const vec2d& value) {
         funcs.uniform_vec2d(shaders[shader], uniform_id, value);
     }
     template<>
-    void MgmGraphics::uniform_data(const ShaderHandle shader, const uint32_t uniform_id, const vec3d& value) {
+    void MgmGraphics::uniform_data<vec3d>(const ShaderHandle shader, const uint32_t uniform_id, const vec3d& value) {
         funcs.uniform_vec3d(shaders[shader], uniform_id, value);
     }
     template<>
-    void MgmGraphics::uniform_data(const ShaderHandle shader, const uint32_t uniform_id, const vec4d& value) {
+    void MgmGraphics::uniform_data<vec4d>(const ShaderHandle shader, const uint32_t uniform_id, const vec4d& value) {
         funcs.uniform_vec4d(shaders[shader], uniform_id, value);
     }
     template<>
-    void MgmGraphics::uniform_data(const ShaderHandle shader, const uint32_t uniform_id, const vec2u32& value) {
+    void MgmGraphics::uniform_data<vec2u32>(const ShaderHandle shader, const uint32_t uniform_id, const vec2u32& value) {
         funcs.uniform_vec2u(shaders[shader], uniform_id, value);
     }
     template<>
-    void MgmGraphics::uniform_data(const ShaderHandle shader, const uint32_t uniform_id, const vec3u32& value) {
+    void MgmGraphics::uniform_data<vec3u32>(const ShaderHandle shader, const uint32_t uniform_id, const vec3u32& value) {
         funcs.uniform_vec3u(shaders[shader], uniform_id, value);
     }
     template<>
-    void MgmGraphics::uniform_data(const ShaderHandle shader, const uint32_t uniform_id, const vec4u32& value) {
+    void MgmGraphics::uniform_data<vec4u32>(const ShaderHandle shader, const uint32_t uniform_id, const vec4u32& value) {
         funcs.uniform_vec4u(shaders[shader], uniform_id, value);
     }
     template<>
-    void MgmGraphics::uniform_data(const ShaderHandle shader, const uint32_t uniform_id, const vec2i32& value) {
+    void MgmGraphics::uniform_data<vec2i32>(const ShaderHandle shader, const uint32_t uniform_id, const vec2i32& value) {
         funcs.uniform_vec2i(shaders[shader], uniform_id, value);
     }
     template<>
-    void MgmGraphics::uniform_data(const ShaderHandle shader, const uint32_t uniform_id, const vec3i32& value) {
+    void MgmGraphics::uniform_data<vec3i32>(const ShaderHandle shader, const uint32_t uniform_id, const vec3i32& value) {
         funcs.uniform_vec3i(shaders[shader], uniform_id, value);
     }
     template<>
-    void MgmGraphics::uniform_data(const ShaderHandle shader, const uint32_t uniform_id, const vec4i32& value) {
+    void MgmGraphics::uniform_data<vec4i32>(const ShaderHandle shader, const uint32_t uniform_id, const vec4i32& value) {
         funcs.uniform_vec4i(shaders[shader], uniform_id, value);
     }
     template<>
-    void MgmGraphics::uniform_data(const ShaderHandle shader, const uint32_t uniform_id, const mat4f& value) {
+    void MgmGraphics::uniform_data<mat4f>(const ShaderHandle shader, const uint32_t uniform_id, const mat4f& value) {
         funcs.uniform_mat4f(shaders[shader], uniform_id, value);
     }
 }

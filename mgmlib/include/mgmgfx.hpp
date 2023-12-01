@@ -39,7 +39,7 @@ namespace mgm {
             using __destroy_backend = void(*)(BackendData* data);
 
             using __viewport = void(*)(BackendData* data, const vec2i32& pos, const vec2i32& size);
-            using __get_viewport = vec<2, vec2i32>(*)(BackendData* data);
+            using __get_viewport = void(*)(BackendData* data, vec<2, vec2i32>& ret);
             using __scissor = void(*)(BackendData* data, const vec2i32& pos, const vec2i32& size);
             using __clear_color = void(*)(BackendData* data, const vec4f& color);
             using __clear = void(*)(BackendData* data);
@@ -194,7 +194,9 @@ namespace mgm {
         }
 
         inline auto get_viewport() {
-            return funcs.get_viewport(data);
+            vec<2, vec2i32> res;
+            funcs.get_viewport(data, res);
+            return res;
         }
 
         inline void scissor(const vec2i32& pos, const vec2i32& size) {
@@ -336,9 +338,4 @@ namespace mgm {
             uniform_data(shader, uniform_id, value);
         }
     };
-
-    template<typename T>
-    void MgmGraphics::uniform_data(const ShaderHandle shader, const uint32_t uniform_id, const T &value) {
-        log.error("Uniform type not supported");
-    }
 }
