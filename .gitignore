@@ -2,3 +2,5 @@
 .vs/
 .vscode/
 build/
+
+imgui.ini
