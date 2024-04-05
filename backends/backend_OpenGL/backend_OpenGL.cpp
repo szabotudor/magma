@@ -23,12 +23,16 @@
 
 
 namespace mgm {
+    struct BuffersObject;
+
     struct Buffer {
         GLuint buffer = 0;
         GLint gl_data_type = 0;
+        GLint bind_location = 0;
         size_t gl_data_type_point_count = 0;
         size_t size = 0;
         size_t data_point_size = 0;
+        BuffersObject* connected_to = nullptr;
         bool is_element_array: 1 = false;
 
         ~Buffer() {
@@ -39,6 +43,7 @@ namespace mgm {
 
     struct BuffersObject {
         std::vector<Buffer*> buffers{};
+        size_t size = 0;
         GLuint vao = 0;
         bool has_index_buffer = false;
 
@@ -229,6 +234,7 @@ namespace mgm {
             log.error("Unsupported shader parameter type '", value.type().name(), "'");
     }
 
+    void setup_vao_attrib_pointers(BuffersObject* buffers);
     EXPORT void execute(BackendData* backend) {
         for (const auto& draw_call : backend->draw_calls) {
             glUseProgram(draw_call.shader->prog);
@@ -256,21 +262,25 @@ namespace mgm {
                 }
             }
 
-            size_t data_point_count = (size_t)-1;
-
-            for (const auto& buf : draw_call.buffers_object->buffers) {
+            for (GLint i = 0; (size_t)i < draw_call.buffers_object->buffers.size(); i++) {
+                const auto buf = draw_call.buffers_object->buffers[i];
                 if (buf->is_element_array) {
-                    data_point_count = buf->size;
-                    continue;
+                    if (draw_call.buffers_object->size != buf->size) {
+                        setup_vao_attrib_pointers(draw_call.buffers_object);
+                        break;
+                    }
                 }
-                data_point_count = std::min(data_point_count, buf->size);
+                else if (buf->bind_location != i) {
+                    setup_vao_attrib_pointers(draw_call.buffers_object);
+                    break;
+                }
             }
 
             glBindVertexArray(draw_call.buffers_object->vao);
             if (draw_call.buffers_object->has_index_buffer)
-                glDrawElements(GL_TRIANGLES, data_point_count, GL_UNSIGNED_INT, nullptr);
+                glDrawElements(GL_TRIANGLES, draw_call.buffers_object->size, GL_UNSIGNED_INT, nullptr);
             else
-                glDrawArrays(GL_TRIANGLES, 0, data_point_count);
+                glDrawArrays(GL_TRIANGLES, 0, draw_call.buffers_object->size);
         }
         backend->draw_calls.clear();
     }
@@ -356,55 +366,72 @@ namespace mgm {
         glBufferData(gl_buffer_type, size * buffer->data_point_size, data, GL_STATIC_DRAW);
         glBindBuffer(gl_buffer_type, 0);
         buffer->size = size;
+        buffer->bind_location = -1;
     }
 
     EXPORT void destroy_buffer(BackendData*, Buffer* buffer) {
         delete buffer;
     }
 
-    EXPORT BuffersObject* create_buffers_object(BackendData*, Buffer** buffers, size_t count) {
-        const auto buffers_object = new BuffersObject{};
+    void setup_vao_attrib_pointers(BuffersObject* buffers) {
+        Buffer* ebo = nullptr;
+        std::vector<Buffer*> vertex_buffers{};
+        vertex_buffers.reserve(buffers->buffers.size());
 
-        GLuint vao{};
-        glGenVertexArrays(1, &vao);
-        glBindVertexArray(vao);
-        buffers_object->vao = vao;
-        buffers_object->buffers.reserve(count);
-
-        bool element_array_bound = false;
         size_t data_point_count = (size_t)-1;
 
-        for (size_t i = 0; i < count; i++) {
-            const auto& buf = buffers[i];
+        for (size_t i = 0; i < buffers->buffers.size(); i++) {
+            const auto buf = buffers->buffers[i];
             if (buf->is_element_array) {
-                if (element_array_bound) {
+                if (ebo) {
                     log.error("Only one index buffer is allowed per buffers object");
-                    delete buffers_object;
-                    return nullptr;
+                    return;
                 }
-                element_array_bound = true;
-                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buf->buffer);
-                buffers_object->has_index_buffer = true;
-            }
-            else
-                glBindBuffer(GL_ARRAY_BUFFER, buf->buffer);
-            glEnableVertexAttribArray(i);
-            glVertexAttribPointer(i, buf->gl_data_type_point_count, buf->gl_data_type, GL_FALSE, 0, nullptr);
-            glEnableVertexAttribArray(i);
-            buffers_object->buffers.emplace_back(buf);
-
-            if (data_point_count == (size_t)-1 || buf->is_element_array)
+                ebo = buf;
                 data_point_count = buf->size;
-            else if (data_point_count != buf->size) {
+                continue;
+            }
+            vertex_buffers.emplace_back(buf);
+
+            if (data_point_count == (size_t)-1)
+                data_point_count = buf->size;
+            else if (data_point_count != buf->size && !ebo) {
                 log.error("Buffers in buffers object have different sizes");
-                delete buffers_object;
-                return nullptr;
+                return;
             }
         }
+
+        glBindVertexArray(buffers->vao);
+
+        for (size_t i = 0; i < vertex_buffers.size(); i++) {
+            const auto buf = vertex_buffers[i];
+            glBindBuffer(GL_ARRAY_BUFFER, buf->buffer);
+            glVertexAttribPointer(i, buf->gl_data_type_point_count, buf->gl_data_type, GL_FALSE, 0, nullptr);
+            glEnableVertexAttribArray(i);
+            buf->bind_location = i;
+        }
+        if (ebo) {
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo->buffer);
+            buffers->has_index_buffer = true;
+        }
+
+        buffers->size = data_point_count;
+        buffers->buffers = std::move(vertex_buffers);
+        if (ebo)
+            buffers->buffers.emplace_back(ebo);
 
         glBindVertexArray(0);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    }
+
+    EXPORT BuffersObject* create_buffers_object(BackendData*, Buffer** buffers, size_t count) {
+        const auto buffers_object = new BuffersObject{};
+
+        glGenVertexArrays(1, &buffers_object->vao);
+        buffers_object->buffers = std::vector<Buffer*>{buffers, buffers + count};
+
+        setup_vao_attrib_pointers(buffers_object);
 
         return buffers_object;
     }
