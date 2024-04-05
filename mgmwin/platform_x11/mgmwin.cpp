@@ -33,13 +33,13 @@ namespace mgm {
     }
 
 
-    MgmWindow::MgmWindow(const char* name, vec2i32 pos, vec2u32 size, Mode mode):
+    MgmWindow::MgmWindow(const char* name, vec2u32 size, Mode mode, vec2i32 pos):
     log{(std::string("Window \"") + name + '\"').c_str()} {
         input_interfaces = new float[(size_t)InputInterface::_NUM_INPUT_INTERFACES]{};
-        open(name, pos, size, mode);
+        open(name, size, mode, pos);
     }
 
-    void MgmWindow::open(const char* name, vec2i32 pos, vec2u32 size, Mode mode) {
+    void MgmWindow::open(const char* name, vec2u32 size, Mode mode, vec2i32 pos) {
         if (_is_open)
             close();
 

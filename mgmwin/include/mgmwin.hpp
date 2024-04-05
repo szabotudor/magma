@@ -72,12 +72,12 @@ namespace mgm {
 
         NativeWindow* get_native_window() { return data; }
 
-        MgmWindow(const char* name = "Window", vec2i32 pos = vec2i32(-1, -1), vec2u32 size = vec2u32(800, 600), Mode mode = Mode::NORMAL);
+        MgmWindow(const char* name = "Window", vec2u32 size = vec2u32(800, 600), Mode mode = Mode::NORMAL, vec2i32 pos = vec2i32(-1, -1));
 
         /**
          * @brief Open the window if it's closed, or reopen it with the new information if it's already opened
          */
-        void open(const char* name = "Window", vec2i32 pos = vec2i32(-1, -1), vec2u32 size = vec2u32(800, 600), Mode mode = Mode::NORMAL);
+        void open(const char* name = "Window", vec2u32 size = vec2u32(800, 600), Mode mode = Mode::NORMAL, vec2i32 pos = vec2i32(-1, -1));
 
         /**
          * @brief Set the window mode

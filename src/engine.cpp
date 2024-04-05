@@ -14,7 +14,7 @@
 
 namespace mgm {
     void MagmaEngineMainLoop::init() {
-        window = new MgmWindow{"Hello", {}, vec2u32{800, 600}, MgmWindow::Mode::NORMAL};
+        window = new MgmWindow{"Hello", vec2u32{800, 600}, MgmWindow::Mode::NORMAL};
         graphics = new MgmGPU{};
         graphics->connect_to_window(window);
         graphics->load_backend("shared/libbackend_OpenGL.so");
