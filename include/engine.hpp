@@ -3,15 +3,20 @@
 
 namespace mgm {
     class MgmWindow;
-    class MgmGraphics;
+    class MgmGPU;
 
     class MagmaEngineMainLoop {
         public:
         MgmWindow* window = nullptr;
-        MgmGraphics* graphics = nullptr;
+        MgmGPU* graphics = nullptr;
 
 
-        MagmaEngineMainLoop();
+        MagmaEngineMainLoop() = default;
+
+        /**
+         * @brief Initialize the engine
+         */
+        void init();
 
         /**
          * @brief Runs once per frame
@@ -26,10 +31,8 @@ namespace mgm {
         void draw();
 
         /**
-         * @brief Check if the engine is running
+         * @brief Close the engine and free resources
          */
-        bool running();
-
-        ~MagmaEngineMainLoop();
+        void close();
     };
 }

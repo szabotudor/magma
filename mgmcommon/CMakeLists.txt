@@ -26,6 +26,7 @@ add_library(
         ${CMAKE_CURRENT_SOURCE_DIR}/src/logging.cpp
         ${PLATFORM_SOURCES}
 )
+enable_warnings(mgmcommon)
 
 target_include_directories(
     mgmcommon

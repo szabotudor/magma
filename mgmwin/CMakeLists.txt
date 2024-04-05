@@ -28,6 +28,7 @@ add_library(
     mgmwin
         ${PLATFORM_SOURCES}
 )
+enable_warnings(mgmwin)
 
 get_target_property(MGMCOMMON_INCLUDE_DIRS mgmcommon INTERFACE_INCLUDE_DIRECTORIES)
 

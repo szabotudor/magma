@@ -42,6 +42,7 @@ namespace mgm {
         /**
          * @brief Unload the library
          */
+        // !!! THIS SEGFAULTS !!!
         void unload();
 
         /**

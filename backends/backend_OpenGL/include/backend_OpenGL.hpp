@@ -9,9 +9,9 @@
 
 namespace mgm {
     class OpenGLPlatform {
-        struct BackendData;
+        struct EGLBackendData;
         Logging log{"OpenGL Platform"};
-        BackendData* data = nullptr;
+        EGLBackendData* data = nullptr;
 
         public:
 

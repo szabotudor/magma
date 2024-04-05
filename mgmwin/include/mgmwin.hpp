@@ -159,6 +159,16 @@ namespace mgm {
         void set_position(vec2i32 pos);
 
         /**
+         * @brief Check if the window should close
+         */
+        bool should_close() const { return _should_close; }
+
+        /**
+         * @brief Ignore the close event
+         */
+        void ignore_close() { _should_close = false; }
+
+        /**
          * @brief Make the window close the next time it updates
          */
         void set_should_close_next_update() { _should_close = true; }

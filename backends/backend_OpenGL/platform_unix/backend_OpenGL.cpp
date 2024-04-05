@@ -5,7 +5,7 @@
 
 
 namespace mgm {
-    struct OpenGLPlatform::BackendData {
+    struct OpenGLPlatform::EGLBackendData {
         bool is_opengl_es = false;
         bool init = false;
         EGLint* attrib = nullptr;
@@ -23,12 +23,17 @@ namespace mgm {
 
 
     OpenGLPlatform::OpenGLPlatform(bool is_opengl_es) {
-        data = new BackendData{};
+        data = new EGLBackendData{};
         data->is_opengl_es = is_opengl_es;
     }
 
     void OpenGLPlatform::create_context(int ver_major, int ver_minor, struct NativeWindow* native_window) {
         data->display = eglGetDisplay(native_window->display);
+        if (data->display == EGL_NO_DISPLAY) {
+            log.error("Failed to get EGL display");
+            return;
+        }
+
         if (!eglInitialize(data->display, nullptr, nullptr)) {
             log.error("Failed to initialize EGL");
             return;
@@ -96,9 +101,15 @@ namespace mgm {
     }
 
     OpenGLPlatform::~OpenGLPlatform() {
-        eglDestroySurface(data->display, data->surface);
-        eglDestroyContext(data->display, data->context);
-        eglTerminate(data->display);
+        if (!eglDestroySurface(data->display, data->surface)) {
+            log.error("Failed to destroy EGL surface");
+        }
+        if (!eglDestroyContext(data->display, data->context)) {
+            log.error("Failed to destroy EGL context");
+        }
+        if (!eglTerminate(data->display)) {
+            log.error("Failed to terminate EGL");
+        }
 
         delete[] data->attrib;
         data->attrib = nullptr;

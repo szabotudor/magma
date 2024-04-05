@@ -1,100 +1,139 @@
 #include "engine.hpp"
+#include "backend_settings.hpp"
 #include "file.hpp"
 #include "imgui.h"
 #include "imgui_impl_mgmgfx.h"
-#include "mgmgfx.hpp"
+#include "logging.hpp"
+#include "mgmgpu.hpp"
 #include "mgmwin.hpp"
+
 #include <bits/chrono.h>
 #include <chrono>
 #include <ratio>
 
 
 namespace mgm {
-    MagmaEngineMainLoop::MagmaEngineMainLoop() {
+    void MagmaEngineMainLoop::init() {
         window = new MgmWindow{"Hello", {}, vec2u32{800, 600}, MgmWindow::Mode::NORMAL};
-        graphics = new MgmGraphics{};
-#if defined(__linux__)
+        graphics = new MgmGPU{};
+        graphics->connect_to_window(window);
         graphics->load_backend("shared/libbackend_OpenGL.so");
-#elif defined(WIN32)
-        graphics->load_backend("shared/backend_OpenGL.dll");
-#endif
-        graphics->connect_to_window(*window);
-        graphics->clear_color(vec4f{0.1f, 0.2f, 0.3f, 1.0f});
 
-        ImGui::SetCurrentContext(ImGui::CreateContext());
-        ImGui_ImplMgmGFX_Init(*graphics);
+        auto& settings = graphics->settings();
+        settings.clear.enabled = true;
+        settings.clear.color = {0.3f, 0.2f, 0.1f, 1.0f};
+        settings.viewport.top_left = {0, 0};
+        settings.viewport.bottom_right = vec2i32{static_cast<int>(window->get_size().x()), static_cast<int>(window->get_size().y())};
+
+        graphics->apply_settings();
+        
+        ShaderCreateInfo shader_info{};
+        shader_info.shader_sources.emplace_back(ShaderCreateInfo::SingleShaderInfo{
+            ShaderCreateInfo::SingleShaderInfo::Type::VERTEX,
+            "#version 460 core\n"
+            "layout(location = 0) in vec3 aPos;\n"
+            "void main() {\n"
+            "    gl_Position = vec4(aPos, 1.0f);\n"
+            "}\n"
+        });
+        shader_info.shader_sources.emplace_back(ShaderCreateInfo::SingleShaderInfo{
+            ShaderCreateInfo::SingleShaderInfo::Type::FRAGMENT,
+            "#version 460 core\n"
+            "out vec4 FragColor;\n"
+            "void main() {\n"
+            "    FragColor = vec4(1.0f, 1.0f, 1.0f, 1.0f);\n"
+            "}\n"
+        });
+
+        const auto shader = graphics->create_shader(shader_info);
+        if (shader == MgmGPU::INVALID_SHADER) {
+            Logging{"main"}.log("Failed to create shader");
+            return;
+        }
+        
+        static const vec3f vertices[] = {
+            {-0.5f, -0.5f, 0.0f},
+            { 0.5f, -0.5f, 0.0f},
+            { 0.0f,  0.5f, 0.0f}
+        };
+        const BufferCreateInfo buffer_info{BufferCreateInfo::Type::RAW, vertices, sizeof(vertices) / sizeof(vec3f)};
+        const auto buffer = graphics->create_buffer(buffer_info);
+        if (buffer == MgmGPU::INVALID_BUFFER) {
+            Logging{"main"}.log("Failed to create buffer");
+            return;
+        }
+        
+        const auto buffers_object = graphics->create_buffers_object({buffer});
+
+        MgmGPU::DrawCall draw_call{
+            MgmGPU::DrawCall::Type::DRAW,
+            shader,
+            buffers_object,
+            {},
+            {}
+        };
+
+        graphics->draw_list.emplace_back(MgmGPU::DrawCall{
+            .type = MgmGPU::DrawCall::Type::CLEAR
+        });
+
+        graphics->draw_list.emplace_back(draw_call);
     }
 
     void MagmaEngineMainLoop::tick(float delta) {
-        window->update();
-
-        ImGui_ImplMgmGFX_ProcessInput(*window);
-
-        ImGui::Begin("fps", nullptr,
-            ImGuiWindowFlags_NoBackground
-            | ImGuiWindowFlags_NoTitleBar
-            | ImGuiWindowFlags_NoSavedSettings
-            | ImGuiWindowFlags_NoResize
-            | ImGuiWindowFlags_AlwaysAutoResize
-            | ImGuiWindowFlags_NoMove
-            | ImGuiWindowFlags_NoMouseInputs
-        );
+        ImGui::Begin("Debug");
         ImGui::SetWindowPos({0, 0});
-        ImGui::Text("FPS: %u", (uint32_t)(1.0f / delta));
+        ImGui::Text("FPS: %.2f", 1.0f / delta);
         ImGui::End();
-
-        const auto size = window->get_size();
-        static vec2u32 old_size{};
-        if (size.x() != old_size.x() || size.y() != old_size.y()) {
-			graphics->viewport(vec2i32{0, 0}, {static_cast<int>(size.x()), static_cast<int>(size.y())});
-            old_size = size;
-        }
+        window->update();
     }
 
     void MagmaEngineMainLoop::draw() {
-        graphics->clear();
+        graphics->draw();
     }
 
-    bool MagmaEngineMainLoop::running() {
-        return window->is_open();
-    }
-
-    MagmaEngineMainLoop::~MagmaEngineMainLoop() {
-        graphics->disconnect_from_window();
+    void MagmaEngineMainLoop::close() {
         delete graphics;
         delete window;
     }
-}
+} // namespace mgm
 
-
-int main(int argc, char** args) {
+int main() {
     mgm::MagmaEngineMainLoop magma{};
-    
+    magma.init();
+
     auto start = std::chrono::high_resolution_clock::now();
     float avg_delta = 1.0f;
     constexpr auto delta_avg_calc_ratio = 0.05f;
 
+    ImGui_ImplMgmGFX_Init(*magma.graphics);
+
     bool run = true;
     while (run) {
-        ImGui_ImplMgmGFX_NewFrame();
-        ImGui::NewFrame();
-
         const auto now = std::chrono::high_resolution_clock::now();
         const auto delta = std::chrono::duration_cast<std::chrono::microseconds>(now - start).count();
         start = now;
 
         avg_delta = avg_delta * (1.0f - delta_avg_calc_ratio) + (float)delta * 0.001f * delta_avg_calc_ratio;
 
+        ImGui_ImplMgmGFX_NewFrame();
+        ImGui::NewFrame();
+
         magma.tick((float)avg_delta * 0.001f);
-        magma.draw();
 
         ImGui::EndFrame();
         ImGui::Render();
-        ImGui_ImplMgmGFX_RenderDrawData(ImGui::GetDrawData());
-        magma.graphics->swap_buffers();
 
-        run = magma.running();
+        magma.draw();
+        ImGui_ImplMgmGFX_RenderDrawData(ImGui::GetDrawData());
+        magma.graphics->present();
+
+        run = !magma.window->should_close();
     }
 
+    ImGui_ImplMgmGFX_Shutdown();
+
+    magma.close();
+    mgm::Logging{"main"}.log("Closed engine");
     return 0;
 }

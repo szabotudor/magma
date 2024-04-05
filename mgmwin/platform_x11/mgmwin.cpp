@@ -437,9 +437,6 @@ namespace mgm {
                     break;
             }
         }
-
-        if (_should_close)
-            close();
     }
 
     MgmWindow::~MgmWindow() {

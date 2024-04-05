@@ -93,7 +93,7 @@ namespace mgm {
             this->w() = w;
         }
 
-        vec(const T x = T()) {
+        vec(const T x = T{}) {
             for (T& p : data)
                 p = x;
         }
@@ -407,7 +407,7 @@ namespace mgm {
             init(i, x, xs...);
         }
 
-        explicit mat(const T x = T()) {
+        explicit mat(const T x = T{}) {
             for (size_t i = 0; i < l && i < c; i++)
                 data[i][i] = x;
         }
@@ -548,9 +548,9 @@ namespace mgm {
             const T cos = std::cos(angle);
             const T sin = std::sin(angle);
             return mat<c, l, T>{
-                cos, -sin, T(),
-                sin, cos, T(),
-                T(), T(), (T)1
+                cos, -sin, T{},
+                sin, cos, T{},
+                T{}, T{}, (T)1
             };
         }
 
@@ -566,9 +566,9 @@ namespace mgm {
             const T cos = std::cos(angle);
             const T sin = std::sin(angle);
             return mat<c, l, T>{
-                (T)1, T(), T(),
-                T(), cos, -sin,
-                T(), sin, cos
+                (T)1, T{}, T{},
+                T{}, cos, -sin,
+                T{}, sin, cos
             };
         }
 
@@ -584,9 +584,9 @@ namespace mgm {
             const T cos = std::cos(angle);
             const T sin = std::sin(angle);
             return mat<c, l, T>{
-                cos, T(), sin,
-                T(), (T)1, T(),
-                -sin, T(), cos
+                cos, T{}, sin,
+                T{}, (T)1, T{},
+                -sin, T{}, cos
             };
         }
 
@@ -602,9 +602,9 @@ namespace mgm {
             const T cos = std::cos(angle);
             const T sin = std::sin(angle);
             return mat<c, l, T>{
-                cos, -sin, T(),
-                sin, cos, T(),
-                T(), T(), (T)1
+                cos, -sin, T{},
+                sin, cos, T{},
+                T{}, T{}, (T)1
             };
         }
 
@@ -619,9 +619,9 @@ namespace mgm {
             && (is_same_type<Type, float>::value || is_same_type<Type, double>::value), int>::type = 0>
         static mat<l, c, T> gen_x_rotation3d(T sin, T cos) {
             return mat<c, l, T>{
-                (T)1, T(), T(),
-                T(), cos, -sin,
-                T(), sin, cos
+                (T)1, T{}, T{},
+                T{}, cos, -sin,
+                T{}, sin, cos
             };
         }
 
@@ -636,9 +636,9 @@ namespace mgm {
             && (is_same_type<Type, float>::value || is_same_type<Type, double>::value), int>::type = 0>
         static mat<l, c, T> gen_y_rotation3d(T sin, T cos) {
             return mat<c, l, T>{
-                cos, T(), sin,
-                T(), (T)1, T(),
-                -sin, T(), cos
+                cos, T{}, sin,
+                T{}, (T)1, T{},
+                -sin, T{}, cos
             };
         }
 
@@ -653,9 +653,9 @@ namespace mgm {
             && (is_same_type<Type, float>::value || is_same_type<Type, double>::value), int>::type = 0>
         static mat<l, c, T> gen_z_rotation3d(T sin, T cos) {
             return mat<c, l, T>{
-                cos, -sin, T(),
-                sin, cos, T(),
-                T(), T(), (T)1
+                cos, -sin, T{},
+                sin, cos, T{},
+                T{}, T{}, (T)1
             };
         }
 
@@ -671,10 +671,10 @@ namespace mgm {
             const T cos = std::cos(angle);
             const T sin = std::sin(angle);
             return mat<c, l, T>{
-                (T)1, T(), T(), T(),
-                T(), cos, -sin, T(),
-                T(), sin, cos, T(),
-                T(), T(), T(), (T)1
+                (T)1, T{}, T{}, T{},
+                T{}, cos, -sin, T{},
+                T{}, sin, cos, T{},
+                T{}, T{}, T{}, (T)1
             };
         }
 
@@ -690,10 +690,10 @@ namespace mgm {
             const T cos = std::cos(angle);
             const T sin = std::sin(angle);
             return mat<c, l, T>{
-                cos, T(), sin, T(),
-                T(), (T)1, T(), T(),
-                -sin, T(), cos, T(),
-                T(), T(), T(), (T)1
+                cos, T{}, sin, T{},
+                T{}, (T)1, T{}, T{},
+                -sin, T{}, cos, T{},
+                T{}, T{}, T{}, (T)1
             };
         }
 
@@ -709,10 +709,10 @@ namespace mgm {
             const T cos = std::cos(angle);
             const T sin = std::sin(angle);
             return mat<c, l, T>{
-                cos, -sin, T(), T(),
-                sin, cos, T(), T(),
-                T(), T(), (T)1, T(),
-                T(), T(), T(), (T)1
+                cos, -sin, T{}, T{},
+                sin, cos, T{}, T{},
+                T{}, T{}, (T)1, T{},
+                T{}, T{}, T{}, (T)1
             };
         }
 
@@ -727,10 +727,10 @@ namespace mgm {
             && (is_same_type<Type, float>::value || is_same_type<Type, double>::value), int>::type = 0>
         static mat<l, c, T> gen_x_rotation3d(T sin, T cos) {
             return mat<c, l, T>{
-                (T)1, T(), T(), T(),
-                T(), cos, -sin, T(),
-                T(), sin, cos, T(),
-                T(), T(), T(), (T)1
+                (T)1, T{}, T{}, T{},
+                T{}, cos, -sin, T{},
+                T{}, sin, cos, T{},
+                T{}, T{}, T{}, (T)1
             };
         }
 
@@ -745,10 +745,10 @@ namespace mgm {
             && (is_same_type<Type, float>::value || is_same_type<Type, double>::value), int>::type = 0>
         static mat<l, c, T> gen_y_rotation3d(T sin, T cos) {
             return mat<c, l, T>{
-                cos, T(), sin, T(),
-                T(), (T)1, T(), T(),
-                -sin, T(), cos, T(),
-                T(), T(), T(), (T)1
+                cos, T{}, sin, T{},
+                T{}, (T)1, T{}, T{},
+                -sin, T{}, cos, T{},
+                T{}, T{}, T{}, (T)1
             };
         }
 
@@ -763,210 +763,11 @@ namespace mgm {
             && (is_same_type<Type, float>::value || is_same_type<Type, double>::value), int>::type = 0>
         static mat<l, c, T> gen_z_rotation3d(T sin, T cos) {
             return mat<c, l, T>{
-                cos, -sin, T(), T(),
-                sin, cos, T(), T(),
-                T(), T(), (T)1, T(),
-                T(), T(), T(), (T)1
+                cos, -sin, T{}, T{},
+                sin, cos, T{}, T{},
+                T{}, T{}, (T)1, T{},
+                T{}, T{}, T{}, (T)1
             };
-        }
-
-        /**
-         * @brief Rotate the matrix in 2D and return a reference to it after it has been rotated
-         * 
-         * @param angle (in radians) The angle to rotate by
-         */
-        template<size_t Lines = l, size_t Columns = c, class Type = T,
-            typename enbif<(Lines == 2 && Columns == 2 || Lines == 3 && Columns == 3)
-            && (is_same_type<Type, float>::value || is_same_type<Type, double>::value), int>::type = 0>
-        mat<l, c, T>& rotate2d(T angle) {
-            *this = gen_rotation2d(angle) * (*this);
-            return *this;
-        }
-
-        /**
-         * @brief Return a rotated version of this matrix in 2D
-         * 
-         * @param angle (in radians) The angle to rotate by
-         */
-        template<size_t Lines = l, size_t Columns = c, class Type = T,
-            typename enbif<(Lines == 2 && Columns == 2 || Lines == 3 && Columns == 3)
-            && (is_same_type<Type, float>::value || is_same_type<Type, double>::value), int>::type = 0>
-        mat<l, c, T> rotated2d(T angle) const {
-            return gen_rotation2d(angle) * (*this);
-        }
-
-        /**
-         * @brief Rotate the matrix in 3D in the order XYZ and return a reference to it after it has been rotated
-         * 
-         * @param angle (in radians) The angle to rotate by
-         */
-        template<size_t Lines = l, size_t Columns = c, class Type = T,
-            typename enbif<(Lines == 3 && Columns == 3 || Lines == 4 && Columns == 4)
-            && (is_same_type<Type, float>::value || is_same_type<Type, double>::value), int>::type = 0>
-        mat<l, c, T>& rotate3d_xyz(const vec<3, T>& axis) {
-            *this = gen_x_rotation3d(axis.x())
-                  * gen_y_rotation3d(axis.y())
-                  * gen_z_rotation3d(axis.z()) * (*this);
-            return *this;
-        }
-
-        /**
-         * @brief Rotate the matrix in 3D in the order XZY and return a reference to it after it has been rotated
-         * 
-         * @param angle (in radians) The angle to rotate by
-         */
-        template<size_t Lines = l, size_t Columns = c, class Type = T,
-            typename enbif<(Lines == 3 && Columns == 3 || Lines == 4 && Columns == 4)
-            && (is_same_type<Type, float>::value || is_same_type<Type, double>::value), int>::type = 0>
-        mat<l, c, T>& rotate3d_xzy(const vec<3, T>& axis) {
-            *this = gen_x_rotation3d(axis.x())
-                  * gen_z_rotation3d(axis.z())
-                  * gen_y_rotation3d(axis.y()) * (*this);
-            return *this;
-        }
-
-        /**
-         * @brief Rotate the matrix in 3D in the order YXZ and return a reference to it after it has been rotated
-         * 
-         * @param angle (in radians) The angle to rotate by
-         */
-        template<size_t Lines = l, size_t Columns = c, class Type = T,
-            typename enbif<(Lines == 3 && Columns == 3 || Lines == 4 && Columns == 4)
-            && (is_same_type<Type, float>::value || is_same_type<Type, double>::value), int>::type = 0>
-        mat<l, c, T>& rotate3d_yxz(const vec<3, T>& axis) {
-            *this = gen_y_rotation3d(axis.y())
-                  * gen_x_rotation3d(axis.x())
-                  * gen_z_rotation3d(axis.z()) * (*this);
-            return *this;
-        }
-
-        /**
-         * @brief Rotate the matrix in 3D in the order YZX and return a reference to it after it has been rotated
-         * 
-         * @param angle (in radians) The angle to rotate by
-         */
-        template<size_t Lines = l, size_t Columns = c, class Type = T,
-            typename enbif<(Lines == 3 && Columns == 3 || Lines == 4 && Columns == 4)
-            && (is_same_type<Type, float>::value || is_same_type<Type, double>::value), int>::type = 0>
-        mat<l, c, T>& rotate3d_yzx(const vec<3, T>& axis) {
-            *this = gen_y_rotation3d(axis.y())
-                  * gen_z_rotation3d(axis.z())
-                  * gen_x_rotation3d(axis.x()) * (*this);
-            return *this;
-        }
-
-        /**
-         * @brief Rotate the matrix in 3D in the order ZXY and return a reference to it after it has been rotated
-         * 
-         * @param angle (in radians) The angle to rotate by
-         */
-        template<size_t Lines = l, size_t Columns = c, class Type = T,
-            typename enbif<(Lines == 3 && Columns == 3 || Lines == 4 && Columns == 4)
-            && (is_same_type<Type, float>::value || is_same_type<Type, double>::value), int>::type = 0>
-        mat<l, c, T>& rotate3d_zxy(const vec<3, T>& axis) {
-            *this = gen_z_rotation3d(axis.z())
-                  * gen_x_rotation3d(axis.x())
-                  * gen_y_rotation3d(axis.y()) * (*this);
-            return *this;
-        }
-
-        /**
-         * @brief Rotate the matrix in 3D in the order ZYX and return a reference to it after it has been rotated
-         * 
-         * @param angle (in radians) The angle to rotate by
-         */
-        template<size_t Lines = l, size_t Columns = c, class Type = T,
-            typename enbif<(Lines == 3 && Columns == 3 || Lines == 4 && Columns == 4)
-            && (is_same_type<Type, float>::value || is_same_type<Type, double>::value), int>::type = 0>
-        mat<l, c, T>& rotate3d_zyx(const vec<3, T>& axis) {
-            *this = gen_z_rotation3d(axis.z())
-                  * gen_y_rotation3d(axis.y())
-                  * gen_x_rotation3d(axis.x()) * (*this);
-            return *this;
-        }
-
-        /**
-         * @brief Return a rotated version of this matrix in 2D in the order XYZ
-         * 
-         * @param angle (in radians) The angle to rotate by
-         */
-        template<size_t Lines = l, size_t Columns = c, class Type = T,
-            typename enbif<(Lines == 3 && Columns == 3 || Lines == 4 && Columns == 4)
-            && (is_same_type<Type, float>::value || is_same_type<Type, double>::value), int>::type = 0>
-        mat<l, c, T> rotated3d_xyz(const vec<3, T>& axis) const {
-            return gen_x_rotation3d(axis.x())
-                 * gen_y_rotation3d(axis.y())
-                 * gen_z_rotation3d(axis.z()) * (*this);
-        }
-
-        /**
-         * @brief Return a rotated version of this matrix in 2D in the order XZY
-         * 
-         * @param angle (in radians) The angle to rotate by
-         */
-        template<size_t Lines = l, size_t Columns = c, class Type = T,
-            typename enbif<(Lines == 3 && Columns == 3 || Lines == 4 && Columns == 4)
-            && (is_same_type<Type, float>::value || is_same_type<Type, double>::value), int>::type = 0>
-        mat<l, c, T> rotated3d_xzy(const vec<3, T>& axis) const {
-            return gen_x_rotation3d(axis.x())
-                 * gen_z_rotation3d(axis.z())
-                 * gen_y_rotation3d(axis.y()) * (*this);
-        }
-
-        /**
-         * @brief Return a rotated version of this matrix in 2D in the order YXZ
-         * 
-         * @param angle (in radians) The angle to rotate by
-         */
-        template<size_t Lines = l, size_t Columns = c, class Type = T,
-            typename enbif<(Lines == 3 && Columns == 3 || Lines == 4 && Columns == 4)
-            && (is_same_type<Type, float>::value || is_same_type<Type, double>::value), int>::type = 0>
-        mat<l, c, T> rotated3d_yxz(const vec<3, T>& axis) const {
-            return gen_y_rotation3d(axis.y())
-                 * gen_x_rotation3d(axis.x())
-                 * gen_z_rotation3d(axis.z()) * (*this);
-        }
-
-        /**
-         * @brief Return a rotated version of this matrix in 2D in the order YZX
-         * 
-         * @param angle (in radians) The angle to rotate by
-         */
-        template<size_t Lines = l, size_t Columns = c, class Type = T,
-            typename enbif<(Lines == 3 && Columns == 3 || Lines == 4 && Columns == 4)
-            && (is_same_type<Type, float>::value || is_same_type<Type, double>::value), int>::type = 0>
-        mat<l, c, T> rotated3d_yzx(const vec<3, T>& axis) const {
-            return gen_y_rotation3d(axis.y())
-                 * gen_z_rotation3d(axis.z())
-                 * gen_x_rotation3d(axis.x()) * (*this);
-        }
-
-        /**
-         * @brief Return a rotated version of this matrix in 2D in the order ZXY
-         * 
-         * @param angle (in radians) The angle to rotate by
-         */
-        template<size_t Lines = l, size_t Columns = c, class Type = T,
-            typename enbif<(Lines == 3 && Columns == 3 || Lines == 4 && Columns == 4)
-            && (is_same_type<Type, float>::value || is_same_type<Type, double>::value), int>::type = 0>
-        mat<l, c, T> rotated3d_zxy(const vec<3, T>& axis) const {
-            return gen_z_rotation3d(axis.z())
-                 * gen_x_rotation3d(axis.x())
-                 * gen_y_rotation3d(axis.y()) * (*this);
-        }
-
-        /**
-         * @brief Return a rotated version of this matrix in 2D in the order ZYX
-         * 
-         * @param angle (in radians) The angle to rotate by
-         */
-        template<size_t Lines = l, size_t Columns = c, class Type = T,
-            typename enbif<(Lines == 3 && Columns == 3 || Lines == 4 && Columns == 4)
-            && (is_same_type<Type, float>::value || is_same_type<Type, double>::value), int>::type = 0>
-        mat<l, c, T> rotated3d_zyx(const vec<3, T>& axis) const {
-            return gen_z_rotation3d(axis.z())
-                 * gen_y_rotation3d(axis.y())
-                 * gen_x_rotation3d(axis.x()) * (*this);
         }
     };
 

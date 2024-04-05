@@ -6,6 +6,6 @@ namespace mgm {
     class FileIO {
         public:
 
-        static std::string exe_dir();
+        // static std::string exe_dir();
     };
 }

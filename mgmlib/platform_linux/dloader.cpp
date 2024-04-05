@@ -35,7 +35,7 @@ namespace mgm {
         log.log("Trying to load dynamic library from \"", file_path, "\"");
         if (is_loaded()) unload();
 
-        lib = dlopen((FileIO::exe_dir() + "/" + file_path).c_str(), RTLD_LAZY);
+        lib = dlopen(file_path, RTLD_LAZY | RTLD_GLOBAL);
         if (lib == nullptr) {
             log.error(dlerror());
             return;
@@ -47,7 +47,8 @@ namespace mgm {
     void DLoader::unload() {
         if (!is_loaded()) return;
 
-        dlclose(lib);
+        // TODO: This SEGFAULTS (sometimes)
+        //dlclose(lib);
         lib = nullptr;
 
         log.log("Unloaded dynamic library");
