@@ -151,6 +151,8 @@ void ImGui_ImplMgmGFX_RenderDrawData(ImDrawData *draw_data) {
         const auto mesh_colors = backend.create_buffer({mgm::BufferCreateInfo::Type::RAW, colors.data(), colors.size()});
         const auto mesh_coords = backend.create_buffer({mgm::BufferCreateInfo::Type::RAW, coords.data(), coords.size()});
 
+        std::vector<mgm::MgmGPU::BufferHandle> leftover_buffers{};
+
         for (int j = 0; j < cmd_list->CmdBuffer.Size; j++) {
             const auto* cmd = &cmd_list->CmdBuffer[j];
 
@@ -171,6 +173,7 @@ void ImGui_ImplMgmGFX_RenderDrawData(ImDrawData *draw_data) {
                 backend.apply_settings();
 
                 const auto mesh_indices = backend.create_buffer({mgm::BufferCreateInfo::Type::INDEX, indices.data() + cmd->IdxOffset, cmd->ElemCount});
+                leftover_buffers.emplace_back(mesh_indices);
                 const auto mesh = backend.create_buffers_object({mesh_verts, mesh_colors, mesh_coords, mesh_indices});
 
                 backend.draw_list.emplace_back(mgm::MgmGPU::DrawCall{
@@ -182,13 +185,14 @@ void ImGui_ImplMgmGFX_RenderDrawData(ImDrawData *draw_data) {
                         {"Proj", proj}
                     }
                 });
-
-                backend.draw();
-                backend.draw_list.clear();
-                backend.destroy_buffers_object(mesh);
-                backend.destroy_buffer(mesh_indices);
             }
         }
+        backend.draw();
+        for (const auto& buf : leftover_buffers)
+            backend.destroy_buffer(buf);
+        for (const auto& draw_call : backend.draw_list)
+            backend.destroy_buffers_object(draw_call.buffers_object);
+
         backend.destroy_buffer(mesh_verts);
         backend.destroy_buffer(mesh_coords);
         backend.destroy_buffer(mesh_colors);
