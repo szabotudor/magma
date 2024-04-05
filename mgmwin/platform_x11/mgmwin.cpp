@@ -161,7 +161,7 @@ namespace mgm {
         _allow_maximize = allow;
     }
 
-    void MgmWindow::set_allow_minimize(const bool allow) {
+    void MgmWindow::set_allow_minimize(const bool) {
         log.error("X11 doesn't support blocking/allowing minimization");
     }
 
@@ -423,13 +423,13 @@ namespace mgm {
                     break;
                 }
                 case ClientMessage: {
-                    if (event.xclient.data.l[0] == data->wm_destroy)
+                    if (event.xclient.data.l[0] == (int)data->wm_destroy)
                         _should_close = true;
                     break;
                 }
                 case ConfigureNotify: {
-                    if (event.xconfigure.width != window_size.x()
-                        | event.xconfigure.height != window_size.y()) {
+                    if (event.xconfigure.width != (int)window_size.x()
+                        || event.xconfigure.height != (int)window_size.y()) {
                         window_size = vec2u32{(uint32_t)event.xconfigure.width, (uint32_t)event.xconfigure.height};
                     }
                 }
