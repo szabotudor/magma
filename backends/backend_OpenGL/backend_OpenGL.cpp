@@ -257,7 +257,7 @@ namespace mgm {
 
             if (!draw_call.textures.empty()) {
                 for (size_t i = 0; i < draw_call.textures.size(); i++) {
-                    glActiveTexture(GL_TEXTURE0 + i);
+                    glActiveTexture(GL_TEXTURE0 + static_cast<GLenum>(i));
                     glBindTexture(GL_TEXTURE_2D, draw_call.textures[i]->tex);
                 }
             }
@@ -278,9 +278,9 @@ namespace mgm {
 
             glBindVertexArray(draw_call.buffers_object->vao);
             if (draw_call.buffers_object->has_index_buffer)
-                glDrawElements(GL_TRIANGLES, draw_call.buffers_object->size, GL_UNSIGNED_INT, nullptr);
+                glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(draw_call.buffers_object->size), GL_UNSIGNED_INT, nullptr);
             else
-                glDrawArrays(GL_TRIANGLES, 0, draw_call.buffers_object->size);
+                glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(draw_call.buffers_object->size));
         }
         backend->draw_calls.clear();
     }
@@ -406,9 +406,9 @@ namespace mgm {
         for (size_t i = 0; i < vertex_buffers.size(); i++) {
             const auto buf = vertex_buffers[i];
             glBindBuffer(GL_ARRAY_BUFFER, buf->buffer);
-            glVertexAttribPointer(i, buf->gl_data_type_point_count, buf->gl_data_type, GL_FALSE, 0, nullptr);
-            glEnableVertexAttribArray(i);
-            buf->bind_location = i;
+            glVertexAttribPointer(static_cast<GLuint>(i), static_cast<GLint>(buf->gl_data_type_point_count), buf->gl_data_type, GL_FALSE, 0, nullptr);
+            glEnableVertexAttribArray(static_cast<GLuint>(i));
+            buf->bind_location = static_cast<GLint>(i);
         }
         if (ebo) {
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo->buffer);

@@ -204,5 +204,5 @@ void ImGui_ImplMgmGFX_RenderDrawData(ImDrawData *draw_data) {
     backend.apply_settings();
 }
 
-void ImGui_ImplMgmGFX_ProcessInput(mgm::MgmWindow &window) {
+void ImGui_ImplMgmGFX_ProcessInput(mgm::MgmWindow &) {
 }

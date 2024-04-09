@@ -177,22 +177,22 @@ namespace mgm {
         return *this;
     }
 
-    MgmGPU::MgmGPU(MgmWindow* window) {
+    MgmGPU::MgmGPU(MgmWindow* window_to_connect) {
         data = new Data{};
         data->settings_offsets.emplace(Settings::StateAttribute::CLEAR, Data::StateAttributeOffset{offsetof(Settings, clear), sizeof(Settings::Clear)});
         data->settings_offsets.emplace(Settings::StateAttribute::BLENDING, Data::StateAttributeOffset{offsetof(Settings, blending), sizeof(Settings::Blending)});
         data->settings_offsets.emplace(Settings::StateAttribute::VIEWPORT, Data::StateAttributeOffset{offsetof(Settings, viewport), sizeof(Settings::Viewport)});
         data->settings_offsets.emplace(Settings::StateAttribute::SCISSOR, Data::StateAttributeOffset{offsetof(Settings, scissor), sizeof(Settings::Scissor)});
 
-        this->window = window;
+        connect_to_window(window_to_connect);
     }
 
-    void MgmGPU::connect_to_window(MgmWindow *window) {
-        if (this->window) {
+    void MgmGPU::connect_to_window(MgmWindow *window_to_connect) {
+        if (window) {
             data->log.warning("Already connected to a window, disconnecting first");
             disconnect_from_window();
         }
-        this->window = window;
+        window = window_to_connect;
     }
 
     void MgmGPU::disconnect_from_window() {

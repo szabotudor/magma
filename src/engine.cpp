@@ -7,9 +7,7 @@
 #include "mgmgpu.hpp"
 #include "mgmwin.hpp"
 
-#include <bits/chrono.h>
 #include <chrono>
-#include <ratio>
 
 
 namespace mgm {
@@ -17,7 +15,11 @@ namespace mgm {
         window = new MgmWindow{"Hello", vec2u32{800, 600}, MgmWindow::Mode::NORMAL};
         graphics = new MgmGPU{};
         graphics->connect_to_window(window);
+#if defined(__linux__)
         graphics->load_backend("shared/libbackend_OpenGL.so");
+#elif defined (WIN32) || defined(_WIN32)
+        graphics->load_backend("shared/backend_OpenGL.dll");
+#endif
 
         auto& settings = graphics->settings();
         settings.clear.enabled = true;
