@@ -5,7 +5,7 @@
 
 
 namespace mgm {
-	struct OpenGLPlatform::WGLBackendData {
+	struct OpenGLPlatform::GLBackendData {
 		HGLRC context{};
 		HDC h_device{};
 	};
@@ -27,7 +27,7 @@ namespace mgm {
 			log.error("Windows doesn't support OpenGL ES");
 			return;
 		}
-		data = new WGLBackendData{};
+		data = new GLBackendData{};
 	}
 
 	void OpenGLPlatform::create_context(int ver_major, int ver_minor, struct NativeWindow* native_window) {
