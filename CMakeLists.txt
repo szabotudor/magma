@@ -35,6 +35,7 @@ add_subdirectory(${CMAKE_SOURCE_DIR}/mgmlib)
 add_executable(
     magma
         ${CMAKE_CURRENT_SOURCE_DIR}/src/engine.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/engine.hpp
 )
 
 enable_warnings(magma)

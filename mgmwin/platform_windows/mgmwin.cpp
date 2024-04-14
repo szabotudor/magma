@@ -1,5 +1,6 @@
 #include "mgmwin.hpp"
 #include "native_window.hpp"
+#undef max
 #include "mgmath.hpp"
 #include <iostream>
 
@@ -152,7 +153,8 @@ namespace mgm {
 		if (pos.x() < 0 || pos.y() < 0) {
 		    POINT cursor{};
 			GetCursorPos(&cursor);
-			const vec2i32 target_pos = vec2i32{cursor.x, cursor.y} - vec2i32{static_cast<int>(window_size.x()), static_cast<int>(window_size.y())} / 2;
+			vec2i32 target_pos = vec2i32{cursor.x, cursor.y} - vec2i32{static_cast<int>(window_size.x()), static_cast<int>(window_size.y())} / 2;
+			target_pos = vec2i32::max(target_pos, vec2i32{0, 0});
 			SetWindowPos(data->window, nullptr, target_pos.x(), target_pos.y(), window_size.x(), window_size.y(), SWP_NOSIZE | SWP_NOZORDER);
 			return;
 		}

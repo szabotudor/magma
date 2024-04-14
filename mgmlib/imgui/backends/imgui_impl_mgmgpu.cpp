@@ -1,5 +1,5 @@
 #include "backend_settings.hpp"
-#include "imgui_impl_mgmgfx.h"
+#include "imgui_impl_mgmgpu.h"
 #include "imgui.h"
 #include "logging.hpp"
 #include "mgmath.hpp"

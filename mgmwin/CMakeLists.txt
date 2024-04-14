@@ -27,6 +27,8 @@ endif()
 add_library(
     mgmwin
         ${PLATFORM_SOURCES}
+
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/mgmwin.hpp
 )
 enable_warnings(mgmwin)
 

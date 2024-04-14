@@ -25,6 +25,11 @@ add_library(
     mgmcommon
         ${CMAKE_CURRENT_SOURCE_DIR}/src/logging.cpp
         ${PLATFORM_SOURCES}
+
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/file.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/logging.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/mgmath.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/types.hpp
 )
 enable_warnings(mgmcommon)
 
