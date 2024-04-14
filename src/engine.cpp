@@ -8,6 +8,8 @@
 #include "mgmwin.hpp"
 
 #include <chrono>
+#include <iostream>
+#include <ratio>
 
 
 namespace mgm {
@@ -23,11 +25,11 @@ namespace mgm {
 
         auto& settings = graphics->settings();
         settings.clear.enabled = true;
-        settings.clear.color = {0.3f, 0.2f, 0.1f, 1.0f};
+        settings.clear.color = {0.1f, 0.2f, 0.3f, 1.0f};
         settings.viewport.top_left = {0, 0};
         settings.viewport.bottom_right = vec2i32{static_cast<int>(window->get_size().x()), static_cast<int>(window->get_size().y())};
 
-        graphics->apply_settings();
+        graphics->apply_settings(true);
         
         ShaderCreateInfo shader_info{};
         shader_info.shader_sources.emplace_back(ShaderCreateInfo::SingleShaderInfo{
@@ -83,11 +85,12 @@ namespace mgm {
     }
 
     void MagmaEngineMainLoop::tick(float delta) {
+        window->update();
+
         ImGui::Begin("Debug");
         ImGui::SetWindowPos({0, 0});
         ImGui::Text("FPS: %.2f", 1.0f / delta);
         ImGui::End();
-        window->update();
     }
 
     void MagmaEngineMainLoop::draw() {
@@ -119,6 +122,7 @@ int main() {
         avg_delta = avg_delta * (1.0f - delta_avg_calc_ratio) + (float)delta * 0.001f * delta_avg_calc_ratio;
 
         ImGui_ImplMgmGFX_NewFrame();
+        ImGui_ImplMgmGFX_ProcessInput(*magma.window);
         ImGui::NewFrame();
 
         magma.tick((float)avg_delta * 0.001f);

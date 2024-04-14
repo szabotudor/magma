@@ -1,4 +1,4 @@
-#include <memory>
+#include <cstring>
 #include <string>
 #include <type_traits>
 #include <unordered_map>
@@ -270,7 +270,7 @@ namespace mgm {
         if (!settings_changed) return;
 
         for (const auto& [attr, offset] : data->settings_offsets) {
-            const auto changed = force ? true : (memcmp(
+            const auto changed = force ? true : (std::memcmp(
                 reinterpret_cast<const char*>(&backend_settings) + offset.offset,
                 reinterpret_cast<const char*>(&data->old_settings) + offset.offset,
                 offset.size
@@ -280,6 +280,7 @@ namespace mgm {
                 data->set_attribute(data->backend, attr, reinterpret_cast<const char*>(&backend_settings) + offset.offset);
         }
 
+        data->old_settings = backend_settings;
         settings_changed = false;
     }
 
@@ -288,15 +289,36 @@ namespace mgm {
         apply_settings();
 
         for (const auto& call : draw_list) {
-            std::vector<Texture*> textures{};
-            for (const auto& tex : call.textures)
-                if (tex != INVALID_TEXTURE)
-                    textures.emplace_back(data->textures[tex]);
+            switch (call.type) {
+                case DrawCall::Type::CLEAR: {
+                    data->execute(data->backend);
+                    data->clear(data->backend);
+                    break;
+                }
+                case DrawCall::Type::DRAW: {
+                    std::vector<Texture*> textures{};
+                    for (const auto& tex : call.textures)
+                        if (tex != INVALID_TEXTURE)
+                            textures.emplace_back(data->textures[tex]);
 
-            if (call.type == DrawCall::Type::CLEAR)
-                data->clear(data->backend);
-            else
-                data->push_draw_call(data->backend, data->shaders[call.shader], data->buffers_objects[call.buffers_object], textures.data(), textures.size(), call.parameters);
+                    data->push_draw_call(data->backend, data->shaders[call.shader], data->buffers_objects[call.buffers_object], textures.data(), textures.size(), call.parameters);
+                    break;
+                }
+                case DrawCall::Type::COMPUTE: {
+                    break;
+                }
+                case DrawCall::Type::SETTINGS_CHANGE: {
+                    data->execute(data->backend);
+                    const auto it = call.parameters.find("settings");
+                    if (it == call.parameters.end())
+                        data->log.error("SETTINGS_CHANGE draw call missing \"settings\" parameter");
+                    else {
+                        settings() = std::any_cast<Settings>(it->second);
+                        apply_settings();
+                    }
+                    break;
+                }
+            }
         }
 
         data->execute(data->backend);
@@ -328,6 +350,7 @@ namespace mgm {
     void MgmGPU::destroy_buffer(BufferHandle buffer) {
         if (!is_backend_loaded()) return;
         apply_settings();
+        if (buffer == INVALID_BUFFER) return;
 
         data->destroy_buffer(data->backend, data->buffers[buffer].buffer);
         data->buffers.destroy(buffer);
@@ -347,6 +370,7 @@ namespace mgm {
     void MgmGPU::destroy_buffers_object(BuffersObjectHandle buffers_object) {
         if (!is_backend_loaded()) return;
         apply_settings();
+        if (buffers_object == INVALID_BUFFERS_OBJECT) return;
 
         data->destroy_buffers_object(data->backend, data->buffers_objects[buffers_object]);
         data->buffers_objects.destroy(buffers_object);
@@ -362,6 +386,7 @@ namespace mgm {
     void MgmGPU::destroy_shader(ShaderHandle shader) {
         if (!is_backend_loaded()) return;
         apply_settings();
+        if (shader == INVALID_SHADER) return;
 
         data->destroy_shader(data->backend, data->shaders[shader]);
         data->shaders.destroy(shader);
@@ -377,6 +402,7 @@ namespace mgm {
     void MgmGPU::destroy_texture(TextureHandle texture) {
         if (!is_backend_loaded()) return;
         apply_settings();
+        if (texture == INVALID_TEXTURE) return;
 
         data->destroy_texture(data->backend, data->textures[texture]);
         data->textures.destroy(texture);

@@ -48,8 +48,10 @@ namespace mgm {
             vec2i32 top_left{}, bottom_right{};
         } viewport{};
 
-        using Scissor = Viewport;
-        Scissor scissor{};
+        struct Scissor {
+            vec2i32 top_left{}, bottom_right{};
+            bool enabled = false;
+        } scissor{};
     };
 
     struct BufferCreateInfo {

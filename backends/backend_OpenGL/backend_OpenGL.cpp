@@ -182,12 +182,17 @@ namespace mgm {
             }
             case Settings::StateAttribute::SCISSOR: {
                 const auto& scissor = *static_cast<const Settings::Settings::Scissor*>(data);
-                backend->scissor.pos = scissor.top_left;
-                backend->scissor.size = scissor.bottom_right - scissor.top_left;
-                glScissor(
-                    backend->scissor.pos.x(), backend->scissor.pos.y(),
-                    backend->scissor.size.x(), backend->scissor.size.y()
-                );
+                if ((scissor.top_left == vec2i32{0, 0} && scissor.bottom_right == vec2i32{0, 0}) || !scissor.enabled)
+                    glDisable(GL_SCISSOR_TEST);
+                else {
+                    backend->scissor.pos = scissor.top_left;
+                    backend->scissor.size = scissor.bottom_right - scissor.top_left;
+                    glEnable(GL_SCISSOR_TEST);
+                    glScissor(
+                        backend->scissor.pos.x(), backend->scissor.pos.y(),
+                        backend->scissor.size.x(), backend->scissor.size.y()
+                    );
+                }
                 return true;
             }
         }

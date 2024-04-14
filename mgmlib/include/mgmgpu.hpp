@@ -34,7 +34,8 @@ namespace mgm {
             enum class Type {
                 CLEAR,
                 DRAW,
-                COMPUTE
+                COMPUTE,
+                SETTINGS_CHANGE
             } type = Type::DRAW;
             ShaderHandle shader = INVALID_SHADER;
             BuffersObjectHandle buffers_object = INVALID_BUFFERS_OBJECT;
