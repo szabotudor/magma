@@ -66,7 +66,7 @@ namespace mgm {
          * 
          * @param window The window to render to
          */
-        void connect_to_window(MgmWindow *window);
+        void connect_to_window(MgmWindow *window_to_connect);
 
         /**
          * @brief Disconnect from the window, if one is connected
