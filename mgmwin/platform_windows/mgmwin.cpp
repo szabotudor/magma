@@ -57,6 +57,7 @@ namespace mgm {
 
 		ShowWindow(data->window, SW_SHOW);
 		set_size(size);
+		set_position(pos);
 
 		window_pos = pos;
 		window_size = size;
@@ -148,7 +149,14 @@ namespace mgm {
 	}
 
 	void MgmWindow::set_position(const vec2i32 pos) {
-		SetWindowPos(data->window, nullptr, pos.x(), pos.y(), window_size.x(), window_size.y(), 0);
+		if (pos.x() < 0 || pos.y() < 0) {
+		    POINT cursor{};
+			GetCursorPos(&cursor);
+			const vec2i32 target_pos = vec2i32{cursor.x, cursor.y} - vec2i32{static_cast<int>(window_size.x()), static_cast<int>(window_size.y())} / 2;
+			SetWindowPos(data->window, nullptr, target_pos.x(), target_pos.y(), window_size.x(), window_size.y(), SWP_NOSIZE | SWP_NOZORDER);
+			return;
+		}
+		SetWindowPos(data->window, nullptr, pos.x(), pos.y(), window_size.x(), window_size.y(), SWP_NOSIZE | SWP_NOZORDER);
 		window_pos = pos;
 	}
 
@@ -289,7 +297,6 @@ namespace mgm {
 					RECT rect{};
 					GetClientRect(updating_window->data->window, &rect);
 					updating_window->window_size = {LOWORD(l_param), HIWORD(l_param)};
-					std::cout << updating_window->window_size.x() << ' ' << updating_window->window_size.y() << std::endl;
 				}
 				return LRESULT{};
 			}
@@ -316,11 +323,7 @@ namespace mgm {
 				break;
 			}
 			case WM_CHAR: {
-				const auto key = winchar_to_input_interface(w_param);
-				updating_window->input_events_since_last_update.emplace_back(
-					MgmWindow::InputEvent{key, 1.0f, MgmWindow::InputEvent::Mode::PRESS, MgmWindow::InputEvent::From::KEYBOARD}
-				);
-				updating_window->get_input_interface(key) = 1.0f;
+				updating_window->text_input_since_last_update += static_cast<char>(w_param);
 				break;
 			}
 			case WM_LBUTTONDOWN: {
@@ -334,31 +337,36 @@ namespace mgm {
 				updating_window->input_events_since_last_update.emplace_back(
 					MgmWindow::InputEvent{MgmWindow::InputInterface::Mouse_LEFT, 0.0f, MgmWindow::InputEvent::Mode::RELEASE, MgmWindow::InputEvent::From::MOUSE}
 				);
-				updating_window->get_input_interface(MgmWindow::InputInterface::Mouse_LEFT) = 0.0f; break;
+				updating_window->get_input_interface(MgmWindow::InputInterface::Mouse_LEFT) = 0.0f;
+			    break;
 			}
 			case WM_RBUTTONDOWN: {
 				updating_window->input_events_since_last_update.emplace_back(
 					MgmWindow::InputEvent{MgmWindow::InputInterface::Mouse_RIGHT, 1.0f, MgmWindow::InputEvent::Mode::PRESS, MgmWindow::InputEvent::From::MOUSE}
 				);
-				updating_window->get_input_interface(MgmWindow::InputInterface::Mouse_RIGHT) = 1.0f; break;
+				updating_window->get_input_interface(MgmWindow::InputInterface::Mouse_RIGHT) = 1.0f;
+			    break;
 			}
 			case WM_RBUTTONUP: {
 				updating_window->input_events_since_last_update.emplace_back(
 					MgmWindow::InputEvent{MgmWindow::InputInterface::Mouse_RIGHT, 0.0f, MgmWindow::InputEvent::Mode::RELEASE, MgmWindow::InputEvent::From::MOUSE}
 				);
-				updating_window->get_input_interface(MgmWindow::InputInterface::Mouse_RIGHT) = 0.0f; break;
+				updating_window->get_input_interface(MgmWindow::InputInterface::Mouse_RIGHT) = 0.0f;
+			    break;
 			}
 			case WM_MBUTTONDOWN: {
 				updating_window->input_events_since_last_update.emplace_back(
 					MgmWindow::InputEvent{MgmWindow::InputInterface::Mouse_MIDDLE, 1.0f, MgmWindow::InputEvent::Mode::PRESS, MgmWindow::InputEvent::From::MOUSE}
 				);
-				updating_window->get_input_interface(MgmWindow::InputInterface::Mouse_MIDDLE) = 1.0f; break;
+				updating_window->get_input_interface(MgmWindow::InputInterface::Mouse_MIDDLE) = 1.0f;
+			    break;
 			}
 			case WM_MBUTTONUP: {
 				updating_window->input_events_since_last_update.emplace_back(
 					MgmWindow::InputEvent{MgmWindow::InputInterface::Mouse_MIDDLE, 0.0f, MgmWindow::InputEvent::Mode::RELEASE, MgmWindow::InputEvent::From::MOUSE}
 				);
-				updating_window->get_input_interface(MgmWindow::InputInterface::Mouse_MIDDLE) = 0.0f; break;
+				updating_window->get_input_interface(MgmWindow::InputInterface::Mouse_MIDDLE) = 0.0f;
+			    break;
 			}
 			case WM_MOUSEWHEEL: {
 				const auto delta = GET_WHEEL_DELTA_WPARAM(w_param);
@@ -372,8 +380,29 @@ namespace mgm {
 					updating_window->input_events_since_last_update.emplace_back(
 						MgmWindow::InputEvent{MgmWindow::InputInterface::Mouse_SCROLL_DOWN, 1.0f, MgmWindow::InputEvent::Mode::PRESS, MgmWindow::InputEvent::From::MOUSE}
 					);
-					updating_window->get_input_interface(MgmWindow::InputInterface::Mouse_SCROLL_DOWN) = 0.0f;
+					updating_window->get_input_interface(MgmWindow::InputInterface::Mouse_SCROLL_DOWN) = 1.0f;
 				}
+				break;
+			}
+			case WM_MOUSEMOVE: {
+			    const vec2i32 pos = {LOWORD(l_param), HIWORD(l_param)};
+				const vec2f posf = vec2f{static_cast<float>(pos.x()), static_cast<float>(pos.y())}
+				    / vec2f{static_cast<float>(updating_window->window_size.x()), static_cast<float>(updating_window->window_size.y())} * 2.0f - 1.0f;
+				updating_window->get_input_interface(MgmWindow::InputInterface::Mouse_POS_X) = posf.x();
+				updating_window->get_input_interface(MgmWindow::InputInterface::Mouse_POS_Y) = posf.y();
+				updating_window->input_events_since_last_update.emplace_back(
+					MgmWindow::InputInterface::Mouse_POS_X,
+					posf.x(),
+					MgmWindow::InputEvent::Mode::OTHER,
+					MgmWindow::InputEvent::From::MOUSE
+				);
+                updating_window->input_events_since_last_update.emplace_back(
+                    MgmWindow::InputInterface::Mouse_POS_Y,
+                    posf.y(),
+                    MgmWindow::InputEvent::Mode::OTHER,
+                    MgmWindow::InputEvent::From::MOUSE
+                );
+				break;
 			}
 			default: {
 				return DefWindowProc(h_window, u_msg, w_param, l_param);
@@ -395,6 +424,7 @@ namespace mgm {
 		get_input_interface(InputInterface::Mouse_SCROLL_DOWN) = 0.0f;
 
 		input_events_since_last_update.clear();
+		text_input_since_last_update.clear();
 
 		MSG msg;
         while (PeekMessage(&msg, data->window, 0, 0, PM_REMOVE)) {
