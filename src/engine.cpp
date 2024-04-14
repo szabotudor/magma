@@ -83,8 +83,6 @@ namespace mgm {
     }
 
     void MagmaEngineMainLoop::tick(float delta) {
-        window->update();
-        ImGui_ImplMgmGFX_ProcessInput(*window);
 
         ImGui::Begin("Debug");
         ImGui::Text("FPS: %.2f", 1.0f / delta);
@@ -123,6 +121,8 @@ int main() {
 
         avg_delta = avg_delta * (1.0f - delta_avg_calc_ratio) + (float)delta * 0.001f * delta_avg_calc_ratio;
 
+        magma.window->update();
+        ImGui_ImplMgmGFX_ProcessInput(*magma.window);
         ImGui_ImplMgmGFX_NewFrame();
         ImGui::NewFrame();
 
