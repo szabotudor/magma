@@ -5,7 +5,7 @@
 
 
 namespace mgm {
-    struct OpenGLPlatform::EGLBackendData {
+    struct OpenGLPlatform::GLBackendData {
         bool is_opengl_es = false;
         bool init = false;
         EGLint* attrib = nullptr;
@@ -23,7 +23,7 @@ namespace mgm {
 
 
     OpenGLPlatform::OpenGLPlatform(bool is_opengl_es) {
-        data = new EGLBackendData{};
+        data = new GLBackendData{};
         data->is_opengl_es = is_opengl_es;
     }
 
