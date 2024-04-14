@@ -38,7 +38,7 @@ bool ImGui_ImplMgmGFX_Init(mgm::MgmGPU &backend) {
     io.Fonts->GetTexDataAsRGBA32(&tex_data, &size.x(), &size.y());
     const auto texture_info = mgm::TextureCreateInfo{4, 1, 2, size, tex_data};
     const auto fonts_texture = backend.create_texture(texture_info);
-    io.Fonts->SetTexID((void*)(intptr_t)fonts_texture);
+    io.Fonts->SetTexID(reinterpret_cast<void*>(static_cast<intptr_t>(fonts_texture)));
     
     mgm::ShaderCreateInfo fonts_shader_info{};
     fonts_shader_info.shader_sources.emplace_back(mgm::ShaderCreateInfo::SingleShaderInfo{
@@ -89,7 +89,7 @@ void ImGui_ImplMgmGFX_Shutdown() {
 }
 
 void ImGui_ImplMgmGFX_NewFrame() {
-    //auto& backend = *get_backend_data()->backend;
+    // This function doesn't need to exist, but it's here for consistency with other backends
 }
 
 void ImGui_ImplMgmGFX_RenderDrawData(ImDrawData *draw_data) {
@@ -360,8 +360,10 @@ void ImGui_ImplMgmGFX_ProcessInput(mgm::MgmWindow &window) {
                             mouse_pos_x = (event.value + 1.0f) * 0.5f * io.DisplaySize.x;
                             mouse_pos_filled = true;
                         }
+                        break;
                     default: break;
                 }
+                break;
             }
             case mgm::MgmWindow::InputEvent::From::KEYBOARD: {
                 switch (event.mode) {
@@ -381,6 +383,7 @@ void ImGui_ImplMgmGFX_ProcessInput(mgm::MgmWindow &window) {
                     }
                     default: break;
                 }
+                break;
             }
             default: break;
         }

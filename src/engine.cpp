@@ -86,10 +86,14 @@ namespace mgm {
 
     void MagmaEngineMainLoop::tick(float delta) {
         window->update();
+        ImGui_ImplMgmGFX_ProcessInput(*window);
 
         ImGui::Begin("Debug");
-        ImGui::SetWindowPos({0, 0});
         ImGui::Text("FPS: %.2f", 1.0f / delta);
+        ImGui::Text("Mouse position: (%.1f, %.1f)", ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y);
+        ImGui::Text("Mouse scroll: %.1f", ImGui::GetIO().MouseWheel);
+        static char buffer[256]{};
+        ImGui::InputText("Input", buffer, sizeof(buffer));
         ImGui::End();
     }
 
@@ -109,12 +113,12 @@ int main() {
 
     auto start = std::chrono::high_resolution_clock::now();
     float avg_delta = 1.0f;
-    constexpr auto delta_avg_calc_ratio = 0.05f;
 
     ImGui_ImplMgmGFX_Init(*magma.graphics);
 
     bool run = true;
     while (run) {
+        constexpr auto delta_avg_calc_ratio = 0.05f;
         const auto now = std::chrono::high_resolution_clock::now();
         const auto delta = std::chrono::duration_cast<std::chrono::microseconds>(now - start).count();
         start = now;
@@ -122,10 +126,9 @@ int main() {
         avg_delta = avg_delta * (1.0f - delta_avg_calc_ratio) + (float)delta * 0.001f * delta_avg_calc_ratio;
 
         ImGui_ImplMgmGFX_NewFrame();
-        ImGui_ImplMgmGFX_ProcessInput(*magma.window);
         ImGui::NewFrame();
 
-        magma.tick((float)avg_delta * 0.001f);
+        magma.tick(avg_delta * 0.001f);
 
         ImGui::EndFrame();
         ImGui::Render();
