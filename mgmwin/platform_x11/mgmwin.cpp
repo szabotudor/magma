@@ -172,10 +172,28 @@ namespace mgm {
     }
 
     void MgmWindow::set_position(vec2i32 pos) {
-        if (pos.x() < 0)
-            pos.x() = (DisplayWidth(data->display, data->screenid) - window_size.x()) / 2;
-        if (pos.y() < 0)
-            pos.y() = (DisplayHeight(data->display, data->screenid) - window_size.y()) / 2;
+        if (pos.x() < 0 || pos.y() < 0) {
+            const auto screen_count = ScreenCount(data->display);
+            vec2i32 mouse_pos{};
+            vec2i32 root_mouse_pos{};
+            vec2i32 screen_size{};
+            Window root_window{};
+            for (int i = 0; i < screen_count; i++) {
+                root_window = RootWindow(data->display, i);
+                Window current_window_return, root_window_return;
+                uint32_t mask;
+                XQueryPointer(data->display, root_window, &root_window_return, &current_window_return, &root_mouse_pos.x(), &root_mouse_pos.y(), &mouse_pos.x(), &mouse_pos.y(), &mask);
+                screen_size = {DisplayWidth(data->display, i), DisplayHeight(data->display, i)};
+                if (mouse_pos.x() >= 0 && mouse_pos.y() >= 0 && mouse_pos.x() < screen_size.x() && mouse_pos.y() < screen_size.y()) {
+                    const auto half_size = vec2i32{static_cast<int>(window_size.x()), static_cast<int>(window_size.y())} / 2;
+                    set_position(vec2i32::max(mouse_pos - half_size, vec2i32{0, 0}));
+                    return;
+                }
+            }
+
+            set_position(vec2i32{0, 0});
+            return;
+        }
         XMoveWindow(data->display, data->window, pos.x(), pos.y());
         if (window_mode != Mode::FULLSCREEN)
             window_pos = pos;
@@ -312,49 +330,6 @@ namespace mgm {
         }
     }
 
-    KeySym keycode_to_keysym(Display* display, KeyCode keycode, unsigned int event_mask) {
-        KeySym res = NoSymbol;
-
-        XkbDescPtr keyboard_map = XkbGetMap(display, XkbAllClientInfoMask, XkbUseCoreKbd);
-        if (keyboard_map) {
-            unsigned char info = XkbKeyGroupInfo(keyboard_map, keycode);
-            unsigned int num_groups = XkbKeyNumGroups(keyboard_map, keycode);
-
-            unsigned int group = 0x00;
-            switch (XkbOutOfRangeGroupAction(info)) {
-                case XkbRedirectIntoRange: {
-                    group = XkbOutOfRangeGroupInfo(info);
-                    if (group >= num_groups)
-                        group = 0;
-                    break;
-                }
-                case XkbClampIntoRange: {
-                    group = num_groups - 1;
-                    break;
-                }
-                case XkbWrapIntoRange:
-                default: {
-                    if (num_groups != 0)
-                        group %= num_groups;
-                    break;
-                }
-            }
-
-            XkbKeyTypePtr key_type = XkbKeyKeyType(keyboard_map, keycode, group);
-            unsigned int active_mods = event_mask & key_type->mods.mask;
-
-            int i, level = 0;
-            for (i = 0; i < key_type->map_count; i++)
-                if (key_type->map[i].active && key_type->map[i].mods.mask == active_mods)
-                    level = key_type->map[i].level;
-
-            res = XkbKeySymEntry(keyboard_map, keycode, level, group);
-            XkbFreeClientMap(keyboard_map, XkbAllClientInfoMask, true);
-        }
-
-        return res;
-    }
-
     void MgmWindow::update() {
         if (!_is_open)
             return;
@@ -364,7 +339,7 @@ namespace mgm {
 
         const auto current_mouse_query_time = std::chrono::steady_clock::now();
         const auto mills = std::chrono::duration_cast<std::chrono::milliseconds>(current_mouse_query_time - data->last_mouse_query_time).count();
-        if (mills > 16) {
+        if (mills > 1) {
             Window current_window, root_window;
             int rx, ry, x, y;
             uint32_t mask;
@@ -375,31 +350,27 @@ namespace mgm {
         }
 
         input_events_since_last_update.clear();
+        text_input_since_last_update.clear();
 
         XEvent event{};
         while (XEventsQueued(data->display, QueuedAfterFlush)) {
             XNextEvent(data->display, &event);
             switch (event.type) {
                 case KeyPress: {
-                    KeySym xkey{};
-                    if (get_input_interface(InputInterface::Key_SHIFT))
-                        xkey = XLookupKeysym(&event.xkey, ShiftMask);
-                    else
-                        xkey = XLookupKeysym(&event.xkey, 0);
-                    const auto key = convert_x11_key(xkey);
+                    const auto key = convert_x11_key(XkbKeycodeToKeysym(data->display, event.xkey.keycode, 0, 0));
                     if (key == InputInterface::NONE)
                         break;
                     input_interfaces[(size_t)key] = 1.0f;
                     input_events_since_last_update.emplace_back(InputEvent{key, 1.0f, InputEvent::Mode::PRESS, InputEvent::From::KEYBOARD});
+
+                    char buffer[32];
+                    KeySym keysym;
+                    XLookupString(&event.xkey, buffer, sizeof(buffer), &keysym, nullptr);
+                    text_input_since_last_update += buffer;
                     break;
                 }
                 case KeyRelease: {
-                    KeySym xkey{};
-                    if (get_input_interface(InputInterface::Key_SHIFT))
-                        xkey = XLookupKeysym(&event.xkey, ShiftMask);
-                    else
-                        xkey = XLookupKeysym(&event.xkey, 0);
-                    const auto key = convert_x11_key(xkey);
+                    const auto key = convert_x11_key(XkbKeycodeToKeysym(data->display, event.xkey.keycode, 0, 0));
                     if (key == InputInterface::NONE)
                         break;
                     input_interfaces[(size_t)key] = 0.0f;
@@ -420,6 +391,23 @@ namespace mgm {
                         break;
                     input_interfaces[(size_t)button] = 0.0f;
                     input_events_since_last_update.emplace_back(InputEvent{button, 0.0f, InputEvent::Mode::RELEASE, InputEvent::From::MOUSE});
+                    break;
+                }
+                case MotionNotify: {
+                    input_interfaces[(size_t)InputInterface::Mouse_POS_X] = (float)event.xmotion.x / (float)window_size.x() * 2.0f - 1.0f;
+                    input_interfaces[(size_t)InputInterface::Mouse_POS_Y] = (float)event.xmotion.y / (float)window_size.y() * 2.0f - 1.0f;
+                    input_events_since_last_update.emplace_back(InputEvent{
+                        InputInterface::Mouse_POS_X,
+                        input_interfaces[(size_t)InputInterface::Mouse_POS_X],
+                        InputEvent::Mode::OTHER,
+                        InputEvent::From::MOUSE
+                    });
+                    input_events_since_last_update.emplace_back(InputEvent{
+                        InputInterface::Mouse_POS_Y,
+                        input_interfaces[(size_t)InputInterface::Mouse_POS_Y],
+                        InputEvent::Mode::OTHER,
+                        InputEvent::From::MOUSE
+                    });
                     break;
                 }
                 case ClientMessage: {

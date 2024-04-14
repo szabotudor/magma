@@ -39,7 +39,7 @@ namespace mgm {
         float& get_input_interface(const InputInterface ii) const { return input_interfaces[(size_t)ii]; }
 
         struct InputEvent {
-            enum class Mode { NONE, PRESS, RELEASE };
+            enum class Mode { NONE, PRESS, RELEASE, OTHER };
             enum class From { NONE, KEYBOARD, MOUSE };
 
             InputInterface interface{};
@@ -49,9 +49,11 @@ namespace mgm {
         };
         private:
         std::vector<InputEvent> input_events_since_last_update{};
+        std::string text_input_since_last_update{};
 
         public:
         const auto& get_input_events() { return input_events_since_last_update; }
+        const auto& get_text_input() { return text_input_since_last_update; }
 
         private:
         struct NativeWindow* data = nullptr;
