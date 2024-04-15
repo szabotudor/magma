@@ -1,4 +1,8 @@
 #pragma once
+#include <any>
+#include <string>
+#include <unordered_map>
+#include <functional>
 
 
 namespace mgm {
@@ -10,8 +14,24 @@ namespace mgm {
         MgmWindow* window = nullptr;
         MgmGPU* graphics = nullptr;
 
+        struct MenuPage {
+            using MenuEntry = std::function<void()>;
+            struct MenuButton {
+                std::any data{};
+                float position{}, target_position{};
+                bool is_menu_page = false;
+            };
+            std::unordered_map<std::string, MenuButton> entries;
+            std::vector<std::string> entry_order{};
+            std::string previous{};
+        };
 
-        MagmaEngineMainLoop() = default;
+        std::unordered_map<std::string, MenuPage> pages{};
+        std::string current_page = "main";
+
+        bool draw_button(const std::string& name, MenuPage::MenuButton& entry);
+
+        MagmaEngineMainLoop();
 
         /**
          * @brief Initialize the engine
