@@ -89,7 +89,19 @@ void ImGui_ImplMgmGFX_Shutdown() {
 }
 
 void ImGui_ImplMgmGFX_NewFrame() {
-    // This function doesn't need to exist, but it's here for consistency with other backends
+    auto* data = get_backend_data();
+    auto& backend = *data->backend;
+    auto& io = ImGui::GetIO();
+
+    if (!io.Fonts->IsBuilt()) {
+        uint8_t* tex_data = nullptr;
+        mgm::vec2i32 size{};
+        io.Fonts->GetTexDataAsRGBA32(&tex_data, &size.x(), &size.y());
+        const auto texture_info = mgm::TextureCreateInfo{4, 1, 2, size, tex_data};
+        backend.destroy_texture(data->font_atlas);
+        data->font_atlas = backend.create_texture(texture_info);
+        io.Fonts->SetTexID(reinterpret_cast<void*>(static_cast<intptr_t>(data->font_atlas)));
+    }
 }
 
 void ImGui_ImplMgmGFX_RenderDrawData(ImDrawData *draw_data) {
