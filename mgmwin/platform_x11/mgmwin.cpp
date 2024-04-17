@@ -13,9 +13,10 @@
 
 namespace mgm {
     constexpr uint32_t WM_HINT_FUNCTIONS = 0x1,
-        WM_HINT_BORDER = 0x2,
-        WM_HINT_INPUT_MODE = 0x3,
-        WM_HINT_INPUT_STATUS = 0x4;
+        WM_HINT_BORDER = 0x2;
+        // Unused for now
+        // WM_HINT_INPUT_MODE = 0x3,
+        // WM_HINT_INPUT_STATUS = 0x4;
     struct MwmHints {
         unsigned long flags = 0;
         // 0(no resize + no close), 1(), 2(no close), 3(no resize)
