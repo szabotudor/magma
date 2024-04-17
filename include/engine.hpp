@@ -9,29 +9,12 @@ namespace mgm {
     class MgmWindow;
     class MgmGPU;
 
-    class MagmaEngineMainLoop {
+    class MagmaEngine {
         public:
         MgmWindow* window = nullptr;
         MgmGPU* graphics = nullptr;
 
-        struct MenuPage {
-            using MenuEntry = std::function<void()>;
-            struct MenuButton {
-                std::any data{};
-                float position{}, target_position{};
-                bool is_menu_page = false;
-            };
-            std::unordered_map<std::string, MenuButton> entries;
-            std::vector<std::string> entry_order{};
-            std::string previous{};
-        };
-
-        std::unordered_map<std::string, MenuPage> pages{};
-        std::string current_page = "main";
-
-        bool draw_button(const std::string& name, MenuPage::MenuButton& entry);
-
-        MagmaEngineMainLoop();
+        MagmaEngine();
 
         /**
          * @brief Initialize the engine

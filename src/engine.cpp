@@ -11,7 +11,7 @@
 
 
 namespace mgm {
-    MagmaEngineMainLoop::MagmaEngineMainLoop() {
+    MagmaEngine::MagmaEngine() {
         window = new MgmWindow{"Hello", vec2u32{800, 600}, MgmWindow::Mode::NORMAL};
         graphics = new MgmGPU{};
         graphics->connect_to_window(window);
@@ -27,10 +27,10 @@ namespace mgm {
         settings.viewport.top_left = {0, 0};
         settings.viewport.bottom_right = vec2i32{static_cast<int>(window->get_size().x()), static_cast<int>(window->get_size().y())};
 
-        graphics->apply_settings(true);
+        graphics->apply_settings();
     }
 
-    void MagmaEngineMainLoop::init() {
+    void MagmaEngine::init() {
         ShaderCreateInfo shader_info{};
         shader_info.shader_sources.emplace_back(ShaderCreateInfo::SingleShaderInfo{
             ShaderCreateInfo::SingleShaderInfo::Type::VERTEX,
@@ -82,66 +82,9 @@ namespace mgm {
         });
 
         graphics->draw_list.emplace_back(draw_call);
-
-        ImGuiIO& io = ImGui::GetIO();
-        const auto font = io.Fonts->AddFontFromFileTTF("good times rg.otf", 64.0f);
-        if (font == nullptr) {
-            Logging{"main"}.log("Failed to load font");
-        }
-
-        auto& main = pages["main"];
-
-        main.entries["Play"].data = (MenuPage::MenuEntry)[]() {
-            Logging{"main"}.log("Play button clicked");
-        };
-
-        main.entries["Settings"].data = std::string{"Settings"};
-        pages["Settings"] = MenuPage{
-            .entries = {
-                {"Graphics", MenuPage::MenuButton{}},
-                {"Audio", MenuPage::MenuButton{}},
-                {"Controls", MenuPage::MenuButton{}},
-                {"Back", MenuPage::MenuButton{.data = std::string{"main"}, .is_menu_page = true}}
-            },
-            .entry_order = {"Graphics", "Audio", "Controls", "Back"},
-            .previous = "main"
-        };
-        main.entries["Settings"].is_menu_page = true;
-
-        const auto _window = window;
-        main.entries["Exit"].data = (MenuPage::MenuEntry)[_window]() {
-            _window->set_should_close_next_update();
-        };
-
-        main.entry_order = {
-            "Play",
-            "Settings",
-            "Exit"
-        };
     }
 
-    float lerp(float a, float b, float t) {
-        return a + (b - a) * t;
-    }
-
-    bool MagmaEngineMainLoop::draw_button(const std::string &name, MenuPage::MenuButton &entry) {
-        entry.position = lerp(entry.position, entry.target_position, 0.25f);
-        ImGui::SetCursorPosX(entry.position);
-        ImGui::Text("%s", name.c_str());
-        entry.target_position = ImGui::IsItemHovered() ? 20.0f : 0.0f;
-
-        if (ImGui::IsItemClicked() && entry.data.has_value()) {
-            if (entry.is_menu_page) {
-                current_page = std::any_cast<std::string>(entry.data);
-                return true;
-            } else {
-                std::any_cast<MenuPage::MenuEntry>(entry.data)();
-            }
-        }
-        return false;
-    }
-
-    void MagmaEngineMainLoop::tick(float delta) {
+    void MagmaEngine::tick(float delta) {
         constexpr auto window_falgs = ImGuiWindowFlags_AlwaysAutoResize
             | ImGuiWindowFlags_NoResize
             | ImGuiWindowFlags_NoMove
@@ -152,39 +95,22 @@ namespace mgm {
 
         ImGui::SetNextWindowPos({0, 0});
         ImGui::Begin("Debug", nullptr, window_falgs);
-        ImGui::Text("FPS: %.2f", 1.0f / delta);
-        ImGui::Text("Mouse position: (%.1f, %.1f)", ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y);
+        ImGui::Text("%.2f", 1.0f / delta);
         ImGui::End();
-
-        ImGui::PushFont(ImGui::GetIO().Fonts->Fonts[1]);
-        ImGui::SetNextWindowPos({10, 100});
-        ImGui::Begin("Menu", nullptr, window_falgs);
-        auto& main = pages[current_page];
-
-        for (const auto& name : main.entry_order) {
-            auto& entry = main.entries.at(name);
-
-            if (draw_button(name, entry)) {
-                break;
-            }
-        }
-
-        ImGui::End();
-        ImGui::PopFont();
     }
 
-    void MagmaEngineMainLoop::draw() {
+    void MagmaEngine::draw() {
         graphics->draw();
     }
 
-    void MagmaEngineMainLoop::close() {
+    void MagmaEngine::close() {
         delete graphics;
         delete window;
     }
 }
 
 int main() {
-    mgm::MagmaEngineMainLoop magma{};
+    mgm::MagmaEngine magma{};
 
     ImGui_ImplMgmGFX_Init(*magma.graphics);
     magma.init();
