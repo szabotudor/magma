@@ -6,9 +6,14 @@
 
 #include "backend_settings.hpp"
 #include "mgmgpu.hpp"
-#include "dloader.hpp"
 
 #include "mgmwin.hpp"
+
+#if defined(EMBED_BACKEND)
+#include "backend.hpp"
+#else
+#include "dloader.hpp"
+#endif
 
 
 namespace mgm {
@@ -156,7 +161,9 @@ namespace mgm {
         };
         std::unordered_map<Settings::StateAttribute, StateAttributeOffset> settings_offsets{};
 
+#if !defined(EMBED_BACKEND)
         DLoader dloader{};
+#endif
 
         Logging log{"MgmGPU"};
     };
@@ -213,6 +220,30 @@ namespace mgm {
             return;
         }
 
+#if defined(EMBED_BACKEND)
+        if (!path.empty())
+            data->log.warning("Ignoring backend at path \"", path, "\" when using embedded backend");
+
+        data->create_backend = reinterpret_cast<decltype(data->create_backend)>(&mgm::create_backend);
+        data->destroy_backend = reinterpret_cast<decltype(data->destroy_backend)>(&mgm::destroy_backend);
+        data->set_attribute = reinterpret_cast<decltype(data->set_attribute)>(&mgm::set_attribute);
+
+        data->clear = reinterpret_cast<decltype(data->clear)>(&mgm::clear);
+        data->execute = reinterpret_cast<decltype(data->execute)>(&mgm::execute);
+        data->present = reinterpret_cast<decltype(data->present)>(&mgm::present);
+
+        data->create_buffer = reinterpret_cast<decltype(data->create_buffer)>(&mgm::create_buffer);
+        data->buffer_data = reinterpret_cast<decltype(data->buffer_data)>(&mgm::buffer_data);
+        data->destroy_buffer = reinterpret_cast<decltype(data->destroy_buffer)>(&mgm::destroy_buffer);
+        data->create_buffers_object = reinterpret_cast<decltype(data->create_buffers_object)>(&mgm::create_buffers_object);
+        data->destroy_buffers_object = reinterpret_cast<decltype(data->destroy_buffers_object)>(&mgm::destroy_buffers_object);
+        data->create_shader = reinterpret_cast<decltype(data->create_shader)>(&mgm::create_shader);
+        data->destroy_shader = reinterpret_cast<decltype(data->destroy_shader)>(&mgm::destroy_shader);
+        data->create_texture = reinterpret_cast<decltype(data->create_texture)>(&mgm::create_texture);
+        data->destroy_texture = reinterpret_cast<decltype(data->destroy_texture)>(&mgm::destroy_texture);
+
+        data->push_draw_call = reinterpret_cast<decltype(data->push_draw_call)>(&mgm::push_draw_call);
+#else
         data->dloader.load(path.c_str());
 
         if (!data->dloader.is_loaded()) {
@@ -239,6 +270,7 @@ namespace mgm {
         data->dloader.sym("destroy_texture", &data->destroy_texture);
 
         data->dloader.sym("push_draw_call", &data->push_draw_call);
+#endif
 
         data->loaded = true;
 

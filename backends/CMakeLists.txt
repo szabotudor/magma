@@ -25,6 +25,7 @@ add_library(
         ${CMAKE_CURRENT_SOURCE_DIR}/backend_OpenGL/glad/src/glad.c
         ${PLATFORM_SOURCES}
         ${CMAKE_CURRENT_SOURCE_DIR}/include/backend_settings.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/backend.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/backend_OpenGL/include/backend_OpenGL.hpp
 )
 enable_warnings(backend_OpenGL)

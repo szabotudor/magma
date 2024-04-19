@@ -1,25 +1,8 @@
-#include <algorithm>
-#include <atomic>
-#include <cstddef>
-#include <type_traits>
-#include <unordered_map>
-#include <vector>
-#include <any>
-
-#include "types.hpp"
-
-#include "glad/glad.h"
+#include "backend.hpp"
 #include "backend_OpenGL.hpp"
+#include "glad/glad.h"
+#include <atomic>
 
-#include "backend_settings.hpp"
-#include "logging.hpp"
-#include "mgmath.hpp"
-
-#if !defined(WIN32)
-#define EXPORT extern "C"
-#else
-#define EXPORT extern "C" __declspec(dllexport)
-#endif
 
 
 namespace mgm {
