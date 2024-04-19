@@ -1,5 +1,7 @@
 #include "engine.hpp"
 #include "backend_settings.hpp"
+#include "editor.hpp"
+#include "game_manager.hpp"
 #include "imgui.h"
 #include "imgui_impl_mgmgpu.h"
 #include "logging.hpp"
@@ -15,10 +17,13 @@ namespace mgm {
         window = new MgmWindow{"Hello", vec2u32{800, 600}, MgmWindow::Mode::NORMAL};
         graphics = new MgmGPU{};
         graphics->connect_to_window(window);
+
+#if !defined(EMBED_BACKEND)
 #if defined(__linux__)
         graphics->load_backend("shared/libbackend_OpenGL.so");
 #elif defined (WIN32) || defined(_WIN32)
         graphics->load_backend("shared/backend_OpenGL.dll");
+#endif
 #endif
 
         auto& settings = graphics->settings();
@@ -109,16 +114,27 @@ namespace mgm {
     }
 }
 
-int main() {
-    mgm::MagmaEngine magma{};
+bool arg(const std::vector<std::string>& args, const std::string& arg) {
+    return std::find(args.begin(), args.end(), arg) != args.end();
+}
+
+int main(int _argc, char** _argv) {
+    using namespace mgm;
+
+    std::vector<std::string> args{_argv, _argv + _argc};
+
+    MagmaEngine magma{};
 
     ImGui_ImplMgmGFX_Init(*magma.graphics);
     magma.init();
 
+    magma.systems.create<GameManager>();
+    if (arg(args, "--editor")) magma.systems.create<Editor>();
+
     auto start = std::chrono::high_resolution_clock::now();
     float avg_delta = 1.0f;
-
     bool run = true;
+
     while (run) {
         constexpr auto delta_avg_calc_ratio = 0.05f;
         const auto now = std::chrono::high_resolution_clock::now();
@@ -147,6 +163,6 @@ int main() {
     ImGui_ImplMgmGFX_Shutdown();
 
     magma.close();
-    mgm::Logging{"main"}.log("Closed engine");
+    Logging{"main"}.log("Closed engine");
     return 0;
 }

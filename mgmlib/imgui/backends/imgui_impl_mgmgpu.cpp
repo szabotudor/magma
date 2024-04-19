@@ -108,7 +108,7 @@ void ImGui_ImplMgmGFX_RenderDrawData(ImDrawData *draw_data) {
     auto* data = get_backend_data();
     auto& backend = *data->backend;
     const auto old_settings = backend.settings();
-    const auto old_draw_calls = backend.draw_list;
+    const auto old_draw_calls = std::move(backend.draw_list);
     backend.draw_list.clear();
 
     backend.settings().blending.enabled = true;
