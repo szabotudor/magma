@@ -13,11 +13,6 @@
 
 
 namespace mgm {
-    bool arg(const std::vector<std::string>& args, const std::string& arg) {
-        return std::find(args.begin(), args.end(), arg) != args.end();
-    }
-
-
     MagmaEngine::MagmaEngine(const std::vector<std::string>& args) {
         bool help_called = false;
         std::unordered_map<std::string, std::function<void(MagmaEngine*)>> args_map{
