@@ -57,11 +57,13 @@ enable_warnings(mgmlib)
 
 if (EMBED_BACKEND)
     target_compile_definitions(mgmlib PUBLIC EMBED_BACKEND=1)
+
     get_target_property(BACKEND_INCLUDE_DIRS ${BACKEND_EMBED_TARGET} INCLUDE_DIRECTORIES)
-    target_include_directories(mgmlib PRIVATE ${BACKEND_INCLUDE_DIRS})
     get_target_property(BACKEND_LIBRARIES ${BACKEND_EMBED_TARGET} LINK_LIBRARIES)
-    target_link_libraries(mgmlib ${BACKEND_LIBRARIES})
     get_target_property(BACKEND_LINK_OPTIONS ${BACKEND_EMBED_TARGET} LINK_OPTIONS)
+    
+    target_include_directories(mgmlib PRIVATE ${BACKEND_INCLUDE_DIRS})
+    target_link_libraries(mgmlib ${BACKEND_LIBRARIES})
     target_link_options(mgmlib PUBLIC ${BACKEND_LINK_OPTIONS})
 
     message(STATUS "Embedding backend: ${BACKEND_TO_EMBED}")
@@ -83,4 +85,7 @@ target_include_directories(
             ${MGMWIN_INCLUDE_DIRS}
 )
 target_link_libraries(mgmlib mgmcommon)
-target_link_options(mgmlib PUBLIC -ldl)
+
+if (UNIX AND NOT APPLE)
+    target_link_options(mgmlib PUBLIC -ldl)
+endif()

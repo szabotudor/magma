@@ -29,21 +29,30 @@ if (UNIX AND NOT APPLE)
     option(USE_WAYLAND "If true, will compile with wayland instead of X11" OFF)
 endif()
 
+option(ENABLE_EDITOR "If true, will compile the editor" ON)
+
 add_subdirectory(${CMAKE_SOURCE_DIR}/mgmcommon)
 add_subdirectory(${CMAKE_SOURCE_DIR}/mgmwin)
 add_subdirectory(${CMAKE_SOURCE_DIR}/backends)
 add_subdirectory(${CMAKE_SOURCE_DIR}/mgmlib)
 
+if (ENABLE_EDITOR)
+    set(EDITOR_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/editor.cpp ${CMAKE_CURRENT_SOURCE_DIR}/include/editor.hpp)
+endif()
+
 add_executable(
     magma
         ${CMAKE_CURRENT_SOURCE_DIR}/src/engine.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/editor.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/game_manager.cpp
 
         ${CMAKE_CURRENT_SOURCE_DIR}/include/engine.hpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/editor.hpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/game_manager.hpp
+
+        ${EDITOR_SOURCES}
 )
+
+if (ENABLE_EDITOR)
+    target_compile_definitions(magma PRIVATE ENABLE_EDITOR)
+    message(STATUS "Editor enabled")
+endif()
 
 enable_warnings(magma)
 

@@ -2,16 +2,15 @@
 
 
 namespace mgm {
-    void Editor::init() {
+    void Editor::on_begin_play() {
         Logging{"Editor"}.log("Editor initialized");
     }
 
     void Editor::in_editor_update(float delta) {
         (void)delta;
-        Logging{"Editor"}.log("Editor updated");
     }
 
-    void Editor::close() {
+    void Editor::on_end_play() {
         Logging{"Editor"}.log("Editor closed");
     }
 }

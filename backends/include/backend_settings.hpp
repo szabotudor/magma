@@ -23,8 +23,7 @@ namespace mgm {
 
         struct Clear {
             mgm::vec4f color{0.1f, 0.2f, 0.3f, 1.0f};
-            bool enabled = true,
-                color_buffer = true,
+            bool color_buffer = true,
                 depth_buffer = true,
                 stencil_buffer = true;
         } clear{};

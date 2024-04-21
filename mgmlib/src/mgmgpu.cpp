@@ -320,6 +320,12 @@ namespace mgm {
         if (!is_backend_loaded()) return;
         apply_settings();
 
+        if (draw_list.empty()) {
+            data->clear(data->backend);
+            data->execute(data->backend);
+            return;
+        }
+
         for (const auto& call : draw_list) {
             switch (call.type) {
                 case DrawCall::Type::CLEAR: {

@@ -19,7 +19,7 @@ namespace mgm {
         /**
          * @brief Called immediately after the system is created
          */
-        virtual void init() {}
+        virtual void on_begin_play() {}
 
         /**
          * @brief Called once per frame
@@ -43,7 +43,7 @@ namespace mgm {
         /**
          * @brief Called immediately before the system is destroyed
          */
-        virtual void close() {}
+        virtual void on_end_play() {}
 
         virtual ~System() = default;
     };
@@ -72,7 +72,6 @@ namespace mgm {
             auto& system = systems[id];
             system = reinterpret_cast<System*>(new T{std::forward<Ts>(args)...});
             T& sys = *reinterpret_cast<T*>(system);
-            sys.init();
             return sys;
         }
 
@@ -96,6 +95,25 @@ namespace mgm {
             }
             return *reinterpret_cast<T*>(it->second);
         }
+
+        template<typename T>
+        T* try_get() {
+            auto id = typeid(T).hash_code();
+            const auto it = systems.find(id);
+            if (it == systems.end()) {
+                return nullptr;
+            }
+            return reinterpret_cast<T*>(it->second);
+        }
+        template<typename T>
+        const T* try_get() const {
+            auto id = typeid(T).hash_code();
+            const auto it = systems.find(id);
+            if (it == systems.end()) {
+                return nullptr;
+            }
+            return reinterpret_cast<T*>(it->second);
+        }
         
         template<typename T>
         void destroy() {
@@ -106,20 +124,22 @@ namespace mgm {
                 return;
             }
             T& sys = *reinterpret_cast<T*>(it->second);
-            sys.close();
+            sys.on_end_play();
             delete it->second;
             systems.erase(it);
         }
 
         ~SystemManager() {
             for (auto& [_, system] : systems) {
-                system->close();
+                system->on_end_play();
                 delete system;
             }
         }
     };
 
     class MagmaEngine {
+        bool initialized = false;
+
         public:
         MgmWindow* window = nullptr;
         MgmGPU* graphics = nullptr;
@@ -129,28 +149,13 @@ namespace mgm {
         template<typename T> T& system() { return systems.get<T>(); }
         template<typename T> const T& system() const { return systems.get<T>(); }
 
-        MagmaEngine();
+        MagmaEngine(const std::vector<std::string>& args = {});
 
         /**
-         * @brief Initialize the engine
+         * @brief Runs the engine
          */
-        void init();
+        void run();
 
-        /**
-         * @brief Runs once per frame
-         * 
-         * @param delta Delta time for framerate (in seconds)
-         */
-        void tick(float delta);
-
-        /**
-         * @brief Runs once per frame, after the tic fucntion
-         */
-        void draw();
-
-        /**
-         * @brief Close the engine and free resources
-         */
-        void close();
+        ~MagmaEngine();
     };
 }

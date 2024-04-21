@@ -121,17 +121,13 @@ namespace mgm {
         switch (attr) {
             case Settings::StateAttribute::CLEAR: {
                 const auto& clear = *static_cast<const Settings::Settings::Clear*>(data);
-                if (clear.enabled) {
-                    backend->clear_color = clear.color;
-                    backend->clear_mask = clear.color_buffer * GL_COLOR_BUFFER_BIT
-                        | clear.depth_buffer * GL_DEPTH_BUFFER_BIT
-                        | clear.stencil_buffer * GL_STENCIL_BUFFER_BIT;
-                    glClearColor(clear.color.x(), clear.color.y(), clear.color.z(), clear.color.w());
-                    glClearDepth(1.0);
-                    glClearStencil(0);
-                }
-                else
-                    backend->clear_mask = 0;
+                backend->clear_color = clear.color;
+                backend->clear_mask = clear.color_buffer * GL_COLOR_BUFFER_BIT
+                    | clear.depth_buffer * GL_DEPTH_BUFFER_BIT
+                    | clear.stencil_buffer * GL_STENCIL_BUFFER_BIT;
+                glClearColor(clear.color.x(), clear.color.y(), clear.color.z(), clear.color.w());
+                glClearDepth(1.0);
+                glClearStencil(0);
                 return true;
             }
             case Settings::StateAttribute::BLENDING: {

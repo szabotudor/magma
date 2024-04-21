@@ -1,7 +1,6 @@
 #include "engine.hpp"
 #include "backend_settings.hpp"
 #include "editor.hpp"
-#include "game_manager.hpp"
 #include "imgui.h"
 #include "imgui_impl_mgmgpu.h"
 #include "logging.hpp"
@@ -10,11 +9,46 @@
 
 #include <chrono>
 #include <iostream>
+#include <unordered_map>
 
 
 namespace mgm {
-    MagmaEngine::MagmaEngine() {
-        window = new MgmWindow{"Hello", vec2u32{800, 600}, MgmWindow::Mode::NORMAL};
+    bool arg(const std::vector<std::string>& args, const std::string& arg) {
+        return std::find(args.begin(), args.end(), arg) != args.end();
+    }
+
+
+    MagmaEngine::MagmaEngine(const std::vector<std::string>& args) {
+        bool help_called = false;
+        std::unordered_map<std::string, std::function<void(MagmaEngine*)>> args_map{
+            {"--help", [&](MagmaEngine* engine) {
+                (void)engine;
+                std::cout << "Usage: " << "magma [options]\n"
+                    << "Options:\n"
+                    << "\t--help\t\tShow this help message\n"
+                    << "\t--editor\tStart the editor\n";
+                help_called = true;
+            }},
+#if defined(ENABLE_EDITOR)
+            {"--editor", [](MagmaEngine* engine) {
+                engine->systems.create<Editor>().on_begin_play();
+            }}
+#endif
+        };
+
+        for (const auto& arg : args) {
+            const auto it = args_map.find(arg);
+            if (it == args_map.end()) {
+                Logging{"main"}.warning("Unknown argument: ", arg);
+                continue;
+            }
+            it->second(this);
+        }
+
+        if (help_called) return;
+
+
+        window = new MgmWindow{"Magma", vec2u32{800, 600}, MgmWindow::Mode::NORMAL};
         graphics = new MgmGPU{};
         graphics->connect_to_window(window);
 
@@ -27,142 +61,77 @@ namespace mgm {
 #endif
 
         auto& settings = graphics->settings();
-        settings.clear.enabled = true;
         settings.clear.color = {0.1f, 0.2f, 0.3f, 1.0f};
         settings.viewport.top_left = {0, 0};
         settings.viewport.bottom_right = vec2i32{static_cast<int>(window->get_size().x()), static_cast<int>(window->get_size().y())};
 
-        graphics->apply_settings();
+        graphics->apply_settings(true);
+        ImGui_ImplMgmGFX_Init(*graphics);
+
+        initialized = true;
     }
 
-    void MagmaEngine::init() {
-        ShaderCreateInfo shader_info{};
-        shader_info.shader_sources.emplace_back(ShaderCreateInfo::SingleShaderInfo{
-            ShaderCreateInfo::SingleShaderInfo::Type::VERTEX,
-            "#version 460 core\n"
-            "layout(location = 0) in vec3 aPos;\n"
-            "void main() {\n"
-            "    gl_Position = vec4(aPos, 1.0f);\n"
-            "}\n"
-        });
-        shader_info.shader_sources.emplace_back(ShaderCreateInfo::SingleShaderInfo{
-            ShaderCreateInfo::SingleShaderInfo::Type::FRAGMENT,
-            "#version 460 core\n"
-            "out vec4 FragColor;\n"
-            "void main() {\n"
-            "    FragColor = vec4(1.0f, 1.0f, 1.0f, 1.0f);\n"
-            "}\n"
-        });
+    void MagmaEngine::run() {
+        if (!initialized) return;
+        auto start = std::chrono::high_resolution_clock::now();
+        float delta = 1.0f;
 
-        const auto shader = graphics->create_shader(shader_info);
-        if (shader == MgmGPU::INVALID_SHADER) {
-            Logging{"main"}.log("Failed to create shader");
-            return;
+#if defined(ENABLE_EDITOR)
+        if (!systems.try_get<Editor>())
+            for (const auto& [id, sys] : systems.systems)
+                sys->on_begin_play();
+#else
+        for (const auto& [id, sys] : systems.systems)
+            sys->init();
+#endif
+
+        while (!window->should_close()) {
+            constexpr auto delta_avg_calc_ratio = 0.05f;
+            const auto now = std::chrono::high_resolution_clock::now();
+            const auto chrono_delta = std::chrono::duration_cast<std::chrono::microseconds>(now - start).count();
+            start = now;
+            delta = delta * (1.0f - delta_avg_calc_ratio) + (float)chrono_delta * 0.000001f * delta_avg_calc_ratio;
+
+            window->update();
+            ImGui_ImplMgmGFX_ProcessInput(*window);
+            ImGui_ImplMgmGFX_NewFrame();
+            ImGui::NewFrame();
+
+            for (const auto& [id, sys] : systems.systems) {
+                sys->update(delta);
+            }
+
+            ImGui::SetNextWindowPos({0, 0});
+            ImGui::Begin("Debug", nullptr, ImGuiWindowFlags_AlwaysAutoResize
+                | ImGuiWindowFlags_NoResize
+                | ImGuiWindowFlags_NoMove
+                | ImGuiWindowFlags_NoCollapse
+                | ImGuiWindowFlags_NoTitleBar
+                | ImGuiWindowFlags_NoBackground
+                | ImGuiWindowFlags_NoSavedSettings);
+            ImGui::Text("%.2f", 1.0f / delta);
+            ImGui::End();
+
+            ImGui::EndFrame();
+            ImGui::Render();
+
+            graphics->draw();
+            ImGui_ImplMgmGFX_RenderDrawData(ImGui::GetDrawData());
+            graphics->present();
         }
-        
-        static const vec3f vertices[] = {
-            {-0.5f, -0.5f, 0.0f},
-            { 0.5f, -0.5f, 0.0f},
-            { 0.0f,  0.5f, 0.0f}
-        };
-        const BufferCreateInfo buffer_info{BufferCreateInfo::Type::RAW, vertices, sizeof(vertices) / sizeof(vec3f)};
-        const auto buffer = graphics->create_buffer(buffer_info);
-        if (buffer == MgmGPU::INVALID_BUFFER) {
-            Logging{"main"}.log("Failed to create buffer");
-            return;
-        }
-        
-        const auto buffers_object = graphics->create_buffers_object({buffer});
-
-        MgmGPU::DrawCall draw_call{
-            MgmGPU::DrawCall::Type::DRAW,
-            shader,
-            buffers_object,
-            {},
-            {}
-        };
-
-        graphics->draw_list.emplace_back(MgmGPU::DrawCall{
-            .type = MgmGPU::DrawCall::Type::CLEAR
-        });
-
-        graphics->draw_list.emplace_back(draw_call);
     }
 
-    void MagmaEngine::tick(float delta) {
-        constexpr auto window_falgs = ImGuiWindowFlags_AlwaysAutoResize
-            | ImGuiWindowFlags_NoResize
-            | ImGuiWindowFlags_NoMove
-            | ImGuiWindowFlags_NoCollapse
-            | ImGuiWindowFlags_NoTitleBar
-            | ImGuiWindowFlags_NoBackground
-            | ImGuiWindowFlags_NoSavedSettings;
-
-        ImGui::SetNextWindowPos({0, 0});
-        ImGui::Begin("Debug", nullptr, window_falgs);
-        ImGui::Text("%.2f", 1.0f / delta);
-        ImGui::End();
-    }
-
-    void MagmaEngine::draw() {
-        graphics->draw();
-    }
-
-    void MagmaEngine::close() {
+    MagmaEngine::~MagmaEngine() {
+        if (!initialized) return;
         delete graphics;
         delete window;
     }
 }
 
-bool arg(const std::vector<std::string>& args, const std::string& arg) {
-    return std::find(args.begin(), args.end(), arg) != args.end();
-}
-
 int main(int _argc, char** _argv) {
-    using namespace mgm;
+    mgm::MagmaEngine magma{{_argv + 1, _argv + _argc}};
 
-    std::vector<std::string> args{_argv, _argv + _argc};
+    magma.run();
 
-    MagmaEngine magma{};
-
-    ImGui_ImplMgmGFX_Init(*magma.graphics);
-    magma.init();
-
-    magma.systems.create<GameManager>();
-    if (arg(args, "--editor")) magma.systems.create<Editor>();
-
-    auto start = std::chrono::high_resolution_clock::now();
-    float avg_delta = 1.0f;
-    bool run = true;
-
-    while (run) {
-        constexpr auto delta_avg_calc_ratio = 0.05f;
-        const auto now = std::chrono::high_resolution_clock::now();
-        const auto delta = std::chrono::duration_cast<std::chrono::microseconds>(now - start).count();
-        start = now;
-
-        avg_delta = avg_delta * (1.0f - delta_avg_calc_ratio) + (float)delta * 0.001f * delta_avg_calc_ratio;
-
-        magma.window->update();
-        ImGui_ImplMgmGFX_ProcessInput(*magma.window);
-        ImGui_ImplMgmGFX_NewFrame();
-        ImGui::NewFrame();
-
-        magma.tick(avg_delta * 0.001f);
-
-        ImGui::EndFrame();
-        ImGui::Render();
-
-        magma.draw();
-        ImGui_ImplMgmGFX_RenderDrawData(ImGui::GetDrawData());
-        magma.graphics->present();
-
-        run = !magma.window->should_close();
-    }
-
-    ImGui_ImplMgmGFX_Shutdown();
-
-    magma.close();
-    Logging{"main"}.log("Closed engine");
     return 0;
 }

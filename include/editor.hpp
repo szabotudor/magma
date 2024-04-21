@@ -7,9 +7,9 @@ namespace mgm {
         public:
         Editor() = default;
 
-        void init() override;
+        void on_begin_play() override;
         void in_editor_update(float delta) override;
-        void close() override;
+        void on_end_play() override;
 
         ~Editor() override = default;
     };
