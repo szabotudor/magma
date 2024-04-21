@@ -128,8 +128,8 @@ namespace mgm {
     }
 }
 
-int main(int _argc, char** _argv) {
-    mgm::MagmaEngine magma{{_argv + 1, _argv + _argc}};
+int main(int argc, char** argv) {
+    mgm::MagmaEngine magma{{argv + 1, argv + argc}};
 
     magma.run();
 

@@ -107,9 +107,7 @@ void ImGui_ImplMgmGFX_NewFrame() {
 void ImGui_ImplMgmGFX_RenderDrawData(ImDrawData *draw_data) {
     auto* data = get_backend_data();
     auto& backend = *data->backend;
-    const auto old_settings = backend.settings();
-    const auto old_draw_calls = std::move(backend.draw_list);
-    backend.draw_list.clear();
+    backend.stash();
 
     backend.settings().blending.enabled = true;
     backend.settings().blending.color_equation = mgm::Settings::Blending::Equation::ADD;
@@ -224,9 +222,7 @@ void ImGui_ImplMgmGFX_RenderDrawData(ImDrawData *draw_data) {
         backend.draw_list.clear();
     }
 
-    backend.settings() = old_settings;
-    backend.draw_list = old_draw_calls;
-    backend.apply_settings();
+    backend.pop_stash();
 }
 
 ImGuiMouseButton input_interface_to_imgui_mb(const mgm::MgmWindow::InputInterface ii) {
@@ -314,16 +310,16 @@ ImGuiKey input_interface_to_imgui_key(const mgm::MgmWindow::InputInterface ii) {
         case mgm::MgmWindow::InputInterface::Key_EQUAL: return ImGuiKey_Equal;
         case mgm::MgmWindow::InputInterface::Key_COMMA: return ImGuiKey_Comma;
         case mgm::MgmWindow::InputInterface::Key_PERIOD: return ImGuiKey_Period;
-        //case mgm::MgmWindow::InputInterface::Key_COLON: return ImGuiKey_;
         case mgm::MgmWindow::InputInterface::Key_SEMICOLON: return ImGuiKey_Semicolon;
         case mgm::MgmWindow::InputInterface::Key_APOSTROPHE: return ImGuiKey_Apostrophe;
-        //case mgm::MgmWindow::InputInterface::Key_QUOTE: return ImGuiKey_;
         case mgm::MgmWindow::InputInterface::Key_OPEN_BRACKET: return ImGuiKey_LeftBracket;
         case mgm::MgmWindow::InputInterface::Key_CLOSE_BRACKET: return ImGuiKey_RightBracket;
         case mgm::MgmWindow::InputInterface::Key_OPEN_CURLY_BRACKET: return ImGuiKey_LeftBracket;
         case mgm::MgmWindow::InputInterface::Key_CLOSE_CURLY_BRACKET: return ImGuiKey_RightBracket;
         case mgm::MgmWindow::InputInterface::Key_BACKSLASH: return ImGuiKey_Backslash;
         case mgm::MgmWindow::InputInterface::Key_FORWARD_SLASH: return ImGuiKey_Slash;
+        //case mgm::MgmWindow::InputInterface::Key_COLON: return ImGuiKey_;
+        //case mgm::MgmWindow::InputInterface::Key_QUOTE: return ImGuiKey_;
         //case mgm::MgmWindow::InputInterface::Key_QUESTION_MARK: return ImGuiKey_;
         //case mgm::MgmWindow::InputInterface::Key_EXCLAMATION_MARK: return ImGuiKey_;
         //case mgm::MgmWindow::InputInterface::Key_AT: return ImGuiKey_;

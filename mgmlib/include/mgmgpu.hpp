@@ -51,6 +51,12 @@ namespace mgm {
         Settings backend_settings{};
         bool settings_changed = true;
 
+        struct StashItem {
+            Settings settings;
+            std::vector<DrawCall> draw_list;
+        };
+        std::vector<StashItem> stash_list{};
+
         public:
         std::vector<DrawCall> draw_list{};
 
@@ -126,6 +132,16 @@ namespace mgm {
          * @brief Present the rendered image to the window (switch buffers, etc.)
          */
         void present();
+
+        /**
+         * @brief Stash draw calls and settings, so they can be restored later (WILL CLEAR THE DRAW LIST)
+         */
+        void stash();
+
+        /**
+         * @brief Restore the stashed draw calls and settings
+         */
+        void pop_stash();
 
         /**
          * @brief Create a buffer

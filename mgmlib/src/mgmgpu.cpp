@@ -366,6 +366,24 @@ namespace mgm {
         data->present(data->backend);
     }
 
+    void MgmGPU::stash() {
+        stash_list.emplace_back(StashItem{backend_settings, draw_list});
+        draw_list.clear();
+    }
+
+    void MgmGPU::pop_stash() {
+        if (stash_list.empty()) {
+            data->log.warning("No stashes to pop");
+            return;
+        }
+
+        backend_settings = stash_list.back().settings;
+        draw_list = stash_list.back().draw_list;
+        stash_list.pop_back();
+
+        apply_settings();
+    }
+
     MgmGPU::BufferHandle MgmGPU::create_buffer(const BufferCreateInfo &info) {
         if (!is_backend_loaded()) return INVALID_BUFFER;
         apply_settings();
