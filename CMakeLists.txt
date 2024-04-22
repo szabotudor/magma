@@ -40,8 +40,8 @@ if (ENABLE_EDITOR)
     set(EDITOR_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/editor.cpp ${CMAKE_CURRENT_SOURCE_DIR}/include/editor.hpp)
 endif()
 
-add_executable(
-    magma
+add_library(
+    magma STATIC
         ${CMAKE_CURRENT_SOURCE_DIR}/src/engine.cpp
 
         ${CMAKE_CURRENT_SOURCE_DIR}/include/engine.hpp
@@ -71,4 +71,20 @@ add_custom_command(TARGET magma POST_BUILD
     COMMAND cmake -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/mgmcommon/include ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/include
     COMMAND cmake -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/mgmwin/include ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/include
     COMMAND cmake -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/mgmlib/include ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/include
+    COMMAND cmake -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/include ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/include
 )
+
+add_executable(
+    magma_engine
+        ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp
+)
+enable_warnings(magma_engine)
+
+target_include_directories(
+    magma_engine
+        PRIVATE
+            ${MGMCOMMON_INCLUDE_DIRS}
+            ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
+target_link_libraries(magma_engine PRIVATE magma)

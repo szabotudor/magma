@@ -51,11 +51,20 @@ namespace mgm {
 
     struct Texture {
         GLuint tex = 0;
+        GLuint fbo = (GLuint)-1;
+        GLuint rbo = (GLuint)-1;
         vec2i32 size{};
+
+        GLint internal_format = GL_RGBA;
+        GLint channel_size = GL_UNSIGNED_BYTE;
 
         ~Texture() {
             if (tex)
                 glDeleteTextures(1, &tex);
+            if (fbo) {
+                glDeleteFramebuffers(1, &fbo);
+                glDeleteRenderbuffers(1, &rbo);
+            }
         }
     };
 
@@ -72,6 +81,8 @@ namespace mgm {
         vec4f clear_color{};
         GLbitfield clear_mask = GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT;
         GLuint current_shader = 0;
+
+        Texture* canvas = nullptr;
         
         struct DrawCall {
             Shader* shader = nullptr;
@@ -218,8 +229,29 @@ namespace mgm {
             log.error("Unsupported shader parameter type '", value.type().name(), "'");
     }
 
+    void make_texture_canvas(Texture* tex);
     void setup_vao_attrib_pointers(BuffersObject* buffers);
-    EXPORT void execute(BackendData* backend) {
+
+    EXPORT void execute(BackendData* backend, Texture* canvas) {
+        if (backend->draw_calls.empty())
+            return;
+
+        if (canvas) {
+            if (canvas != backend->canvas) {
+                if (backend->viewport.size.x() > canvas->size.x() || backend->viewport.size.y() > canvas->size.y()) {
+                    log.error("Viewport size is larger than canvas size");
+                    return;
+                }
+                make_texture_canvas(canvas);
+                glBindFramebuffer(GL_FRAMEBUFFER, canvas->fbo);
+                backend->canvas = canvas;
+            }
+        }
+        else if (backend->canvas) {
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+            backend->canvas = nullptr;
+        }
+
         for (const auto& draw_call : backend->draw_calls) {
             glUseProgram(draw_call.shader->prog);
             if (!draw_call.parameters.empty()) {
@@ -522,8 +554,34 @@ namespace mgm {
 
         return new Texture{
             .tex = tex,
-            .size = info.size
+            .size = info.size,
+            .internal_format = internal_format,
+            .channel_size = channel_size
         };
+    }
+
+    void make_texture_canvas(Texture* tex) {
+        if (tex->fbo != (GLuint)-1)
+            return;
+
+        GLuint fbo{}, rbo{};
+        glGenFramebuffers(1, &fbo);
+        glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+
+        glGenRenderbuffers(1, &rbo);
+        glBindRenderbuffer(GL_RENDERBUFFER, rbo);
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, tex->size.x(), tex->size.y());
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
+
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tex->tex, 0);
+        if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+            log.error("Failed to make texture a canvas, OpenGL framebuffer is incomplete");
+
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glBindRenderbuffer(GL_RENDERBUFFER, 0);
+
+        tex->fbo = fbo;
+        tex->rbo = rbo;
     }
 
     EXPORT void destroy_texture(BackendData*, Texture* texture) {
@@ -564,6 +622,12 @@ namespace mgm {
         }
 
         log.log("Initialized OpenGL Backend");
+        const char* vendor = (const char*)glGetString(GL_VENDOR);
+        const char* renderer = (const char*)glGetString(GL_RENDERER);
+        const char* version = (const char*)glGetString(GL_VERSION);
+        log.log("\tOpenGL Vendor: ", vendor);
+        log.log("\tOpenGL Renderer: ", renderer);
+        log.log("\tOpenGL Version: ", version);
         data->init = true;
 
         return data;

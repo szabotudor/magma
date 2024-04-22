@@ -14,16 +14,16 @@ namespace mgm {
     class MgmGPU {
         public:
         // Handle for a buffer, which can be used to store data on the GPU
-        using BufferHandle = ID_t;
+        class BufferHandle : public ID_t{ using ID_t::ID_t; };
 
         // Handle for a buffers object, which can be used to store multiple buffers and their bindings
-        using BuffersObjectHandle = ID_t;
+        class BuffersObjectHandle : public ID_t{ using ID_t::ID_t; };
 
         // Handle for a texture, which can be used to store image data on the GPU
-        using TextureHandle = ID_t;
+        class TextureHandle : public ID_t{ using ID_t::ID_t; };
 
         // Handle for a shader, which can be used to execute code on the GPU
-        using ShaderHandle = ID_t;
+        class ShaderHandle : public ID_t{ using ID_t::ID_t; };
         
         static constexpr BufferHandle INVALID_BUFFER = static_cast<BufferHandle>(-1);
         static constexpr BuffersObjectHandle INVALID_BUFFERS_OBJECT = static_cast<BuffersObjectHandle>(-1);
@@ -47,12 +47,18 @@ namespace mgm {
         struct Data;
         Data* data = nullptr;
         MgmWindow* window = nullptr;
+        
+        struct GPUSettings : public Settings {
+            using Settings::Settings;
 
-        Settings backend_settings{};
+            TextureHandle canvas = INVALID_TEXTURE;
+        };
+
+        GPUSettings backend_settings{};
         bool settings_changed = true;
 
         struct StashItem {
-            Settings settings;
+            GPUSettings settings;
             std::vector<DrawCall> draw_list;
         };
         std::vector<StashItem> stash_list{};
@@ -103,7 +109,7 @@ namespace mgm {
          * 
          * @return A reference to the settings struct
          */
-        Settings& settings() {
+        GPUSettings& settings() {
             settings_changed = true;
             return backend_settings;
         }
@@ -113,7 +119,7 @@ namespace mgm {
          * 
          * @return A reference to the settings struct
          */
-        const Settings& settings() const { return backend_settings; }
+        const GPUSettings& settings() const { return backend_settings; }
 
         /**
          * @brief Apply the settings, if any changes were made.

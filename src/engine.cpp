@@ -122,11 +122,3 @@ namespace mgm {
         delete window;
     }
 }
-
-int main(int argc, char** argv) {
-    mgm::MagmaEngine magma{{argv + 1, argv + argc}};
-
-    magma.run();
-
-    return 0;
-}

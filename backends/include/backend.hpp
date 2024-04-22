@@ -68,7 +68,7 @@ namespace mgm {
      * 
      * @param backend The backend to use
      */
-    EXPORT void execute(BackendData* backend);
+    EXPORT void execute(BackendData* backend, Texture* canvas = nullptr);
 
     /**
      * @brief Present the frame to the screen

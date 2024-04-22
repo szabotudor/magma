@@ -62,7 +62,7 @@ namespace mgm {
                     alloc(capacity ? capacity * 2 : 8);
                 new (&data[size].data) T{std::forward<Ts>(args)...};
                 data[size].alive = true;
-                return size++;
+                return static_cast<ID_t>(size++);
             }
 
             const auto id = free_ids.back();
@@ -98,8 +98,13 @@ namespace mgm {
         }
     };
 
+    struct Buffer;
+    struct BuffersObject;
+    struct Shader;
+    struct Texture;
+
     struct MgmGPU::Data {
-        Settings old_settings{};
+        GPUSettings old_settings{};
 
         struct BackendData;
         BackendData* backend = nullptr;
@@ -109,18 +114,18 @@ namespace mgm {
         using SetAttribute = bool(*)(BackendData* backend, const Settings::StateAttribute& attr, const void* data);
 
         using Clear = void(*)(BackendData* backend);
-        using Execute = void(*)(BackendData* backend);
+        using Execute = void(*)(BackendData* backend, Texture* canvas);
         using Present = void(*)(BackendData* backend);
 
-        using CreateBuffer = struct Buffer*(*)(BackendData* backend, const BufferCreateInfo& info);
-        using BufferData = void(*)(BackendData* backend, struct Buffer* buffer, const void* data, size_t size);
-        using DestroyBuffer = void(*)(BackendData* backend, struct Buffer* buffer);
-        using CreateBuffersObject = struct BuffersObject*(*)(BackendData* backend, Buffer** buffers, size_t count);
-        using DestroyBuffersObject = void(*)(BackendData* backend, struct BuffersObject* buffers_object);
-        using CreateShader = struct Shader*(*)(BackendData* backend, const ShaderCreateInfo& info);
-        using DestroyShader = void(*)(BackendData* backend, struct Shader* shader);
-        using CreateTexture = struct Texture*(*)(BackendData* backend, const TextureCreateInfo& info);
-        using DestroyTexture = void(*)(BackendData* backend, struct Texture* texture);
+        using CreateBuffer = Buffer*(*)(BackendData* backend, const BufferCreateInfo& info);
+        using BufferData = void(*)(BackendData* backend, Buffer* buffer, const void* data, size_t size);
+        using DestroyBuffer = void(*)(BackendData* backend, Buffer* buffer);
+        using CreateBuffersObject = BuffersObject*(*)(BackendData* backend, Buffer** buffers, size_t count);
+        using DestroyBuffersObject = void(*)(BackendData* backend, BuffersObject* buffers_object);
+        using CreateShader = Shader*(*)(BackendData* backend, const ShaderCreateInfo& info);
+        using DestroyShader = void(*)(BackendData* backend, Shader* shader);
+        using CreateTexture = Texture*(*)(BackendData* backend, const TextureCreateInfo& info);
+        using DestroyTexture = void(*)(BackendData* backend, Texture* texture);
 
         using PushDrawCall = void(*)(BackendData* backend, Shader* shader, BuffersObject* buffers_object, Texture** textures, size_t num_textures, const std::unordered_map<std::string, std::any>& parameters);
 
@@ -159,7 +164,7 @@ namespace mgm {
             size_t offset{};
             size_t size{};
         };
-        std::unordered_map<Settings::StateAttribute, StateAttributeOffset> settings_offsets{};
+        std::unordered_map<GPUSettings::StateAttribute, StateAttributeOffset> settings_offsets{};
 
 #if !defined(EMBED_BACKEND)
         DLoader dloader{};
@@ -171,14 +176,14 @@ namespace mgm {
     MgmGPU::MgmGPU(MgmGPU& gpu) {
         data = gpu.data;
         backend_settings = gpu.backend_settings;
-        memset(&gpu.backend_settings, 0, sizeof(Settings));
+        memset(&gpu.backend_settings, 0, sizeof(GPUSettings));
         gpu.data = nullptr;
         gpu.window = nullptr;
     }
     MgmGPU& MgmGPU::operator=(MgmGPU& gpu) {
         data = gpu.data;
         backend_settings = gpu.backend_settings;
-        memset(&gpu.backend_settings, 0, sizeof(Settings));
+        memset(&gpu.backend_settings, 0, sizeof(GPUSettings));
         gpu.data = nullptr;
         gpu.window = nullptr;
         return *this;
@@ -186,10 +191,10 @@ namespace mgm {
 
     MgmGPU::MgmGPU(MgmWindow* window_to_connect) {
         data = new Data{};
-        data->settings_offsets.emplace(Settings::StateAttribute::CLEAR, Data::StateAttributeOffset{offsetof(Settings, clear), sizeof(Settings::Clear)});
-        data->settings_offsets.emplace(Settings::StateAttribute::BLENDING, Data::StateAttributeOffset{offsetof(Settings, blending), sizeof(Settings::Blending)});
-        data->settings_offsets.emplace(Settings::StateAttribute::VIEWPORT, Data::StateAttributeOffset{offsetof(Settings, viewport), sizeof(Settings::Viewport)});
-        data->settings_offsets.emplace(Settings::StateAttribute::SCISSOR, Data::StateAttributeOffset{offsetof(Settings, scissor), sizeof(Settings::Scissor)});
+        data->settings_offsets.emplace(GPUSettings::StateAttribute::CLEAR, Data::StateAttributeOffset{(size_t)&backend_settings.clear - (size_t)&backend_settings, sizeof(GPUSettings::Clear)});
+        data->settings_offsets.emplace(GPUSettings::StateAttribute::BLENDING, Data::StateAttributeOffset{(size_t)&backend_settings.blending - (size_t)&backend_settings, sizeof(GPUSettings::Blending)});
+        data->settings_offsets.emplace(GPUSettings::StateAttribute::VIEWPORT, Data::StateAttributeOffset{(size_t)&backend_settings.viewport - (size_t)&backend_settings, sizeof(GPUSettings::Viewport)});
+        data->settings_offsets.emplace(GPUSettings::StateAttribute::SCISSOR, Data::StateAttributeOffset{(size_t)&backend_settings.scissor - (size_t)&backend_settings, sizeof(GPUSettings::Scissor)});
 
         connect_to_window(window_to_connect);
     }
@@ -301,6 +306,13 @@ namespace mgm {
         if (!is_backend_loaded()) return;
         if (!settings_changed) return;
 
+        if (backend_settings.canvas != data->old_settings.canvas) {
+            if (backend_settings.canvas == INVALID_TEXTURE)
+                ;// TODO: Unbind canvas
+            else
+                ;// TODO: Bind canvas
+        }
+
         for (const auto& [attr, offset] : data->settings_offsets) {
             const auto changed = force ? true : (std::memcmp(
                 reinterpret_cast<const char*>(&backend_settings) + offset.offset,
@@ -320,16 +332,20 @@ namespace mgm {
         if (!is_backend_loaded()) return;
         apply_settings();
 
+        Texture* canvas = nullptr;
+        if (backend_settings.canvas != INVALID_TEXTURE)
+            canvas = data->textures[backend_settings.canvas];
+
         if (draw_list.empty()) {
             data->clear(data->backend);
-            data->execute(data->backend);
+            data->execute(data->backend, canvas);
             return;
         }
 
         for (const auto& call : draw_list) {
             switch (call.type) {
                 case DrawCall::Type::CLEAR: {
-                    data->execute(data->backend);
+                    data->execute(data->backend, canvas);
                     data->clear(data->backend);
                     break;
                 }
@@ -346,12 +362,12 @@ namespace mgm {
                     break;
                 }
                 case DrawCall::Type::SETTINGS_CHANGE: {
-                    data->execute(data->backend);
+                    data->execute(data->backend, canvas);
                     const auto it = call.parameters.find("settings");
                     if (it == call.parameters.end())
                         data->log.error("SETTINGS_CHANGE draw call missing \"settings\" parameter");
                     else {
-                        settings() = std::any_cast<Settings>(it->second);
+                        settings() = std::any_cast<GPUSettings>(it->second);
                         apply_settings();
                     }
                     break;
@@ -359,7 +375,7 @@ namespace mgm {
             }
         }
 
-        data->execute(data->backend);
+        data->execute(data->backend, canvas);
     }
 
     void MgmGPU::present() {
@@ -388,7 +404,7 @@ namespace mgm {
         if (!is_backend_loaded()) return INVALID_BUFFER;
         apply_settings();
         
-        return data->buffers.create(data->create_buffer(data->backend, info), info);
+        return static_cast<BufferHandle>(data->buffers.create(data->create_buffer(data->backend, info), info));
     }
 
     void MgmGPU::update_buffer(BufferHandle buffer, const BufferCreateInfo &info) {
@@ -420,7 +436,7 @@ namespace mgm {
         for (const auto& buf : buffers)
             raw_buffers.emplace_back(data->buffers[buf].buffer);
 
-        return data->buffers_objects.create(data->create_buffers_object(data->backend, raw_buffers.data(), raw_buffers.size()));
+        return static_cast<BuffersObjectHandle>(data->buffers_objects.create(data->create_buffers_object(data->backend, raw_buffers.data(), raw_buffers.size())));
     }
 
     void MgmGPU::destroy_buffers_object(BuffersObjectHandle buffers_object) {
@@ -436,7 +452,7 @@ namespace mgm {
         if (!is_backend_loaded()) return INVALID_SHADER;
         apply_settings();
 
-        return data->shaders.create(data->create_shader(data->backend, info));
+        return static_cast<ShaderHandle>(data->shaders.create(data->create_shader(data->backend, info)));
     }
 
     void MgmGPU::destroy_shader(ShaderHandle shader) {
@@ -452,7 +468,7 @@ namespace mgm {
         if (!is_backend_loaded()) return INVALID_TEXTURE;
         apply_settings();
 
-        return data->textures.create(data->create_texture(data->backend, info));
+        return static_cast<TextureHandle>(data->textures.create(data->create_texture(data->backend, info)));
     }
 
     void MgmGPU::destroy_texture(TextureHandle texture) {
