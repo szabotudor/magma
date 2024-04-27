@@ -393,7 +393,7 @@ namespace mgm {
             return;
         }
 
-        backend_settings = stash_list.back().settings;
+        settings() = stash_list.back().settings;
         draw_list = stash_list.back().draw_list;
         stash_list.pop_back();
 
