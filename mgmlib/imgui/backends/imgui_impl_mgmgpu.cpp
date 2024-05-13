@@ -77,6 +77,11 @@ bool ImGui_ImplMgmGFX_Init(mgm::MgmGPU &backend) {
     };
     get_backend_data()->log.log("Initialized ImGui backend");
 
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    io.ConfigDockingWithShift = false;
+    io.ConfigDockingAlwaysTabBar = false;
+    io.ConfigWindowsMoveFromTitleBarOnly = true;
+
     return true;
 }
 
