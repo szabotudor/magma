@@ -24,6 +24,13 @@ namespace mgm {
             (log_entry(strs), ...);
             flush();
         }
+        template<class... Ts, std::enable_if_t<std::conjunction_v<std::is_convertible<Ts, const std::string&>...>, bool> = true>
+        void message(Ts ... strs) {
+            log_entry(logger_name, "\33[38;2;30;255;30m");
+            log_entry("[MESSAGE] ", "\33[38;2;30;255;30m");
+            (log_entry(strs, "\33[38;2;30;255;30m"), ...);
+            flush();
+        }
         template<class ... Ts, std::enable_if_t<std::conjunction_v<std::is_convertible<Ts, const std::string&>...>, bool> = true>
         void warning(Ts ... strs) {
             log_entry(logger_name, "\33[38;2;30;255;30m");
