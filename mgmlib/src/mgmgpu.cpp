@@ -176,14 +176,14 @@ namespace mgm {
     MgmGPU::MgmGPU(MgmGPU& gpu) {
         data = gpu.data;
         backend_settings = gpu.backend_settings;
-        memset(&gpu.backend_settings, 0, sizeof(GPUSettings));
+        gpu.backend_settings = {};
         gpu.data = nullptr;
         gpu.window = nullptr;
     }
     MgmGPU& MgmGPU::operator=(MgmGPU& gpu) {
         data = gpu.data;
         backend_settings = gpu.backend_settings;
-        memset(&gpu.backend_settings, 0, sizeof(GPUSettings));
+        gpu.backend_settings = {};
         gpu.data = nullptr;
         gpu.window = nullptr;
         return *this;
@@ -307,10 +307,7 @@ namespace mgm {
         if (!settings_changed) return;
 
         if (backend_settings.canvas != data->old_settings.canvas) {
-            if (backend_settings.canvas == INVALID_TEXTURE)
-                ;// TODO: Unbind canvas
-            else
-                ;// TODO: Bind canvas
+            //TODO: Implement canvas change
         }
 
         for (const auto& [attr, offset] : data->settings_offsets) {
