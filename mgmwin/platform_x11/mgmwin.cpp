@@ -34,12 +34,6 @@ namespace mgm {
     }
 
 
-    MgmWindow::MgmWindow(const char* name, vec2u32 size, Mode mode, vec2i32 pos):
-    log{(std::string("Window \"") + name + '\"').c_str()} {
-        input_interfaces = new float[(size_t)InputInterface::_NUM_INPUT_INTERFACES]{};
-        open(name, size, mode, pos);
-    }
-
     void MgmWindow::open(const char* name, vec2u32 size, Mode mode, vec2i32 pos) {
         if (_is_open)
             close();
@@ -353,6 +347,12 @@ namespace mgm {
         input_events_since_last_update.clear();
         text_input_since_last_update.clear();
 
+        memcpy(
+            input_interfaces + (size_t)InputInterface::_NUM_INPUT_INTERFACES,
+            input_interfaces,
+            (size_t)InputInterface::_NUM_INPUT_INTERFACES * sizeof(float)
+        );
+
         XEvent event{};
         while (XEventsQueued(data->display, QueuedAfterFlush)) {
             XNextEvent(data->display, &event);
@@ -426,6 +426,10 @@ namespace mgm {
                     break;
             }
         }
+
+        for (const auto& event : input_events_since_last_update)
+            for (auto& callback : input_callbacks(event.interface))
+                callback(event);
     }
 
     MgmWindow::~MgmWindow() {

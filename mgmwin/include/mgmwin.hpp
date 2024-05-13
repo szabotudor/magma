@@ -1,6 +1,7 @@
 #pragma once
 #include "logging.hpp"
 #include "mgmath.hpp"
+#include <functional>
 #include <vector>
 
 
@@ -36,7 +37,56 @@ namespace mgm {
             _NUM_INPUT_INTERFACES
         };
         float* input_interfaces = nullptr;
-        float& get_input_interface(const InputInterface ii) const { return input_interfaces[(size_t)ii]; }
+
+        /**
+         * @brief Get the value of an input interface
+         * 
+         * @param ii The input interface
+         * @return float& A reference to the value
+         */
+        float& get_input_interface(const InputInterface ii) {
+            return input_interfaces[(size_t)ii];
+        }
+
+        /**
+         * @brief Get the value of an input interface
+         * 
+         * @param ii The input interface
+         * @return const float& A reference to the value
+         */
+        const float& get_input_interface(const InputInterface ii) const {
+            return input_interfaces[(size_t)ii];
+        }
+
+        /**
+         * @brief Get the value of an input interface at the previous update (previous frame)
+         * 
+         * @param ii The input interface
+         * @return float& A reference to the value
+         */
+        float& get_input_interface_last_update(const InputInterface ii) {
+            return input_interfaces[(size_t)ii + (size_t)InputInterface::_NUM_INPUT_INTERFACES];
+        }
+
+        /**
+         * @brief Get the value of an input interface at the previous update (previous frame)
+         * 
+         * @param ii The input interface
+         * @return const float& A reference to the value
+         */
+        const float& get_input_interface_last_update(const InputInterface ii) const {
+            return input_interfaces[(size_t)ii + (size_t)InputInterface::_NUM_INPUT_INTERFACES];
+        }
+
+        /**
+         * @brief Get the delta of an input interface (difference between the current and previous frame)
+         * 
+         * @param ii The input interface
+         * @return float The delta
+         */
+        float get_input_interface_delta(const InputInterface ii) const {
+            return get_input_interface(ii) - get_input_interface_last_update(ii);
+        }
 
         struct InputEvent {
             enum class Mode { NONE, PRESS, RELEASE, OTHER };
@@ -47,13 +97,34 @@ namespace mgm {
             Mode mode{};
             From from{};
         };
+
         private:
         std::vector<InputEvent> input_events_since_last_update{};
         std::string text_input_since_last_update{};
 
+        std::vector<std::vector<std::function<void(InputEvent)>>> callbacks{};
+
         public:
+        /**
+         * @brief Get the input events since the last update
+         * 
+         * @return const auto& The input events
+         */
         const auto& get_input_events() { return input_events_since_last_update; }
+
+        /**
+         * @brief Get the text input since the last update
+         * 
+         * @return const auto& The text input
+         */
         const auto& get_text_input() { return text_input_since_last_update; }
+
+        std::vector<std::function<void(InputEvent)>>& input_callbacks(const InputInterface ii) {
+            return callbacks[(size_t)ii];
+        }
+        const std::vector<std::function<void(InputEvent)>>& input_callbacks(const InputInterface ii) const {
+            return callbacks[(size_t)ii];
+        }
 
         private:
         struct NativeWindow* data = nullptr;
@@ -74,7 +145,12 @@ namespace mgm {
 
         NativeWindow* get_native_window() { return data; }
 
-        MgmWindow(const char* name = "Window", vec2u32 size = vec2u32(800, 600), Mode mode = Mode::NORMAL, vec2i32 pos = vec2i32(-1, -1));
+        MgmWindow(const char* name = "Window", vec2u32 size = vec2u32(800, 600), Mode mode = Mode::NORMAL, vec2i32 pos = vec2i32(-1, -1)):
+        log{(std::string("Window \"") + name + '\"').c_str()} {
+            input_interfaces = new float[(size_t)InputInterface::_NUM_INPUT_INTERFACES * 2]{};
+            callbacks.resize((size_t)InputInterface::_NUM_INPUT_INTERFACES);
+            open(name, size, mode, pos);
+        }
 
         /**
          * @brief Open the window if it's closed, or reopen it with the new information if it's already opened
