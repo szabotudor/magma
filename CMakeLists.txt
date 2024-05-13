@@ -37,14 +37,23 @@ add_subdirectory(${CMAKE_SOURCE_DIR}/backends)
 add_subdirectory(${CMAKE_SOURCE_DIR}/mgmlib)
 
 if (ENABLE_EDITOR)
-    set(EDITOR_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/editor.cpp ${CMAKE_CURRENT_SOURCE_DIR}/include/editor.hpp)
+    set(
+        EDITOR_SOURCES
+            ${CMAKE_CURRENT_SOURCE_DIR}/src/editor.cpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/src/inspector.cpp
+
+            ${CMAKE_CURRENT_SOURCE_DIR}/include/editor.hpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/include/inspector.hpp
+    )
 endif()
 
 add_library(
     magma STATIC
         ${CMAKE_CURRENT_SOURCE_DIR}/src/engine.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/systems.cpp
 
         ${CMAKE_CURRENT_SOURCE_DIR}/include/engine.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/systems.hpp
 
         ${EDITOR_SOURCES}
 )
@@ -72,6 +81,7 @@ add_custom_command(TARGET magma POST_BUILD
     COMMAND cmake -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/mgmwin/include ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/include
     COMMAND cmake -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/mgmlib/include ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/include
     COMMAND cmake -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/include ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/include
+    COMMAND cmake -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/resources ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/resources
 )
 
 add_executable(

@@ -13,7 +13,21 @@
 
 
 namespace mgm {
+    MagmaEngine* MagmaEngine::instance = nullptr;
+
     MagmaEngine::MagmaEngine(const std::vector<std::string>& args) {
+        if (!instance) {
+            instance = this;
+        } else {
+            window = instance->window;
+            graphics = instance->graphics;
+            system_manager = instance->system_manager;
+            initialized = true;
+            return;
+        }
+
+        system_manager = new SystemManager{};
+
         bool help_called = false;
         std::unordered_map<std::string, std::function<void(MagmaEngine*)>> args_map{
             {"--help", [&](MagmaEngine* engine) {
@@ -26,7 +40,7 @@ namespace mgm {
             }},
 #if defined(ENABLE_EDITOR)
             {"--editor", [](MagmaEngine* engine) {
-                engine->systems.create<Editor>().on_begin_play();
+                engine->systems().create<Editor>();
             }}
 #endif
         };
@@ -61,6 +75,11 @@ namespace mgm {
         settings.viewport.bottom_right = vec2i32{static_cast<int>(window->get_size().x()), static_cast<int>(window->get_size().y())};
 
         graphics->apply_settings(true);
+        graphics->draw_list.emplace_back(MgmGPU::DrawCall{
+            .type = MgmGPU::DrawCall::Type::CLEAR
+        });
+
+        
         ImGui_ImplMgmGFX_Init(*graphics);
 
         initialized = true;
@@ -72,9 +91,11 @@ namespace mgm {
         float delta = 1.0f;
 
 #if defined(ENABLE_EDITOR)
-        if (!systems.try_get<Editor>())
-            for (const auto& [id, sys] : systems.systems)
+        if (!systems().try_get<Editor>())
+            for (const auto& [id, sys] : systems().systems)
                 sys->on_begin_play();
+        else
+            systems().get<Editor>().on_begin_play();
 #else
         for (const auto& [id, sys] : systems.systems)
             sys->init();
@@ -92,7 +113,9 @@ namespace mgm {
             ImGui_ImplMgmGFX_NewFrame();
             ImGui::NewFrame();
 
-            for (const auto& [id, sys] : systems.systems) {
+            ImGui::DockSpaceOverViewport(nullptr, ImGuiDockNodeFlags_PassthruCentralNode);
+
+            for (const auto& [id, sys] : systems().systems) {
                 sys->update(delta);
             }
 
@@ -103,7 +126,9 @@ namespace mgm {
                 | ImGuiWindowFlags_NoCollapse
                 | ImGuiWindowFlags_NoTitleBar
                 | ImGuiWindowFlags_NoBackground
-                | ImGuiWindowFlags_NoSavedSettings);
+                | ImGuiWindowFlags_NoSavedSettings
+                | ImGuiWindowFlags_NoInputs
+            );
             ImGui::Text("%.2f", 1.0f / delta);
             ImGui::End();
 
@@ -114,11 +139,19 @@ namespace mgm {
             ImGui_ImplMgmGFX_RenderDrawData(ImGui::GetDrawData());
             graphics->present();
         }
+
+#if !defined(ENABLE_EDITOR)
+        for (const auto& [id, sys] : systems().systems)
+            sys->on_end_play();
+#endif
     }
 
     MagmaEngine::~MagmaEngine() {
+        if (this != instance) return;
+
         if (!initialized) return;
         delete graphics;
         delete window;
+        instance = nullptr;
     }
 }

@@ -22,12 +22,14 @@ set(
         ${CMAKE_CURRENT_SOURCE_DIR}/imgui/imgui_tables.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/imgui/imgui_widgets.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/imgui/imgui.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/imgui/imgui_stdlib.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/imgui/backends/imgui_impl_mgmgpu.cpp
 )
 set(
     IMGUI_HEADERS
         ${CMAKE_CURRENT_SOURCE_DIR}/imgui/imconfig.h
         ${CMAKE_CURRENT_SOURCE_DIR}/imgui/imgui.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/imgui/imgui_stdlib.h
         ${CMAKE_CURRENT_SOURCE_DIR}/imgui/imgui_internal.h
         ${CMAKE_CURRENT_SOURCE_DIR}/imgui/imstb_rectpack.h
         ${CMAKE_CURRENT_SOURCE_DIR}/imgui/imstb_textedit.h
@@ -54,6 +56,8 @@ add_library(
         ${CMAKE_CURRENT_SOURCE_DIR}/include/mgmgpu.hpp
 )
 enable_warnings(mgmlib)
+
+target_compile_definitions(mgmlib PUBLIC IMGUI_DEFINE_MATH_OPERATORS)
 
 if (EMBED_BACKEND)
     target_compile_definitions(mgmlib PUBLIC EMBED_BACKEND=1)
