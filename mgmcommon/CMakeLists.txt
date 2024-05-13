@@ -7,17 +7,20 @@ if(UNIX AND NOT APPLE)
         PLATFORM_SOURCES
             ${CMAKE_CURRENT_SOURCE_DIR}/platform_linux/file.cpp
     )
+    set(STDIO_COMPATIBLE ON)
 elseif(WIN32)
     set(
         PLATFORM_SOURCES
             ${CMAKE_CURRENT_SOURCE_DIR}/platform_windows/file.cpp
     )
+    set(STDIO_COMPATIBLE ON)
 endif()
 
-if(NOT STDIO_COMPATIBLE)
+if(STDIO_COMPATIBLE)
     list(APPEND
         PLATFORM_SOURCES
             ${CMAKE_CURRENT_SOURCE_DIR}/platform_stdio_compatible/logging.cpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/platform_stdio_compatible/file.cpp
         )
 endif()
 
