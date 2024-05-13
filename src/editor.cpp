@@ -54,12 +54,12 @@ namespace mgm {
         auto engine = MagmaEngine{};
         vec2i32 mouse_pos{-1, -1};
 
-        if (engine.window->get_input_interface(MgmWindow::InputInterface::Key_CTRL) == 1.0f
-            && engine.window->get_input_interface_delta(MgmWindow::InputInterface::Key_SPACE) == 1.0f) {
+        if (engine.window().get_input_interface(MgmWindow::InputInterface::Key_CTRL) == 1.0f
+            && engine.window().get_input_interface_delta(MgmWindow::InputInterface::Key_SPACE) == 1.0f) {
             palette_open = !palette_open;
             mouse_pos = {
-                static_cast<int>((engine.window->get_input_interface(MgmWindow::InputInterface::Mouse_POS_X) + 1.0f) * 0.5f * engine.window->get_size().x()),
-                static_cast<int>((engine.window->get_input_interface(MgmWindow::InputInterface::Mouse_POS_Y) + 1.0f) * 0.5f * engine.window->get_size().y())
+                static_cast<int>((engine.window().get_input_interface(MgmWindow::InputInterface::Mouse_POS_X) + 1.0f) * 0.5f * engine.window().get_size().x()),
+                static_cast<int>((engine.window().get_input_interface(MgmWindow::InputInterface::Mouse_POS_Y) + 1.0f) * 0.5f * engine.window().get_size().y())
             };
             if (palette_open) {
                 ImGui::SetNextWindowPos(ImVec2{static_cast<float>(mouse_pos.x() + 16), static_cast<float>(mouse_pos.y())});

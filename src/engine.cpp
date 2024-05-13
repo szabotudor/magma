@@ -19,14 +19,15 @@ namespace mgm {
         if (!instance) {
             instance = this;
         } else {
-            window = instance->window;
-            graphics = instance->graphics;
-            system_manager = instance->system_manager;
+            m_file_io = instance->m_file_io;
+            m_window = instance->m_window;
+            m_graphics = instance->m_graphics;
+            m_system_manager = instance->m_system_manager;
             initialized = true;
             return;
         }
 
-        system_manager = new SystemManager{};
+        m_system_manager = new SystemManager{};
 
         bool help_called = false;
         std::unordered_map<std::string, std::function<void(MagmaEngine*)>> args_map{
@@ -57,30 +58,30 @@ namespace mgm {
         if (help_called) return;
 
 
-        window = new MgmWindow{"Magma", vec2u32{800, 600}, MgmWindow::Mode::NORMAL};
-        graphics = new MgmGPU{};
-        graphics->connect_to_window(window);
+        m_window = new MgmWindow{"Magma", vec2u32{800, 600}, MgmWindow::Mode::NORMAL};
+        m_graphics = new MgmGPU{};
+        m_graphics->connect_to_window(m_window);
 
 #if !defined(EMBED_BACKEND)
 #if defined(__linux__)
-        graphics->load_backend("shared/libbackend_OpenGL.so");
+        m_graphics->load_backend("shared/libbackend_OpenGL.so");
 #elif defined (WIN32) || defined(_WIN32)
         graphics->load_backend("shared/backend_OpenGL.dll");
 #endif
 #endif
 
-        auto& settings = graphics->settings();
+        auto& settings = m_graphics->settings();
         settings.clear.color = {0.1f, 0.2f, 0.3f, 1.0f};
         settings.viewport.top_left = {0, 0};
-        settings.viewport.bottom_right = vec2i32{static_cast<int>(window->get_size().x()), static_cast<int>(window->get_size().y())};
+        settings.viewport.bottom_right = vec2i32{static_cast<int>(m_window->get_size().x()), static_cast<int>(m_window->get_size().y())};
 
-        graphics->apply_settings(true);
-        graphics->draw_list.emplace_back(MgmGPU::DrawCall{
+        m_graphics->apply_settings(true);
+        m_graphics->draw_list.emplace_back(MgmGPU::DrawCall{
             .type = MgmGPU::DrawCall::Type::CLEAR
         });
 
         
-        ImGui_ImplMgmGFX_Init(*graphics);
+        ImGui_ImplMgmGFX_Init(*m_graphics);
 
         initialized = true;
     }
@@ -101,15 +102,15 @@ namespace mgm {
             sys->init();
 #endif
 
-        while (!window->should_close()) {
+        while (!m_window->should_close()) {
             constexpr auto delta_avg_calc_ratio = 0.05f;
             const auto now = std::chrono::high_resolution_clock::now();
             const auto chrono_delta = std::chrono::duration_cast<std::chrono::microseconds>(now - start).count();
             start = now;
             delta = delta * (1.0f - delta_avg_calc_ratio) + (float)chrono_delta * 0.000001f * delta_avg_calc_ratio;
 
-            window->update();
-            ImGui_ImplMgmGFX_ProcessInput(*window);
+            m_window->update();
+            ImGui_ImplMgmGFX_ProcessInput(*m_window);
             ImGui_ImplMgmGFX_NewFrame();
             ImGui::NewFrame();
 
@@ -135,9 +136,9 @@ namespace mgm {
             ImGui::EndFrame();
             ImGui::Render();
 
-            graphics->draw();
+            m_graphics->draw();
             ImGui_ImplMgmGFX_RenderDrawData(ImGui::GetDrawData());
-            graphics->present();
+            m_graphics->present();
         }
 
 #if !defined(ENABLE_EDITOR)
@@ -150,8 +151,10 @@ namespace mgm {
         if (this != instance) return;
 
         if (!initialized) return;
-        delete graphics;
-        delete window;
+        delete m_file_io;
+        delete m_graphics;
+        delete m_window;
+        delete m_system_manager;
         instance = nullptr;
     }
 }

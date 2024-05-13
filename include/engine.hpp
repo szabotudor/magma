@@ -4,6 +4,7 @@
 
 
 namespace mgm {
+    class FileIO;
     class MgmWindow;
     class MgmGPU;
     class SystemManager;
@@ -14,17 +15,20 @@ namespace mgm {
 
         static MagmaEngine* instance;
 
+        FileIO* m_file_io = nullptr;
+        MgmWindow* m_window = nullptr;
+        MgmGPU* m_graphics = nullptr;
+        SystemManager* m_system_manager = nullptr;
+
         public:
-        MgmWindow* window = nullptr;
-        MgmGPU* graphics = nullptr;
+        FileIO& file_io() { return *m_file_io; }
+        MgmWindow& window() { return *m_window; }
+        MgmGPU& graphics() { return *m_graphics; }
+        SystemManager& systems() { return *m_system_manager; }
 
-        SystemManager* system_manager = nullptr;
-
-        SystemManager& systems() { return *system_manager; }
-
-        MagmaEngine(const MagmaEngine&) = delete;
+        MagmaEngine(const MagmaEngine&) = default;
         MagmaEngine(MagmaEngine&&) = delete;
-        MagmaEngine& operator=(const MagmaEngine&) = delete;
+        MagmaEngine& operator=(const MagmaEngine&) = default;
         MagmaEngine& operator=(MagmaEngine&&) = delete;
 
         MagmaEngine(const std::vector<std::string>& args = {});
