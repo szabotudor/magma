@@ -353,16 +353,16 @@ void ImGui_ImplMgmGFX_ProcessInput(mgm::MgmWindow &window) {
     for (const auto& event : window.get_input_events()) {
         switch (event.from) {
             case mgm::MgmWindow::InputEvent::From::MOUSE: {
-                if (event.interface == mgm::MgmWindow::InputInterface::Mouse_SCROLL_UP || event.interface == mgm::MgmWindow::InputInterface::Mouse_SCROLL_DOWN) {
-                    io.MouseWheel += event.interface == mgm::MgmWindow::InputInterface::Mouse_SCROLL_UP ? 1.0f : -1.0f;
+                if (event.input == mgm::MgmWindow::InputInterface::Mouse_SCROLL_UP || event.input == mgm::MgmWindow::InputInterface::Mouse_SCROLL_DOWN) {
+                    io.MouseWheel += event.input == mgm::MgmWindow::InputInterface::Mouse_SCROLL_UP ? 1.0f : -1.0f;
                     break;
                 }
                 switch (event.mode) {
                     case mgm::MgmWindow::InputEvent::Mode::PRESS:
-                        io.MouseDown[input_interface_to_imgui_mb(event.interface)] = true;
+                        io.MouseDown[input_interface_to_imgui_mb(event.input)] = true;
                         break;
                     case mgm::MgmWindow::InputEvent::Mode::RELEASE:
-                        io.MouseDown[input_interface_to_imgui_mb(event.interface)] = false;
+                        io.MouseDown[input_interface_to_imgui_mb(event.input)] = false;
                         break;
                     case mgm::MgmWindow::InputEvent::Mode::OTHER:
                         if (mouse_pos_filled) {
@@ -381,14 +381,14 @@ void ImGui_ImplMgmGFX_ProcessInput(mgm::MgmWindow &window) {
             case mgm::MgmWindow::InputEvent::From::KEYBOARD: {
                 switch (event.mode) {
                     case mgm::MgmWindow::InputEvent::Mode::PRESS: {
-                        const auto key = input_interface_to_imgui_key(event.interface);
+                        const auto key = input_interface_to_imgui_key(event.input);
                         if (key == ImGuiKey_None)
                             break;
                         io.AddKeyEvent(key, true);
                         break;
                     }
                     case mgm::MgmWindow::InputEvent::Mode::RELEASE: {
-                        const auto key = input_interface_to_imgui_key(event.interface);
+                        const auto key = input_interface_to_imgui_key(event.input);
                         if (key == ImGuiKey_None)
                             break;
                         io.AddKeyEvent(key, false);

@@ -32,7 +32,7 @@ namespace mgm {
             if (count == 0)
                 return;
 
-            const auto new_data = static_cast<Container*>(new char[count * sizeof(Container)]);
+            const auto new_data = reinterpret_cast<Container*>(new char[count * sizeof(Container)]);
             if constexpr (!std::is_trivially_constructible_v<T>) {
                 for (size_t i = 0; i < size; i++) {
                     if (data[i].alive) {
@@ -45,7 +45,7 @@ namespace mgm {
             else if (data != nullptr && size > 0)
                 memcpy(new_data, data, size * sizeof(Container));
 
-            delete[] static_cast<char*>(data);
+            delete[] reinterpret_cast<char*>(data);
             data = new_data;
             capacity = count;
         }

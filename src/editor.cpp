@@ -27,7 +27,7 @@ namespace mgm {
 
 
     Editor::Editor() {
-        name = "Editor";
+        system_name = "Editor";
     }
 
     void Editor::on_begin_play() {
@@ -53,6 +53,7 @@ namespace mgm {
 
         auto engine = MagmaEngine{};
         vec2i32 mouse_pos{-1, -1};
+
 
         if (engine.window().get_input_interface(MgmWindow::InputInterface::Key_CTRL) == 1.0f
             && engine.window().get_input_interface_delta(MgmWindow::InputInterface::Key_SPACE) == 1.0f) {

@@ -11,7 +11,7 @@
 namespace mgm {
     class System {
         public:
-        std::string name = "System";
+        std::string system_name = "System";
 
         System() = default;
 
@@ -78,8 +78,8 @@ namespace mgm {
             auto& system = systems[id];
             system = reinterpret_cast<System*>(new T{std::forward<Ts>(args)...});
             T& sys = *reinterpret_cast<T*>(system);
-            if (sys.name.empty())
-                sys.name = typeid(T).name();
+            if (sys.system_name.empty())
+                sys.system_name = typeid(T).name();
             return sys;
         }
 

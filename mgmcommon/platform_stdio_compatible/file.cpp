@@ -36,7 +36,7 @@ namespace mgm {
 
 
     FileIO::FileIO() {
-        data = new Data{};
+        platform_data = new Data{};
     }
 
     std::string FileIO::read_text(const Path &path) {
@@ -93,7 +93,7 @@ namespace mgm {
 
 
     void FileIO::begin_read_stream(const Path &path) {
-        auto& read_file = data->read_files.emplace_back();
+        auto& read_file = platform_data->read_files.emplace_back();
 
         const auto path_str = path.platform_path();
         read_file = std::ifstream{path_str, std::ios::binary};
@@ -102,19 +102,19 @@ namespace mgm {
         }
     }
     void FileIO::read_stream(std::vector<uint8_t> &dst, size_t size) {
-        if (data->read_files.empty()) {
+        if (platform_data->read_files.empty()) {
             Logging{"FileIO"}.error("No file open for reading. Call begin_read_stream first");
             return;
         }
 
-        auto& read_file = data->read_files.back();
+        auto& read_file = platform_data->read_files.back();
         const auto start = dst.size();
         dst.resize(start + size);
         read_file.read(reinterpret_cast<char*>(dst.data() + start), size);
     }
 
     void FileIO::begin_write_stream(const Path &path) {
-        auto& write_file = data->write_files.emplace_back();
+        auto& write_file = platform_data->write_files.emplace_back();
 
         const auto path_str = path.platform_path();
         write_file = std::ofstream{path_str, std::ios::binary};
@@ -123,39 +123,39 @@ namespace mgm {
         }
     }
     void FileIO::write_stream(const std::vector<uint8_t> &data) {
-        if (this->data->write_files.empty()) {
+        if (this->platform_data->write_files.empty()) {
             Logging{"FileIO"}.error("No file open for writing. Call begin_write_stream first");
             return;
         }
 
-        auto& write_file = this->data->write_files.back();
+        auto& write_file = this->platform_data->write_files.back();
         write_file.write(reinterpret_cast<const char*>(data.data()), data.size());
         write_file.flush();
     }
 
     void FileIO::end_read_stream() {
-        if (data->read_files.empty()) {
+        if (platform_data->read_files.empty()) {
             Logging{"FileIO"}.error("No file to close, none are open for reading");
             return;
         }
 
-        data->read_files.pop_back();
+        platform_data->read_files.pop_back();
     }
     void FileIO::end_write_stream() {
-        if (data->write_files.empty()) {
+        if (platform_data->write_files.empty()) {
             Logging{"FileIO"}.error("No file to close, none are open for writing");
             return;
         }
 
-        data->write_files.pop_back();
+        platform_data->write_files.pop_back();
     }
 
     FileIO::~FileIO() {
-        if (!data->read_files.empty())
+        if (!platform_data->read_files.empty())
             Logging{"FileIO"}.warning("FileIO destroyed with files still open for reading");
-        if (!data->write_files.empty())
+        if (!platform_data->write_files.empty())
             Logging{"FileIO"}.warning("FileIO destroyed with files still open for writing");
 
-        delete data;
+        delete platform_data;
     }
 } // namespace mgm

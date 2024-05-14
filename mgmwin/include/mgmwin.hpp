@@ -92,7 +92,7 @@ namespace mgm {
             enum class Mode { NONE, PRESS, RELEASE, OTHER };
             enum class From { NONE, KEYBOARD, MOUSE };
 
-            InputInterface interface{};
+            InputInterface input{};
             float value{};
             Mode mode{};
             From from{};

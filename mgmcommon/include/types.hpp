@@ -6,8 +6,10 @@ class ID_t {
 public:
 #if INTPTR_MAX == INT64_MAX
     using _uint = uint64_t;
+    using _int = int64_t;
 #elif INTPTR_MAX == INT32_MAX
-    using _uint_t = uint32_t;
+    using _uint = uint32_t;
+    using _int = int32_t;
 #else
     #error "Unsupported platform"
 #endif
@@ -15,6 +17,7 @@ public:
 
     constexpr explicit ID_t(_uint id = 0) : id(id) {}
     constexpr operator _uint() const { return id; }
+    constexpr operator _int() const { return id; }
     constexpr operator bool() const { return id != 0; }
 
     constexpr _uint& operator*() { return id; }

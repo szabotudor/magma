@@ -31,7 +31,7 @@ namespace mgm {
         struct Data;
         static std::string exe_dir();
 
-        Data* data = nullptr;
+        Data* platform_data = nullptr;
 
         public:
 

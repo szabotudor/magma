@@ -17,14 +17,14 @@ namespace mgm {
         return ImGui::InputInt(name.c_str(), &value);
     }
     template<> bool Inspector::inspect<Inspector::MinMaxNum<int>>(const std::string& name, MinMaxNum<int>& value) {
-        return ImGui::DragInt(name.c_str(), &value.value, value.speed, value.min, value.max);
+        return ImGui::DragInt(name.c_str(), &value.value, static_cast<float>(value.speed), value.min, value.max);
     }
 
     template<> bool Inspector::inspect<uint32_t>(const std::string& name, uint32_t& value) {
         return ImGui::InputScalar(name.c_str(), ImGuiDataType_U32, &value);
     }
     template<> bool Inspector::inspect<Inspector::MinMaxNum<uint32_t>>(const std::string& name, MinMaxNum<uint32_t>& value) {
-        return ImGui::DragScalar(name.c_str(), ImGuiDataType_U32, &value.value, value.speed, &value.min, &value.max);
+        return ImGui::DragScalar(name.c_str(), ImGuiDataType_U32, &value.value, static_cast<float>(value.speed), &value.min, &value.max);
     }
 
     template<> bool Inspector::inspect<float>(const std::string& name, float& value) {
@@ -38,7 +38,7 @@ namespace mgm {
         return ImGui::InputDouble(name.c_str(), &value);
     }
     template<> bool Inspector::inspect<Inspector::MinMaxNum<double>>(const std::string& name, MinMaxNum<double>& value) {
-        return ImGui::DragScalar(name.c_str(), ImGuiDataType_Double, &value.value, value.speed, &value.min, &value.max);
+        return ImGui::DragScalar(name.c_str(), ImGuiDataType_Double, &value.value, static_cast<float>(value.speed), &value.min, &value.max);
     }
 
     template<> bool Inspector::inspect<vec2f>(const std::string& name, vec2f& value) {
@@ -72,13 +72,13 @@ namespace mgm {
     }
 
     template<> bool Inspector::inspect<Inspector::MinMaxNum<vec2d, double>>(const std::string& name, MinMaxNum<vec2d, double>& value) {
-        return ImGui::DragScalarN(name.c_str(), ImGuiDataType_Double, &value.value.x(), 2, value.speed, &value.min, &value.max);
+        return ImGui::DragScalarN(name.c_str(), ImGuiDataType_Double, &value.value.x(), 2, static_cast<float>(value.speed), &value.min, &value.max);
     }
     template<> bool Inspector::inspect<Inspector::MinMaxNum<vec3d, double>>(const std::string& name, MinMaxNum<vec3d, double>& value) {
-        return ImGui::DragScalarN(name.c_str(), ImGuiDataType_Double, &value.value.x(), 3, value.speed, &value.min, &value.max);
+        return ImGui::DragScalarN(name.c_str(), ImGuiDataType_Double, &value.value.x(), 3, static_cast<float>(value.speed), &value.min, &value.max);
     }
     template<> bool Inspector::inspect<Inspector::MinMaxNum<vec4d, double>>(const std::string& name, MinMaxNum<vec4d, double>& value) {
-        return ImGui::DragScalarN(name.c_str(), ImGuiDataType_Double, &value.value.x(), 4, value.speed, &value.min, &value.max);
+        return ImGui::DragScalarN(name.c_str(), ImGuiDataType_Double, &value.value.x(), 4, static_cast<float>(value.speed), &value.min, &value.max);
     }
 
     template<> bool Inspector::inspect<vec2i32>(const std::string& name, vec2i32& value) {
@@ -91,14 +91,14 @@ namespace mgm {
         return ImGui::InputInt4(name.c_str(), &value.x());
     }
 
-    template<> bool Inspector::inspect<Inspector::MinMaxNum<vec2i32, float>>(const std::string& name, MinMaxNum<vec2i32, float>& value) {
-        return ImGui::DragInt2(name.c_str(), &value.value.x(), value.speed, value.min, value.max);
+    template<> bool Inspector::inspect<Inspector::MinMaxNum<vec2i32, int>>(const std::string& name, MinMaxNum<vec2i32, int>& value) {
+        return ImGui::DragInt2(name.c_str(), &value.value.x(), static_cast<float>(value.speed), value.min, value.max);
     }
-    template<> bool Inspector::inspect<Inspector::MinMaxNum<vec3i32, float>>(const std::string& name, MinMaxNum<vec3i32, float>& value) {
-        return ImGui::DragInt3(name.c_str(), &value.value.x(), value.speed, value.min, value.max);
+    template<> bool Inspector::inspect<Inspector::MinMaxNum<vec3i32, int>>(const std::string& name, MinMaxNum<vec3i32, int>& value) {
+        return ImGui::DragInt3(name.c_str(), &value.value.x(), static_cast<float>(value.speed), value.min, value.max);
     }
-    template<> bool Inspector::inspect<Inspector::MinMaxNum<vec4i32, float>>(const std::string& name, MinMaxNum<vec4i32, float>& value) {
-        return ImGui::DragInt4(name.c_str(), &value.value.x(), value.speed, value.min, value.max);
+    template<> bool Inspector::inspect<Inspector::MinMaxNum<vec4i32, int>>(const std::string& name, MinMaxNum<vec4i32, int>& value) {
+        return ImGui::DragInt4(name.c_str(), &value.value.x(), static_cast<float>(value.speed), value.min, value.max);
     }
 
     template<> bool Inspector::inspect<vec2u32>(const std::string& name, vec2u32& value) {
@@ -111,14 +111,14 @@ namespace mgm {
         return ImGui::InputScalarN(name.c_str(), ImGuiDataType_U32, &value.x(), 4);
     }
 
-    template<> bool Inspector::inspect<Inspector::MinMaxNum<vec2u32, float>>(const std::string& name, MinMaxNum<vec2u32, float>& value) {
-        return ImGui::DragScalarN(name.c_str(), ImGuiDataType_U32, &value.value.x(), 2, value.speed, &value.min, &value.max);
+    template<> bool Inspector::inspect<Inspector::MinMaxNum<vec2u32, uint32_t>>(const std::string& name, MinMaxNum<vec2u32, uint32_t>& value) {
+        return ImGui::DragScalarN(name.c_str(), ImGuiDataType_U32, &value.value.x(), 2, static_cast<float>(value.speed), &value.min, &value.max);
     }
-    template<> bool Inspector::inspect<Inspector::MinMaxNum<vec3u32, float>>(const std::string& name, MinMaxNum<vec3u32, float>& value) {
-        return ImGui::DragScalarN(name.c_str(), ImGuiDataType_U32, &value.value.x(), 3, value.speed, &value.min, &value.max);
+    template<> bool Inspector::inspect<Inspector::MinMaxNum<vec3u32, uint32_t>>(const std::string& name, MinMaxNum<vec3u32, uint32_t>& value) {
+        return ImGui::DragScalarN(name.c_str(), ImGuiDataType_U32, &value.value.x(), 3, static_cast<float>(value.speed), &value.min, &value.max);
     }
-    template<> bool Inspector::inspect<Inspector::MinMaxNum<vec4u32, float>>(const std::string& name, MinMaxNum<vec4u32, float>& value) {
-        return ImGui::DragScalarN(name.c_str(), ImGuiDataType_U32, &value.value.x(), 4, value.speed, &value.min, &value.max);
+    template<> bool Inspector::inspect<Inspector::MinMaxNum<vec4u32, uint32_t>>(const std::string& name, MinMaxNum<vec4u32, uint32_t>& value) {
+        return ImGui::DragScalarN(name.c_str(), ImGuiDataType_U32, &value.value.x(), 4, static_cast<float>(value.speed), &value.min, &value.max);
     }
 
     template<> bool Inspector::inspect<std::string>(const std::string& name, std::string& value) {
@@ -216,27 +216,27 @@ namespace mgm {
     template<> bool Inspector::inspect<Inspector::MinMaxNum<mat2d, double>>(const std::string& name, MinMaxNum<mat2d, double>& value) {
         ImGui::Text("%s", name.c_str());
         ImGui::Indent();
-        bool edited = ImGui::DragScalarN("row #1", ImGuiDataType_Double, &value.value[0].x(), 2, value.speed, &value.min, &value.max);
-        edited |= ImGui::DragScalarN("row #2", ImGuiDataType_Double, &value.value[1].x(), 2, value.speed, &value.min, &value.max);
+        bool edited = ImGui::DragScalarN("row #1", ImGuiDataType_Double, &value.value[0].x(), 2, static_cast<float>(value.speed), &value.min, &value.max);
+        edited |= ImGui::DragScalarN("row #2", ImGuiDataType_Double, &value.value[1].x(), 2, static_cast<float>(value.speed), &value.min, &value.max);
         ImGui::Unindent();
         return edited;
     }
     template<> bool Inspector::inspect<Inspector::MinMaxNum<mat3d, double>>(const std::string& name, MinMaxNum<mat3d, double>& value) {
         ImGui::Text("%s", name.c_str());
         ImGui::Indent();
-        bool edited = ImGui::DragScalarN("row #1", ImGuiDataType_Double, &value.value[0].x(), 3, value.speed, &value.min, &value.max);
-        edited |= ImGui::DragScalarN("row #2", ImGuiDataType_Double, &value.value[1].x(), 3, value.speed, &value.min, &value.max);
-        edited |= ImGui::DragScalarN("row #3", ImGuiDataType_Double, &value.value[2].x(), 3, value.speed, &value.min, &value.max);
+        bool edited = ImGui::DragScalarN("row #1", ImGuiDataType_Double, &value.value[0].x(), 3, static_cast<float>(value.speed), &value.min, &value.max);
+        edited |= ImGui::DragScalarN("row #2", ImGuiDataType_Double, &value.value[1].x(), 3, static_cast<float>(value.speed), &value.min, &value.max);
+        edited |= ImGui::DragScalarN("row #3", ImGuiDataType_Double, &value.value[2].x(), 3, static_cast<float>(value.speed), &value.min, &value.max);
         ImGui::Unindent();
         return edited;
     }
     template<> bool Inspector::inspect<Inspector::MinMaxNum<mat4d, double>>(const std::string& name, MinMaxNum<mat4d, double>& value) {
         ImGui::Text("%s", name.c_str());
         ImGui::Indent();
-        bool edited = ImGui::DragScalarN("row #1", ImGuiDataType_Double, &value.value[0].x(), 4, value.speed, &value.min, &value.max);
-        edited |= ImGui::DragScalarN("row #2", ImGuiDataType_Double, &value.value[1].x(), 4, value.speed, &value.min, &value.max);
-        edited |= ImGui::DragScalarN("row #3", ImGuiDataType_Double, &value.value[2].x(), 4, value.speed, &value.min, &value.max);
-        edited |= ImGui::DragScalarN("row #4", ImGuiDataType_Double, &value.value[3].x(), 4, value.speed, &value.min, &value.max);
+        bool edited = ImGui::DragScalarN("row #1", ImGuiDataType_Double, &value.value[0].x(), 4, static_cast<float>(value.speed), &value.min, &value.max);
+        edited |= ImGui::DragScalarN("row #2", ImGuiDataType_Double, &value.value[1].x(), 4, static_cast<float>(value.speed), &value.min, &value.max);
+        edited |= ImGui::DragScalarN("row #3", ImGuiDataType_Double, &value.value[2].x(), 4, static_cast<float>(value.speed), &value.min, &value.max);
+        edited |= ImGui::DragScalarN("row #4", ImGuiDataType_Double, &value.value[3].x(), 4, static_cast<float>(value.speed), &value.min, &value.max);
         ImGui::Unindent();
         return edited;
     }
@@ -259,7 +259,7 @@ namespace mgm {
 
         bool start_window = false;
 
-        ImGui::SmallButton((name + " \u25B6").c_str());
+        ImGui::SmallButton((name + (char*)(u8"\u25B6")).c_str());
 
         name += std::to_string(pos.y);
 
@@ -313,7 +313,7 @@ namespace mgm {
 
 
     Inspector::Inspector() {
-        name = "Inspector";
+        system_name = "Inspector";
 
         register_type_info<int>("int");
         register_type_info<MinMaxNum<int>>("MinMax int");
