@@ -25,10 +25,10 @@ namespace mgm {
         // Handle for a shader, which can be used to execute code on the GPU
         class ShaderHandle : public ID_t{ using ID_t::ID_t; };
         
-        static constexpr BufferHandle INVALID_BUFFER = static_cast<BufferHandle>(-1);
-        static constexpr BuffersObjectHandle INVALID_BUFFERS_OBJECT = static_cast<BuffersObjectHandle>(-1);
-        static constexpr TextureHandle INVALID_TEXTURE = static_cast<TextureHandle>(-1);
-        static constexpr ShaderHandle INVALID_SHADER = static_cast<ShaderHandle>(-1);
+        static constexpr BufferHandle INVALID_BUFFER = BufferHandle{static_cast<BufferHandle::_uint>(-1)};
+        static constexpr BuffersObjectHandle INVALID_BUFFERS_OBJECT = BuffersObjectHandle{static_cast<BuffersObjectHandle::_uint>(-1)};
+        static constexpr TextureHandle INVALID_TEXTURE = TextureHandle{static_cast<TextureHandle::_uint>(-1)};
+        static constexpr ShaderHandle INVALID_SHADER = ShaderHandle{static_cast<ShaderHandle::_uint>(-1)};
 
         struct DrawCall {
             enum class Type {

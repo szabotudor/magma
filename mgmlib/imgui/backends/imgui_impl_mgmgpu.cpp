@@ -38,7 +38,7 @@ bool ImGui_ImplMgmGFX_Init(mgm::MgmGPU &backend) {
     io.Fonts->GetTexDataAsRGBA32(&tex_data, &size.x(), &size.y());
     const auto texture_info = mgm::TextureCreateInfo{4, 1, 2, size, tex_data};
     const auto fonts_texture = backend.create_texture(texture_info);
-    io.Fonts->SetTexID(reinterpret_cast<void*>(static_cast<intptr_t>(fonts_texture)));
+    io.Fonts->SetTexID(reinterpret_cast<void*>(static_cast<intptr_t>(fonts_texture.id)));
     
     mgm::ShaderCreateInfo fonts_shader_info{};
     fonts_shader_info.shader_sources.emplace_back(mgm::ShaderCreateInfo::SingleShaderInfo{
@@ -105,7 +105,7 @@ void ImGui_ImplMgmGFX_NewFrame() {
         const auto texture_info = mgm::TextureCreateInfo{4, 1, 2, size, tex_data};
         backend.destroy_texture(data->font_atlas);
         data->font_atlas = backend.create_texture(texture_info);
-        io.Fonts->SetTexID(reinterpret_cast<void*>(static_cast<intptr_t>(data->font_atlas)));
+        io.Fonts->SetTexID(reinterpret_cast<void*>(static_cast<intptr_t>(data->font_atlas.id)));
     }
 }
 
