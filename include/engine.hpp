@@ -1,6 +1,11 @@
 #pragma once
-#include "logging.hpp"
+#include <mutex>
 #include <vector>
+
+#include "logging.hpp"
+
+
+struct ImDrawData;
 
 
 namespace mgm {
@@ -15,10 +20,16 @@ namespace mgm {
 
         static MagmaEngine* instance;
 
+        std::atomic<ImDrawData*> m_imgui_draw_data = nullptr;
+
         FileIO* m_file_io = nullptr;
         MgmWindow* m_window = nullptr;
         MgmGPU* m_graphics = nullptr;
         SystemManager* m_system_manager = nullptr;
+
+        std::mutex imgui_mutex;
+        std::atomic_bool engine_running{};
+        void render_thread_function();
 
         public:
         FileIO& file_io() { return *m_file_io; }

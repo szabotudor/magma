@@ -69,7 +69,8 @@ namespace mgm {
             const auto it = any_inspectors.find(typeid(T).hash_code());
             if (it != any_inspectors.end())
                 return it->second.name;
-            return typeid(T).name();
+            register_type_info<T>();
+            return any_inspectors.at(typeid(T).hash_code()).name;
         }
 
         Inspector();

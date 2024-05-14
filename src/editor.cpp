@@ -88,6 +88,7 @@ namespace mgm {
             | ImGuiWindowFlags_NoMove
             | ImGuiWindowFlags_NoSavedSettings
             | ImGuiWindowFlags_NoScrollbar
+            | ImGuiWindowFlags_NoDocking
         );
 
         ImGui::Text("Palette");

@@ -15,6 +15,21 @@
 namespace mgm {
     MagmaEngine* MagmaEngine::instance = nullptr;
 
+    void MagmaEngine::render_thread_function() {
+        while (engine_running) {
+
+            m_graphics->draw();
+
+            imgui_mutex.lock();
+            if (m_imgui_draw_data != nullptr)
+                ImGui_ImplMgmGFX_RenderDrawData(m_imgui_draw_data);
+            m_imgui_draw_data = nullptr;
+            imgui_mutex.unlock();
+
+            m_graphics->present();
+        }
+    }
+
     MagmaEngine::MagmaEngine(const std::vector<std::string>& args) {
         if (!instance) {
             instance = this;
@@ -89,7 +104,7 @@ namespace mgm {
     void MagmaEngine::run() {
         if (!initialized) return;
         auto start = std::chrono::high_resolution_clock::now();
-        float delta = 1.0f;
+        float avg_delta = 1.0f;
 
 #if defined(ENABLE_EDITOR)
         if (!systems().try_get<Editor>())
@@ -102,14 +117,21 @@ namespace mgm {
             sys->init();
 #endif
 
+        engine_running = true;
+        std::thread render_thread{&MagmaEngine::render_thread_function, this};
+
         while (!m_window->should_close()) {
-            constexpr auto delta_avg_calc_ratio = 0.05f;
+            constexpr auto delta_avg_calc_ratio = 0.01f;
             const auto now = std::chrono::high_resolution_clock::now();
             const auto chrono_delta = std::chrono::duration_cast<std::chrono::microseconds>(now - start).count();
             start = now;
-            delta = delta * (1.0f - delta_avg_calc_ratio) + (float)chrono_delta * 0.000001f * delta_avg_calc_ratio;
+            const float delta = (float)chrono_delta * 0.000001f;
+            avg_delta = avg_delta * (1.0f - delta_avg_calc_ratio) + (float)chrono_delta * 0.000001f * delta_avg_calc_ratio;
 
             m_window->update();
+            //render_thread_function();
+
+            imgui_mutex.lock();
             ImGui_ImplMgmGFX_ProcessInput(*m_window);
             ImGui_ImplMgmGFX_NewFrame();
             ImGui::NewFrame();
@@ -129,17 +151,21 @@ namespace mgm {
                 | ImGuiWindowFlags_NoBackground
                 | ImGuiWindowFlags_NoSavedSettings
                 | ImGuiWindowFlags_NoInputs
+                | ImGuiWindowFlags_NoDocking
             );
-            ImGui::Text("%.2f", 1.0f / delta);
+            ImGui::Text("%.2f", 1.0f / avg_delta);
             ImGui::End();
 
             ImGui::EndFrame();
             ImGui::Render();
 
-            m_graphics->draw();
-            ImGui_ImplMgmGFX_RenderDrawData(ImGui::GetDrawData());
-            m_graphics->present();
+            if (m_imgui_draw_data == nullptr)
+                m_imgui_draw_data = ImGui::GetDrawData();
+            imgui_mutex.unlock();
         }
+
+        engine_running = false;
+        render_thread.join();
 
 #if !defined(ENABLE_EDITOR)
         for (const auto& [id, sys] : systems().systems)
