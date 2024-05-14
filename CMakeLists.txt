@@ -8,7 +8,7 @@ macro(enable_warnings target)
     )
 endmacro()
 
-add_compile_definitions(MGMATH_SIMD MGMATH_SWIZZLE)
+add_compile_definitions(MGMATH_SIMD=1 MGMATH_SWIZZLE=1)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/build/${CMAKE_BUILD_TYPE}/magma)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/build/${CMAKE_BUILD_TYPE}/magma/libs)
