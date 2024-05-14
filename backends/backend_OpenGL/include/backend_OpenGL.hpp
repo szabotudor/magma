@@ -28,6 +28,8 @@ namespace mgm {
 
         void make_current();
 
+        void make_null_current();
+
         void swap_buffers() const;
 
         bool is_init() const;

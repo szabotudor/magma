@@ -93,7 +93,12 @@ namespace mgm {
 			log.error("Cannot make context current");
 	}
 
-	void OpenGLPlatform::swap_buffers() const {
+    void OpenGLPlatform::make_null_current() {
+	    if (!wglMakeCurrent(nullptr, nullptr))
+			log.error("Cannot make context current");
+	}
+
+    void OpenGLPlatform::swap_buffers() const {
 		SwapBuffers(data->h_device);
 	}
 

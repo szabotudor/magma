@@ -2,7 +2,7 @@
 #include "backend_OpenGL.hpp"
 #include "glad/glad.h"
 #include <atomic>
-
+#include <mutex>
 
 
 namespace mgm {
@@ -95,6 +95,7 @@ namespace mgm {
 
     thread_local Logging log{"backend_OpenGL"};
     std::atomic_bool initialized{false};
+    std::mutex mutex{};
 
 
 
@@ -129,6 +130,12 @@ namespace mgm {
     }
 
     EXPORT bool set_attribute(BackendData* backend, const Settings::StateAttribute& attr, const void* data) {
+        mutex.lock();
+        backend->platform->make_current();
+
+        // Unused until one of the attributes has a failure condition
+        constexpr bool success = true;
+
         switch (attr) {
             case Settings::StateAttribute::CLEAR: {
                 const auto& clear = *static_cast<const Settings::Settings::Clear*>(data);
@@ -139,7 +146,7 @@ namespace mgm {
                 glClearColor(clear.color.x(), clear.color.y(), clear.color.z(), clear.color.w());
                 glClearDepth(1.0);
                 glClearStencil(0);
-                return true;
+                break;
             }
             case Settings::StateAttribute::BLENDING: {
                 const auto& blending = *static_cast<const Settings::Settings::Blending*>(data);
@@ -158,7 +165,7 @@ namespace mgm {
                 }
                 else
                     glDisable(GL_BLEND);
-                return true;
+                break;
             }
             case Settings::StateAttribute::VIEWPORT: {
                 const auto& viewport = *static_cast<const Settings::Settings::Viewport*>(data);
@@ -168,7 +175,7 @@ namespace mgm {
                     backend->viewport.pos.x(), backend->viewport.pos.y(),
                     backend->viewport.size.x(), backend->viewport.size.y()
                 );
-                return true;
+                break;
             }
             case Settings::StateAttribute::SCISSOR: {
                 const auto& scissor = *static_cast<const Settings::Settings::Scissor*>(data);
@@ -183,15 +190,23 @@ namespace mgm {
                         backend->scissor.size.x(), backend->scissor.size.y()
                     );
                 }
-                return true;
+                break;
             }
         }
-        return false;
+
+        backend->platform->make_null_current();
+        mutex.unlock();
+        return success;
     }
 
     EXPORT void clear(BackendData* backend) {
-        if (backend->clear_mask)
+        mutex.lock();
+        if (backend->clear_mask) {
+            backend->platform->make_current();
             glClear(backend->clear_mask);
+            backend->platform->make_null_current();
+        }
+        mutex.unlock();
     }
 
     void set_uniform(const GLuint uniform, const std::any& value) {
@@ -233,13 +248,20 @@ namespace mgm {
     void setup_vao_attrib_pointers(BuffersObject* buffers);
 
     EXPORT void execute(BackendData* backend, Texture* canvas) {
-        if (backend->draw_calls.empty())
-            return;
+        mutex.lock();
 
+        if (backend->draw_calls.empty()) {
+            mutex.unlock();
+            return;
+        }
+
+        backend->platform->make_current();
         if (canvas) {
             if (canvas != backend->canvas) {
                 if (backend->viewport.size.x() > canvas->size.x() || backend->viewport.size.y() > canvas->size.y()) {
                     log.error("Viewport size is larger than canvas size");
+                    backend->platform->make_null_current();
+                    mutex.unlock();
                     return;
                 }
                 make_texture_canvas(canvas);
@@ -299,10 +321,17 @@ namespace mgm {
                 glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(draw_call.buffers_object->size));
         }
         backend->draw_calls.clear();
+
+        backend->platform->make_null_current();
+        mutex.unlock();
     }
 
     EXPORT void present(BackendData* backend) {
+        mutex.lock();
+        backend->platform->make_current();
         backend->platform->swap_buffers();
+        backend->platform->make_null_current();
+        mutex.unlock();
     }
 
     constexpr auto GL_INVALID = (GLint)-1;
@@ -355,13 +384,18 @@ namespace mgm {
         return point_count;
     }
 
-    EXPORT void buffer_data(BackendData*, Buffer* buffer, void* data, size_t size);
-    EXPORT void* create_buffer(BackendData*, const BufferCreateInfo& info) {
+    EXPORT void buffer_data(BackendData* backend, Buffer* buffer, void* data, size_t size);
+    EXPORT void* create_buffer(BackendData* backend, const BufferCreateInfo& info) {
         const auto gl_buffer_type = info.type() == BufferCreateInfo::Type::RAW ? GL_ARRAY_BUFFER : GL_ELEMENT_ARRAY_BUFFER;
         if (gl_buffer_type == GL_INVALID)
             return nullptr;
         GLuint buf{};
+
+        mutex.lock();
+        backend->platform->make_current();
         glGenBuffers(1, &buf);
+        backend->platform->make_null_current();
+        mutex.unlock();
 
         Buffer* buffer = new Buffer{
             .buffer = buf,
@@ -372,21 +406,31 @@ namespace mgm {
             .is_element_array = info.type() == BufferCreateInfo::Type::INDEX
         };
         
-        buffer_data(nullptr, buffer, info.data(), info.size());
+        buffer_data(backend, buffer, info.data(), info.size());
         return buffer;
     }
 
-    EXPORT void buffer_data(BackendData*, Buffer* buffer, void* data, size_t size) {
+    EXPORT void buffer_data(BackendData* backend, Buffer* buffer, void* data, size_t size) {
         const auto gl_buffer_type = buffer->is_element_array ? GL_ELEMENT_ARRAY_BUFFER : GL_ARRAY_BUFFER;
+        mutex.lock();
+        backend->platform->make_current();
+
         glBindBuffer(gl_buffer_type, buffer->buffer);
         glBufferData(gl_buffer_type, size * buffer->data_point_size, data, GL_STATIC_DRAW);
         glBindBuffer(gl_buffer_type, 0);
         buffer->size = size;
         buffer->bind_location = -1;
+
+        backend->platform->make_null_current();
+        mutex.unlock();
     }
 
-    EXPORT void destroy_buffer(BackendData*, Buffer* buffer) {
+    EXPORT void destroy_buffer(BackendData* backend, Buffer* buffer) {
+        mutex.lock();
+        backend->platform->make_current();
         delete buffer;
+        backend->platform->make_null_current();
+        mutex.unlock();
     }
 
     void setup_vao_attrib_pointers(BuffersObject* buffers) {
@@ -441,23 +485,36 @@ namespace mgm {
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     }
 
-    EXPORT BuffersObject* create_buffers_object(BackendData*, Buffer** buffers, size_t count) {
+    EXPORT BuffersObject* create_buffers_object(BackendData* backend, Buffer** buffers, size_t count) {
         const auto buffers_object = new BuffersObject{};
+
+        mutex.lock();
+        backend->platform->make_current();
 
         glGenVertexArrays(1, &buffers_object->vao);
         buffers_object->buffers = std::vector<Buffer*>{buffers, buffers + count};
 
         setup_vao_attrib_pointers(buffers_object);
 
+        backend->platform->make_null_current();
+        mutex.unlock();
+
         return buffers_object;
     }
 
-    EXPORT void destroy_buffers_object(BackendData*, BuffersObject* buffers_object) {
+    EXPORT void destroy_buffers_object(BackendData* backend, BuffersObject* buffers_object) {
+        mutex.lock();
+        backend->platform->make_current();
         delete buffers_object;
+        backend->platform->make_null_current();
+        mutex.unlock();
     }
 
-    EXPORT Shader* create_shader(BackendData*, const ShaderCreateInfo& info) {
+    EXPORT Shader* create_shader(BackendData* backend, const ShaderCreateInfo& info) {
+        mutex.lock();
+        backend->platform->make_current();
         GLuint prog = glCreateProgram();
+
         Shader* shader = new Shader{};
 
         for (const auto& shader_info : info.shader_sources) {
@@ -506,17 +563,27 @@ namespace mgm {
             delete shader;
             return nullptr;
         }
+        backend->platform->make_null_current();
+        mutex.unlock();
 
         shader->prog = prog;
         return shader;
     }
     
-    EXPORT void destroy_shader(BackendData*, Shader* shader) {
+    EXPORT void destroy_shader(BackendData* backend, Shader* shader) {
+        mutex.lock();
+        backend->platform->make_current();
         delete shader;
+        backend->platform->make_null_current();
+        mutex.unlock();
     }
 
-    EXPORT Texture* create_texture(BackendData*, const TextureCreateInfo& info) {
+    EXPORT Texture* create_texture(BackendData* backend, const TextureCreateInfo& info) {
         GLuint tex{};
+
+        mutex.lock();
+        backend->platform->make_current();
+
         glGenTextures(1, &tex);
         glBindTexture(GL_TEXTURE_2D, tex);
         
@@ -552,6 +619,9 @@ namespace mgm {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         glBindTexture(GL_TEXTURE_2D, 0);
 
+        backend->platform->make_null_current();
+        mutex.unlock();
+
         return new Texture{
             .tex = tex,
             .size = info.size,
@@ -584,17 +654,23 @@ namespace mgm {
         tex->rbo = rbo;
     }
 
-    EXPORT void destroy_texture(BackendData*, Texture* texture) {
+    EXPORT void destroy_texture(BackendData* backend, Texture* texture) {
+        mutex.lock();
+        backend->platform->make_current();
         delete texture;
+        backend->platform->make_null_current();
+        mutex.unlock();
     }
 
     EXPORT void push_draw_call(BackendData* backend, Shader* shader, BuffersObject* buffers_object, Texture** textures, size_t num_textures, const std::unordered_map<std::string, std::any>& parameters) {
+        mutex.lock();
         backend->draw_calls.emplace_back(BackendData::DrawCall{
             .shader = shader,
             .buffers_object = buffers_object,
             .textures = std::vector<Texture*>(textures, textures + num_textures),
             .parameters = parameters
         });
+        mutex.unlock();
     }
 
 
@@ -608,6 +684,8 @@ namespace mgm {
             log.error("OpenGL backend only supports one instance at a time");
             return nullptr;
         }
+
+        mutex.lock();
 
         BackendData* data = new BackendData{};
         data->platform = new OpenGLPlatform{false};
@@ -630,14 +708,22 @@ namespace mgm {
         log.log("\tOpenGL Version: ", version);
         data->init = true;
 
+        data->platform->make_null_current();
+        mutex.unlock();
+
         return data;
     }
 
-    EXPORT void destroy_backend(BackendData* data) {
-        log.log("Destroyed OpenGL Backend");
-        data->init = false;
-        delete data->platform;
-        delete data;
+    EXPORT void destroy_backend(BackendData* backend) {
+        mutex.lock();
+
+        backend->init = false;
+        delete backend->platform;
+        delete backend;
         initialized = false;
+
+        mutex.unlock();
+
+        log.log("Destroyed OpenGL Backend");
     }
 }
