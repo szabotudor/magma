@@ -109,6 +109,134 @@ void ImGui_ImplMgmGFX_NewFrame() {
     }
 }
 
+void extract_draw_data(ImDrawData* draw_data, ExtractedDrawData& out, const mgm::MgmGPU& backend) {
+    float L = draw_data->DisplayPos.x;
+    float R = draw_data->DisplayPos.x + draw_data->DisplaySize.x;
+    float T = draw_data->DisplayPos.y;
+    float B = draw_data->DisplayPos.y + draw_data->DisplaySize.y;
+
+    out.proj = {
+        2.0f/(R-L),   0.0f,         0.0f,   0.0f,
+        0.0f,         2.0f/(T-B),   0.0f,   0.0f,
+        0.0f,         0.0f,        -1.0f,   0.0f,
+        (R+L)/(L-R),  (T+B)/(B-T),  0.0f,   1.0f
+    };
+
+    for (int i = 0; i < draw_data->CmdListsCount; i++) {
+        const auto* cmd_list = draw_data->CmdLists[i];
+
+        auto& cmd = out.cmds.emplace_back();
+
+        cmd.verts.reserve(cmd_list->VtxBuffer.Size);
+        cmd.coords.reserve(cmd_list->VtxBuffer.Size);
+        cmd.colors.reserve(cmd_list->VtxBuffer.Size);
+        for (const auto& v : cmd_list->VtxBuffer) {
+            cmd.verts.emplace_back(v.pos.x, v.pos.y, 0.0f);
+            cmd.coords.emplace_back(v.uv.x, v.uv.y);
+            cmd.colors.emplace_back(
+                ((float)((uint8_t*)&v.col)[0] * 3.906250e-03f),
+                ((float)((uint8_t*)&v.col)[1] * 3.906250e-03f),
+                ((float)((uint8_t*)&v.col)[2] * 3.906250e-03f),
+                ((float)((uint8_t*)&v.col)[3] * 3.906250e-03f)
+            );
+        }
+
+        for (const auto& ind : cmd_list->IdxBuffer)
+            cmd.indices.emplace_back((uint32_t)ind);
+
+        for (int j = 0; j < cmd_list->CmdBuffer.Size; j++) {
+            auto& cmd_data = cmd.cmd_data.emplace_back();
+            const auto* im_cmd = &cmd_list->CmdBuffer[j];
+
+            if (im_cmd->UserCallback) {
+                im_cmd->UserCallback(cmd_list, im_cmd);
+            }
+            else {
+                const auto clip_off = draw_data->DisplayPos;
+                const auto clip_scale = draw_data->FramebufferScale;
+                
+                ImVec2 clip_min{
+                    (im_cmd->ClipRect.x - clip_off.x) * clip_scale.x,
+                    (im_cmd->ClipRect.y - clip_off.y) * clip_scale.y
+                };
+                ImVec2 clip_max{
+                    (im_cmd->ClipRect.z - clip_off.x) * clip_scale.x,
+                    (im_cmd->ClipRect.w - clip_off.y) * clip_scale.y
+                };
+                if (clip_max.x <= clip_min.x || clip_max.y <= clip_min.y)
+                    continue;
+
+                cmd_data.scissor.top_left = {static_cast<int>(clip_min.x), backend.settings().viewport.bottom_right.y() - static_cast<int>(clip_max.y)};
+                cmd_data.scissor.bottom_right = {static_cast<int>(clip_max.x), backend.settings().viewport.bottom_right.y() - static_cast<int>(clip_min.y)};
+
+                cmd_data.idx_offset = im_cmd->IdxOffset;
+                cmd_data.elem_count = im_cmd->ElemCount;
+            }
+        }
+    }
+    out.is_set = true;
+}
+
+void ImGui_ImplMgmGFX_RenderDrawData(ExtractedDrawData& draw_data) {
+    auto* data = get_backend_data();
+    auto& backend = *data->backend;
+    backend.stash();
+
+    backend.settings().blending.enabled = true;
+    backend.settings().blending.color_equation = mgm::Settings::Blending::Equation::ADD;
+    backend.settings().blending.alpha_equation = mgm::Settings::Blending::Equation::ADD;
+    backend.settings().blending.src_color_factor = mgm::Settings::Blending::Factor::SRC_ALPHA;
+    backend.settings().blending.dst_color_factor = mgm::Settings::Blending::Factor::ONE_MINUS_SRC_ALPHA;
+    backend.settings().blending.src_alpha_factor = mgm::Settings::Blending::Factor::ONE;
+    backend.settings().blending.dst_alpha_factor = mgm::Settings::Blending::Factor::ONE;
+
+    for (const auto& cmd : draw_data.cmds) {
+        const auto mesh_verts = backend.create_buffer({mgm::BufferCreateInfo::Type::RAW, cmd.verts.data(), cmd.verts.size()});
+        const auto mesh_colors = backend.create_buffer({mgm::BufferCreateInfo::Type::RAW, cmd.colors.data(), cmd.colors.size()});
+        const auto mesh_coords = backend.create_buffer({mgm::BufferCreateInfo::Type::RAW, cmd.coords.data(), cmd.coords.size()});
+
+        std::vector<mgm::MgmGPU::BufferHandle> leftover_buffers{};
+
+        for (const auto& cmd_data : cmd.cmd_data) {
+            auto settings = backend.settings();
+            settings.scissor = cmd_data.scissor;
+            settings.scissor.enabled = true;
+            backend.draw_list.emplace_back(mgm::MgmGPU::DrawCall{
+                .type = mgm::MgmGPU::DrawCall::Type::SETTINGS_CHANGE,
+                .parameters = {
+                    {"settings", settings}
+                }
+            });
+
+            const auto mesh_indices = backend.create_buffer({mgm::BufferCreateInfo::Type::INDEX, cmd.indices.data() + cmd_data.idx_offset, cmd_data.elem_count});
+            leftover_buffers.emplace_back(mesh_indices);
+            const auto mesh = backend.create_buffers_object({mesh_verts, mesh_colors, mesh_coords, mesh_indices});
+
+            backend.draw_list.emplace_back(mgm::MgmGPU::DrawCall{
+                .type = mgm::MgmGPU::DrawCall::Type::DRAW,
+                .shader = data->font_atlas_shader,
+                .buffers_object = mesh,
+                .textures = {data->font_atlas},
+                .parameters = {
+                    {"Proj", draw_data.proj}
+                }
+            });
+        }
+        backend.draw();
+        for (const auto& buf : leftover_buffers)
+            backend.destroy_buffer(buf);
+        for (const auto& draw_call : backend.draw_list)
+            backend.destroy_buffers_object(draw_call.buffers_object);
+
+        backend.destroy_buffer(mesh_verts);
+        backend.destroy_buffer(mesh_coords);
+        backend.destroy_buffer(mesh_colors);
+        backend.draw_list.clear();
+    }
+
+    backend.pop_stash();
+}
+
 void ImGui_ImplMgmGFX_RenderDrawData(ImDrawData *draw_data) {
     auto* data = get_backend_data();
     auto& backend = *data->backend;

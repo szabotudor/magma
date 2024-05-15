@@ -18,13 +18,11 @@ namespace mgm {
 
     void MagmaEngine::render_thread_function() {
         while (engine_running) {
-
             m_graphics->draw();
 
             imgui_mutex.lock();
-            if (m_imgui_draw_data != nullptr)
-                ImGui_ImplMgmGFX_RenderDrawData(m_imgui_draw_data);
-            m_imgui_draw_data = nullptr;
+            if (m_imgui_draw_data->is_set)
+                ImGui_ImplMgmGFX_RenderDrawData(*m_imgui_draw_data);
             imgui_mutex.unlock();
 
             m_graphics->present();
@@ -35,6 +33,7 @@ namespace mgm {
         if (!instance) {
             instance = this;
         } else {
+            m_imgui_draw_data = instance->m_imgui_draw_data;
             m_file_io = instance->m_file_io;
             m_window = instance->m_window;
             m_graphics = instance->m_graphics;
@@ -42,6 +41,8 @@ namespace mgm {
             initialized = true;
             return;
         }
+
+        m_imgui_draw_data = new ExtractedDrawData{};
 
         m_system_manager = new SystemManager{};
 
@@ -104,6 +105,11 @@ namespace mgm {
 
     void MagmaEngine::run() {
         if (!initialized) return;
+
+        if (this != instance) {
+            Logging{"Engine"}.error("Do not call \"run\" on a secondary instance of MagmaEngine");
+            return;
+        }
         auto start = std::chrono::high_resolution_clock::now();
         float avg_delta = 1.0f;
 
@@ -122,7 +128,7 @@ namespace mgm {
         std::thread render_thread{&MagmaEngine::render_thread_function, this};
 
         while (!m_window->should_close()) {
-            constexpr auto delta_avg_calc_ratio = 0.01f;
+            constexpr auto delta_avg_calc_ratio = 0.00001f;
             const auto now = std::chrono::high_resolution_clock::now();
             const auto chrono_delta = std::chrono::duration_cast<std::chrono::microseconds>(now - start).count();
             start = now;
@@ -130,9 +136,7 @@ namespace mgm {
             avg_delta = avg_delta * (1.0f - delta_avg_calc_ratio) + (float)chrono_delta * 0.000001f * delta_avg_calc_ratio;
 
             m_window->update();
-            //render_thread_function();
 
-            imgui_mutex.lock();
             ImGui_ImplMgmGFX_ProcessInput(*m_window);
             ImGui_ImplMgmGFX_NewFrame();
             ImGui::NewFrame();
@@ -154,14 +158,16 @@ namespace mgm {
                 | ImGuiWindowFlags_NoInputs
                 | ImGuiWindowFlags_NoDocking
             );
-            ImGui::Text("%.2f", 1.0f / avg_delta);
+            ImGui::Text("%i FPS", static_cast<int>(1.0f / avg_delta));
             ImGui::End();
 
             ImGui::EndFrame();
             ImGui::Render();
 
-            if (m_imgui_draw_data == nullptr)
-                m_imgui_draw_data = ImGui::GetDrawData();
+            imgui_mutex.lock();
+            if (m_imgui_draw_data->is_set)
+                m_imgui_draw_data->clear();
+            extract_draw_data(ImGui::GetDrawData(), *m_imgui_draw_data, *m_graphics);
             imgui_mutex.unlock();
         }
 
@@ -182,6 +188,7 @@ namespace mgm {
         delete m_graphics;
         delete m_window;
         delete m_system_manager;
+        delete m_imgui_draw_data;
         instance = nullptr;
     }
 }

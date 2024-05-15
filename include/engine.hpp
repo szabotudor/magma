@@ -7,6 +7,7 @@
 
 
 struct ImDrawData;
+struct ExtractedDrawData;
 
 
 namespace mgm {
@@ -21,7 +22,7 @@ namespace mgm {
 
         static MagmaEngine* instance;
 
-        std::atomic<ImDrawData*> m_imgui_draw_data = nullptr;
+        ExtractedDrawData* m_imgui_draw_data = nullptr;
 
         FileIO* m_file_io = nullptr;
         MgmWindow* m_window = nullptr;
@@ -38,9 +39,9 @@ namespace mgm {
         MgmGPU& graphics() { return *m_graphics; }
         SystemManager& systems() { return *m_system_manager; }
 
-        MagmaEngine(const MagmaEngine&) = default;
+        MagmaEngine(const MagmaEngine&) = delete;
         MagmaEngine(MagmaEngine&&) = delete;
-        MagmaEngine& operator=(const MagmaEngine&) = default;
+        MagmaEngine& operator=(const MagmaEngine&) = delete;
         MagmaEngine& operator=(MagmaEngine&&) = delete;
 
         MagmaEngine(const std::vector<std::string>& args = {});
