@@ -428,7 +428,7 @@ namespace mgm {
         }
 
         for (const auto& event : input_events_since_last_update)
-            for (auto& callback : input_callbacks(event.interface))
+            for (auto& callback : input_callbacks(event.input))
                 callback(event);
     }
 

@@ -92,6 +92,13 @@ namespace mgm {
         }
     }
 
+    void OpenGLPlatform::make_null_current() {
+        if (!eglMakeCurrent(data->display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT)) {
+            log.error("Failed to make null context current");
+            return;
+        }
+    }
+
     void OpenGLPlatform::swap_buffers() const {
         eglSwapBuffers(data->display, data->surface);
     }
