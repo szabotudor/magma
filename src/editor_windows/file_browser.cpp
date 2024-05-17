@@ -61,11 +61,14 @@ namespace mgm {
             if (ImGui::Selectable(sub_folder.file_name().c_str(), i == selected_file)) {
                 if (i == selected_file) {
                     file_path = sub_folder;
+                    file_name = "New File";
                     selected_file = (size_t)-1;
                     return;
                 }
-                else
+                else {
+                    file_name = sub_folder.file_name();
                     selected_file = i;
+                }
             }
             ++i;
         }
@@ -74,14 +77,19 @@ namespace mgm {
         for (const auto& file : engine.file_io().list_files(file_path)) {
             if (ImGui::Selectable(file.file_name().c_str(), i == selected_file)) {
                 if (i == selected_file) {
-                    engine.file_io().write_binary(file_path / (file_name), default_contents);
+                    file_name = file.file_name();
+                    if (mode == Mode::WRITE)
+                        engine.file_io().write_binary(file_path / (file_name), default_contents);
                     open = false;
                     engine.systems().get<Editor>().add_window<ScriptEditor>(true, file_path / file_name);
                     selected_file = (size_t)-1;
+                    ImGui::PopStyleColor();
                     return;
                 }
-                else
+                else {
+                    file_name = file.file_name();
                     selected_file = i;
+                }
             }
             if (mode == Mode::WRITE && ImGui::IsItemHovered())
                 ImGui::SetTooltip("Replace this file with new default contents for");
