@@ -1,8 +1,12 @@
 #include "editor.hpp"
 #include "engine.hpp"
+#include "helper_math.hpp"
 #include "inspector.hpp"
+#include "logging.hpp"
 #include "mgmwin.hpp"
 #include "imgui.h"
+#include "imgui_stdlib.h"
+#include "editor_windows/script_editor.hpp"
 #include "systems.hpp"
 #include <cmath>
 
@@ -55,8 +59,9 @@ namespace mgm {
         vec2i32 mouse_pos{-1, -1};
 
 
-        if (engine.window().get_input_interface(MgmWindow::InputInterface::Key_CTRL) == 1.0f
-            && engine.window().get_input_interface_delta(MgmWindow::InputInterface::Key_SPACE) == 1.0f) {
+        if ((engine.window().get_input_interface(MgmWindow::InputInterface::Key_CTRL) == 1.0f
+            && engine.window().get_input_interface_delta(MgmWindow::InputInterface::Key_SPACE) == 1.0f)
+            || (palette_open && engine.window().get_input_interface(MgmWindow::InputInterface::Key_ESC) == 1.0f)) {
             palette_open = !palette_open;
             mouse_pos = {
                 static_cast<int>((engine.window().get_input_interface(MgmWindow::InputInterface::Mouse_POS_X) + 1.0f) * 0.5f * engine.window().get_size().x()),
@@ -69,7 +74,7 @@ namespace mgm {
         }
 
         if (!palette_open) {
-            palette_window_height = std::lerp(palette_window_height, 0.0f, 0.2f);
+            palette_window_height = std::lerp_with_delta(palette_window_height, 0.0f, 50.0f, delta);
             if (palette_window_height < ImGui::GetTextLineHeight()) {
                 ImGui::PopFont();
                 return;
@@ -95,14 +100,15 @@ namespace mgm {
         ImGui::Separator();
         for (const auto& [type_id, system] : engine.systems().systems) {
             system->in_editor_update(delta);
-            system->palette_options();
+            if (system->palette_options())
+                palette_open = false;
         }
 
         ImGui::PopStyleColor(3);
 
         if (palette_open) {
             const auto max_height = ImGui::GetCursorPosY();
-            palette_window_height = std::lerp(palette_window_height, max_height, 0.2f);
+            palette_window_height = std::lerp_with_delta(palette_window_height, max_height, 50.0f, delta);
         }
 
         ImGui::End();
@@ -113,19 +119,5 @@ namespace mgm {
         for (const auto window : windows)
             delete window;
         Logging{"Editor"}.log("Editor closed");
-    }
-
-    template<>
-    bool Inspector::inspect(const std::string&, EditorWindow*& value) {
-        const auto checkbox_clicked = ImGui::Checkbox(value->name.c_str(), &value->open);
-        if (checkbox_clicked && !value->open && value->remove_on_close)
-            MagmaEngine{}.systems().get<Editor>().remove_window(value);
-
-        return checkbox_clicked;
-    }
-
-    void Editor::palette_options() {
-        auto& inspector = MagmaEngine{}.systems().get<Inspector>();
-        inspector.inspect("Windows", windows);
     }
 } // namespace mgm

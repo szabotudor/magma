@@ -33,6 +33,8 @@ namespace mgm {
         std::atomic_bool engine_running{};
         void render_thread_function();
 
+        float current_dt = 0.0f;
+
         public:
         FileIO& file_io() { return *m_file_io; }
         MgmWindow& window() { return *m_window; }
@@ -50,6 +52,11 @@ namespace mgm {
          * @brief Runs the engine
          */
         void run();
+
+        /**
+         * @brief Get the delta time at the current frame
+         */
+        float delta_time() const;
 
         ~MagmaEngine();
     };

@@ -112,18 +112,29 @@ namespace mgm {
 
         private:
         size_t vector_depth = 0, max_vector_depth = 0;
-        bool begin_vector(std::string name, bool has_elements);
-        void end_vector();
 
         public:
+        /**
+         * @brief Draw a button, and open a window when said button is hovered
+         * 
+         * @param name The name of the button, and the window
+         * @param has_elements Whether the window has elements, or if the button should appear disabled
+         * @return true If the window is open
+         */
+        bool begin_window_here(std::string name, bool has_elements);
+
+        /**
+         * @brief End the window opened by begin_window_here
+         */
+        void end_window_here();
 
         template<typename T>
         bool inspect(const std::string& name, std::vector<T>& values) {
             bool edited = false;
-            if (begin_vector(name, !values.empty())) {
+            if (begin_window_here(name, !values.empty())) {
                 for (auto& v : values)
                     edited |= inspect(get_type_name<T>() + std::to_string(&v - &*values.begin()), v);
-                end_vector();
+                end_window_here();
             }
             return edited;
         }
@@ -131,10 +142,10 @@ namespace mgm {
         template<typename T>
         bool inspect(const std::string& name, std::vector<T>& values, const T& min, const T& max, const T& speed = static_cast<T>(1)) {
             bool edited = false;
-            if (begin_vector(name, !values.empty())) {
+            if (begin_window_here(name, !values.empty())) {
                 for (auto& v : values)
                     edited |= inspect(get_type_name<T>() + std::to_string(&v - &*values.begin()), v, min, max, speed);
-                end_vector();
+                end_window_here();
             }
             return edited;
         }
@@ -142,10 +153,10 @@ namespace mgm {
         template<template <typename, typename> typename MapType, typename T>
         bool inspect(const std::string& name, MapType<std::string, T>& values) {
             bool edited = false;
-            if (begin_vector(name, !values.empty())) {
+            if (begin_window_here(name, !values.empty())) {
                 for (auto& [a, b] : values)
                     edited |= inspect(a, b);
-                end_vector();
+                end_window_here();
             }
             return edited;
         }
@@ -153,10 +164,10 @@ namespace mgm {
         template<template <typename, typename> typename MapType, typename T>
         bool inspect(const std::string& name, MapType<std::string, T>& values, const T& min, const T& max, const T& speed = static_cast<T>(1)) {
             bool edited = false;
-            if (begin_vector(name, !values.empty())) {
+            if (begin_window_here(name, !values.empty())) {
                 for (auto& [a, b] : values)
                     edited |= inspect(a, b, min, max, speed);
-                end_vector();
+                end_window_here();
             }
             return edited;
         }

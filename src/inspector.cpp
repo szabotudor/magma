@@ -1,5 +1,6 @@
 #include "inspector.hpp"
 #include "engine.hpp"
+#include "helper_math.hpp"
 #include "imgui.h"
 #include "imgui_stdlib.h"
 #include "mgmath.hpp"
@@ -241,7 +242,7 @@ namespace mgm {
         return edited;
     }
 
-    bool Inspector::begin_vector(std::string name, bool has_elements) {
+    bool Inspector::begin_window_here(std::string name, bool has_elements) {
         if (vector_depth == 0)
             max_vector_depth = 0;
 
@@ -299,10 +300,14 @@ namespace mgm {
         return start_window;
     }
 
-    void Inspector::end_vector() {
+    void Inspector::end_window_here() {
+        if (vector_depth == 0) {
+            Logging{"Inspector"}.error("end_window_here called without a matching begin_window_here, or called when begin_window_here returned false.\n\tSkipping end_window_here call.");
+            return;
+        }
         --vector_depth;
         const auto max_height = ImGui::GetCursorPosY();
-        hovered_vector_names[vector_depth].window_height = std::lerp(hovered_vector_names[vector_depth].window_height, max_height, 0.2f);
+        hovered_vector_names[vector_depth].window_height = std::lerp_with_delta(hovered_vector_names[vector_depth].window_height, max_height, 50.0f, MagmaEngine{}.delta_time());
         ImGui::End();
 
         if (vector_depth == 0 && hovered_vector_names.size() > max_vector_depth) {

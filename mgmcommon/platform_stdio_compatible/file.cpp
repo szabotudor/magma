@@ -1,4 +1,5 @@
 #include <fstream>
+#include <filesystem>
 #include "file.hpp"
 #include "logging.hpp"
 
@@ -28,6 +29,15 @@ namespace mgm {
       return Path{data + other.data};
     }
 
+    std::string Path::file_name() const {
+        size_t last_slash = data.find_last_of('/');
+        if (last_slash == std::string::npos) {
+            return data;
+        } else {
+            return data.substr(last_slash + 1);
+        }
+    }
+
 
     struct FileIO::Data {
         std::vector<std::ofstream> write_files{};
@@ -37,6 +47,53 @@ namespace mgm {
 
     FileIO::FileIO() {
         platform_data = new Data{};
+    }
+
+    std::vector<Path> FileIO::list_files(const Path &path, bool recursive) {
+        std::vector<Path> files{};
+
+        if (!std::filesystem::exists(path.platform_path()))
+            return files;
+
+        const auto path_str = path.platform_path();
+        auto dir = std::filesystem::directory_iterator{path_str};
+        for (const auto& entry : dir) {
+            if (entry.is_regular_file())
+                files.emplace_back(entry.path().string());
+            else if (recursive && entry.is_directory()) {
+                auto sub_files = list_files(entry.path().string(), true);
+                files.insert(files.end(), sub_files.begin(), sub_files.end());
+            }
+        }
+
+        return files;
+    }
+
+    std::vector<Path> FileIO::list_folders(const Path &path, bool recursive) {
+        std::vector<Path> folders{};
+
+        if (!std::filesystem::exists(path.platform_path()))
+            return folders;
+
+        const auto path_str = path.platform_path();
+        auto dir = std::filesystem::directory_iterator{path_str};
+        for (const auto& entry : dir) {
+            if (entry.is_directory()) {
+                folders.emplace_back(entry.path().string());
+                if (recursive) {
+                    auto sub_folders = list_folders(entry.path().string(), true);
+                    folders.insert(folders.end(), sub_folders.begin(), sub_folders.end());
+                }
+            }
+        }
+
+        return folders;
+    }
+
+    void FileIO::create_folder(const Path &path) {
+        const auto path_str = path.platform_path();
+        if (!std::filesystem::create_directory(path_str))
+            Logging{"FileIO"}.error("Failed to create folder: ", path_str);
     }
 
     std::string FileIO::read_text(const Path &path) {

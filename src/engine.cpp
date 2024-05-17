@@ -128,12 +128,13 @@ namespace mgm {
         std::thread render_thread{&MagmaEngine::render_thread_function, this};
 
         while (!m_window->should_close()) {
-            constexpr auto delta_avg_calc_ratio = 0.00001f;
+            constexpr auto delta_avg_calc_ratio = 0.001f;
             const auto now = std::chrono::high_resolution_clock::now();
             const auto chrono_delta = std::chrono::duration_cast<std::chrono::microseconds>(now - start).count();
             start = now;
             const float delta = (float)chrono_delta * 0.000001f;
             avg_delta = avg_delta * (1.0f - delta_avg_calc_ratio) + (float)chrono_delta * 0.000001f * delta_avg_calc_ratio;
+            instance->current_dt = delta;
 
             m_window->update();
 
@@ -178,6 +179,10 @@ namespace mgm {
         for (const auto& [id, sys] : systems().systems)
             sys->on_end_play();
 #endif
+    }
+
+    float MagmaEngine::delta_time() const {
+        return instance->current_dt;
     }
 
     MagmaEngine::~MagmaEngine() {

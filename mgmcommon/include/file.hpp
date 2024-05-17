@@ -18,10 +18,46 @@ namespace mgm {
             data = path;
         }
 
+        constexpr Path() : data{assets.data} {}
+
         Path operator+(const Path &other) const;
         Path &operator+=(const Path &other);
 
+        Path operator/(const Path &other) const {
+            return *this + other;
+        }
+        Path &operator/=(const Path &other) {
+            return *this += other;
+        }
+
+        Path operator-(const Path &other) const {
+            const auto where = data.find(other.data);
+            if (where == std::string::npos) {
+                return *this;
+            }
+            if (where == 0) {
+                return Path{data.substr(other.data.size())};
+            }
+            return Path{data.substr(0, where - 1)};
+        }
+
+        Path back() const {
+            const auto last_slash = data.find_last_of('/');
+            if (last_slash == std::string::npos) {
+                return Path{};
+            }
+            if (last_slash == 0) {
+                return Path{"/"};
+            }
+            if (last_slash == data.size() - 1) {
+                return Path{data.substr(0, data.find_last_of('/', last_slash - 1))};
+            }
+            return Path{data.substr(0, last_slash)};
+        }
+
         std::string platform_path() const;
+
+        std::string file_name() const;
     };
 
 
@@ -36,6 +72,31 @@ namespace mgm {
         public:
 
         FileIO();
+
+        /**
+         * @brief List all files in a directory
+         * 
+         * @param path The path to the directory
+         * @param recursive Whether to list files in subdirectories
+         * @return std::vector<Path> The list of files
+         */
+        std::vector<Path> list_files(const Path& path, bool recursive = false);
+
+        /**
+         * @brief List all folders in a directory
+         * 
+         * @param path The path to the directory
+         * @param recursive Whether to list folders in subdirectories
+         * @return std::vector<Path> The list of folders
+         */
+        std::vector<Path> list_folders(const Path& path, bool recursive = false);
+
+        /**
+         * @brief Create a folder at the specified path
+         * 
+         * @param path The path to the folder
+         */
+        void create_folder(const Path& path);
 
         /**
          * @brief Reads the text from a file
