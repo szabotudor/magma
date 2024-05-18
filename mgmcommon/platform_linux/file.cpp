@@ -5,11 +5,14 @@
 
 
 namespace mgm {
+    Path::Path(const std::string& path) : data{path} {}
+    Path::Path(const char* path) : data{path} {}
+
     std::string Path::platform_path() const {
         return data;
     }
 
-    std::string FileIO::exe_dir() {
+    Path FileIO::exe_dir() {
         char buffer[PATH_MAX];
         ssize_t count = readlink("/proc/self/exe", buffer, sizeof(buffer));
         std::string executablePath(buffer, (count > 0) ? count : 0);
