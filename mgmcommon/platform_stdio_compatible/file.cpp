@@ -153,7 +153,7 @@ namespace mgm {
     }
 
     bool FileIO::exists(const Path &path) {
-        return std::ifstream{path.platform_path()}.is_open();
+        return std::filesystem::exists(path.platform_path());
     }
 
     void FileIO::delete_file(const Path &path) {

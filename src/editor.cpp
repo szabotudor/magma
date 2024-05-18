@@ -47,6 +47,9 @@ namespace mgm {
         engine.systems().create<Inspector>();
 
         Logging{"Editor"}.log("Editor initialized");
+
+        if (!engine.file_io().exists(Path::assets))
+            engine.file_io().create_folder(Path::assets);
     }
 
     void Editor::update(float delta) {
