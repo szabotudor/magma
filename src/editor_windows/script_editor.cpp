@@ -14,31 +14,47 @@ namespace mgm {
         detect_lines();
     }
 
+    void ScriptEditor::place_visual_cursor() {
+        if (cursor > static_cast<int64_t>(content.size()))
+            cursor = static_cast<int64_t>(content.size());
+
+        int64_t start = 0;
+        int64_t end = static_cast<int64_t>(lines.size()) - 1;
+        while (start < end) {
+            const int64_t mid = (start + end) / 2;
+            if (lines[mid].start > cursor)
+                end = mid;
+            else
+                start = mid + 1;
+        }
+        cursor_pos.y() = start - 1;
+        cursor_pos.x() = cursor - lines[start - 1].start;
+    }
+
+    void ScriptEditor::place_real_cursor() {
+        cursor = lines[cursor_pos.y()].start + cursor_pos.x();
+    }
+
     void ScriptEditor::detect_lines() {
         lines.clear();
         lines.emplace_back(Line{}); // First line
         const auto content_size = static_cast<int64_t>(content.size());
         for (int64_t i = 0; i < content_size; i++)
-            if (content[i] == '\n' || i == content_size - 1)
+            if (content[i] == '\n')
                 lines.emplace_back(Line{ .start = i + 1 });
+        lines.emplace_back(Line{ .start = content_size });
     }
 
-    void ScriptEditor::draw_contents() {
+    void ScriptEditor::draw() {
         const auto start_pos = ImGui::GetCursorScreenPos();
         if (content.empty()) {
             ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(70, 70, 70, 255));
-            ImGui::Text("Start typing to begin editing");
+            ImGui::Text("\tStart typing to begin editing");
             ImGui::PopStyleColor();
+            ImGui::SetCursorPos(start_pos);
+            return;
         }
-        if (lines.empty())
-            detect_lines();
 
-        if (cursor_pos.y() >= (int)lines.size())
-            cursor_pos.y() = lines.size() - 1;
-        if (cursor_pos.y() < (int)lines.size() - 1)
-            if (cursor_pos.x() > (int)lines[cursor_pos.y() + 1].start)
-                cursor_pos.x() = lines[cursor_pos.y() + 1].start;
-        
         const auto scroll = ImGui::GetScrollY();
         const auto line_height = ImGui::GetTextLineHeightWithSpacing();
         const auto line_height_no_spacing = ImGui::GetTextLineHeight();
@@ -46,7 +62,7 @@ namespace mgm {
         const auto line_start = static_cast<int64_t>(scroll / line_height);
         ImGui::Dummy({ 0.0f, line_start * line_height });
 
-        const int64_t line_end = std::min(static_cast<int64_t>(lines.size()), line_start + static_cast<int64_t>(winodw_height / line_height) + 2);
+        const int64_t line_end = std::min(static_cast<int64_t>(lines.size()), line_start + static_cast<int64_t>(winodw_height / line_height) + 2) - 1;
 
         const auto max_line_num_width = ImGui::CalcTextSize((std::to_string(line_end) + "  ").c_str()).x;
 
@@ -54,8 +70,6 @@ namespace mgm {
             const auto& line = lines[l].start;
             const auto& last = lines[l - 1].start;
             const auto& colors = lines[l - 1].colors;
-            if (line == last)
-                continue;
 
             if (!colors.empty()) {
             }
@@ -73,7 +87,12 @@ namespace mgm {
         }
         ImGui::Dummy({ 0.0f, winodw_height - line_height_no_spacing * 3.0f });
 
-        const bool window_hovered = ImGui::IsWindowHovered() && ImGui::IsMouseHoveringRect(start_pos, start_pos + ImVec2{ImGui::GetWindowWidth(), ImGui::GetWindowHeight()});
+        // Process input code in draw cause it's easier, and it's not really input processing, just setting the cursor position
+        const bool window_hovered = ImGui::IsWindowHovered()
+            && ImGui::IsMouseHoveringRect(
+                start_pos + ImVec2{0.0f, scroll},
+                start_pos + ImVec2{ImGui::GetWindowWidth(), ImGui::GetWindowHeight() + scroll}
+            );
         if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && window_hovered) {
             time_since_last_edit = 0.0f;
             auto mouse = ImGui::GetMousePos() - start_pos - ImVec2{max_line_num_width, 0.0f};
@@ -82,10 +101,11 @@ namespace mgm {
             int64_t i = 0;
             while (mouse.x > 0.0f) {
                 const auto loc = lines[cursor_pos.y()].start + i;
-                if (loc >= lines[cursor_pos.y() + 1].start || loc >= static_cast<int64_t>(content.size()))
+                if (loc >= static_cast<int64_t>(content.size()))
                     break;
-                char c = content[loc];
-                mouse.x -= ImGui::CalcTextSize(&c, &c + 1).x;
+                if (content[loc] == '\n')
+                    break;
+                mouse.x -= ImGui::CalcTextSize(&content[loc], &content[loc] + 1).x;
                 i++;
             }
             cursor_pos.x() = i;
@@ -94,6 +114,7 @@ namespace mgm {
                     cursor_pos.x()--;
             
             old_cursor_x = cursor_pos.x();
+            place_real_cursor();
         }
 
         if (static_cast<int>(time_since_last_edit * 3.0f) % 2 == 0) {
@@ -124,7 +145,9 @@ namespace mgm {
             ImVec2{max_line_num_width - line_num_separator_width * 0.75f, winodw_height + scroll} + start_pos,
             line_num_separator_col32
         );
+    }
 
+    void ScriptEditor::process_input() {
         MagmaEngine engine{};
 
         time_since_last_edit += engine.delta_time();
@@ -137,12 +160,13 @@ namespace mgm {
             time_since_last_edit = 0.0f;
             file_saved = false;
             content.insert(
-                content.begin() + lines[cursor_pos.y()].start + cursor_pos.x(),
+                content.begin() + cursor,
                 engine.window().get_text_input().begin(),
                 engine.window().get_text_input().end()
             );
+            cursor += engine.window().get_text_input().size();
             detect_lines();
-            cursor_pos.x() += engine.window().get_text_input().size();
+            place_visual_cursor();
         }
 
         for (const auto& event : engine.window().get_input_events()) {
@@ -150,31 +174,29 @@ namespace mgm {
                 if (event.input == MgmWindow::InputInterface::Key_ENTER) {
                     time_since_last_edit = 0.0f;
                     file_saved = false;
-                    content.insert(content.begin() + lines[cursor_pos.y()].start + cursor_pos.x(), '\n');
+                    content.insert(content.begin() + cursor, '\n');
+                    cursor++;
                     detect_lines();
-                    cursor_pos.x() = 0;
-                    cursor_pos.y()++;
+                    place_visual_cursor();
                 }
                 if (event.input == MgmWindow::InputInterface::Key_BACKSPACE) {
                     time_since_last_edit = 0.0f;
                     file_saved = false;
-                    if (cursor_pos.x() == 0 && cursor_pos.y() == 0)
-                        return;
-                    if (cursor_pos.x() == 0) {
-                        cursor_pos.y()--;
-                        cursor_pos.x() = lines[cursor_pos.y() + 1].start - lines[cursor_pos.y()].start;
-                    }
-                    content.erase(content.begin() + lines[cursor_pos.y()].start + cursor_pos.x() - 1);
+                    if (cursor == 0)
+                        continue;
+                    cursor--;
+                    content.erase(content.begin() + cursor);
                     detect_lines();
-                    cursor_pos.x()--;
+                    place_visual_cursor();
                 }
                 if (event.input == MgmWindow::InputInterface::Key_DELETE) {
                     time_since_last_edit = 0.0f;
                     file_saved = false;
-                    if (cursor_pos.y() == static_cast<int64_t>(lines.size()) - 1 && cursor_pos.x() == lines[cursor_pos.y()].start - lines[cursor_pos.y() - 1].start)
-                        return;
-                    content.erase(content.begin() + lines[cursor_pos.y()].start + cursor_pos.x());
+                    if (cursor >= static_cast<int64_t>(content.size()) - 1)
+                        continue;
+                    content.erase(content.begin() + cursor);
                     detect_lines();
+                    place_visual_cursor();
                 }
 
                 if (event.input == MgmWindow::InputInterface::Key_ARROW_UP) {
@@ -183,10 +205,9 @@ namespace mgm {
                         cursor_pos.y()--;
                     if (cursor_pos.x() < old_cursor_x)
                         cursor_pos.x() = old_cursor_x;
-                    if (cursor_pos.x() > lines[cursor_pos.y() + 1].start - lines[cursor_pos.y()].start)
-                        cursor_pos.x() = lines[cursor_pos.y() + 1].start - lines[cursor_pos.y()].start;
-                    if (content[lines[cursor_pos.y()].start + cursor_pos.x() - 1] == '\n')
-                        cursor_pos.x()--;
+                    if (cursor_pos.x() > lines[cursor_pos.y() + 1].start - lines[cursor_pos.y()].start - 1)
+                        cursor_pos.x() = lines[cursor_pos.y() + 1].start - lines[cursor_pos.y()].start - 1;
+                    place_real_cursor();
                 }
                 if (event.input == MgmWindow::InputInterface::Key_ARROW_DOWN) {
                     time_since_last_edit = 0.0f;
@@ -194,29 +215,24 @@ namespace mgm {
                         cursor_pos.y()++;
                     if (cursor_pos.x() < old_cursor_x)
                         cursor_pos.x() = old_cursor_x;
-                    if (cursor_pos.x() > lines[cursor_pos.y() + 1].start - lines[cursor_pos.y()].start)
-                        cursor_pos.x() = lines[cursor_pos.y() + 1].start - lines[cursor_pos.y()].start;
-                    if (content[lines[cursor_pos.y()].start + cursor_pos.x() - 1] == '\n')
-                        cursor_pos.x()--;
+                    if (cursor_pos.x() > lines[cursor_pos.y() + 1].start - lines[cursor_pos.y()].start - 1)
+                        cursor_pos.x() = lines[cursor_pos.y() + 1].start - lines[cursor_pos.y()].start - 1;
+                    if (cursor_pos.x() < 0)
+                        cursor_pos.x() = 0; // Bandaid fix cause I can't be bothered to figure out why the last line is so broken when it's empty
+                    place_real_cursor();
                 }
                 if (event.input == MgmWindow::InputInterface::Key_ARROW_LEFT) {
                     time_since_last_edit = 0.0f;
-                    if (cursor_pos.x() > 0)
-                        cursor_pos.x()--;
-                    else if (cursor_pos.y() > 0) {
-                        cursor_pos.y()--;
-                        cursor_pos.x() = lines[cursor_pos.y() + 1].start - lines[cursor_pos.y()].start;
-                    }
+                    if (cursor > 0)
+                        cursor--;
+                    place_visual_cursor();
                     old_cursor_x = cursor_pos.x();
                 }
                 if (event.input == MgmWindow::InputInterface::Key_ARROW_RIGHT) {
                     time_since_last_edit = 0.0f;
-                    if (cursor_pos.x() < lines[cursor_pos.y() + 1].start - lines[cursor_pos.y()].start)
-                        cursor_pos.x()++;
-                    else if (cursor_pos.y() < static_cast<int64_t>(lines.size()) - 2) {
-                        cursor_pos.y()++;
-                        cursor_pos.x() = 0;
-                    }
+                    if (cursor < static_cast<int64_t>(content.size()))
+                        cursor++;
+                    place_visual_cursor();
                     old_cursor_x = cursor_pos.x();
                 }
             }
@@ -224,6 +240,14 @@ namespace mgm {
 
         if (time_since_last_edit > 1000.0f)
             time_since_last_edit = 0.0f;
+    }
+
+    void ScriptEditor::draw_contents() {
+        if (lines.empty())
+            detect_lines();
+
+        draw();
+        process_input();
     }
 
     ScriptEditor::~ScriptEditor() {
