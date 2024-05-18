@@ -138,6 +138,7 @@ namespace mgm {
 
             m_window->update();
 
+            ImGui::GetIO().DeltaTime = delta;
             ImGui_ImplMgmGFX_ProcessInput(*m_window);
             ImGui_ImplMgmGFX_NewFrame();
             ImGui::NewFrame();

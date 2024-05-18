@@ -325,6 +325,10 @@ namespace mgm {
         }
     }
 
+    bool can_be_text_input(KeySym keysym) {
+        return (keysym >= XK_space && keysym <= XK_asciitilde) || (keysym >= XK_A && keysym <= XK_Z);
+    }
+
     void MgmWindow::update() {
         if (!_is_open)
             return;
@@ -367,7 +371,12 @@ namespace mgm {
                     char buffer[32];
                     KeySym keysym;
                     XLookupString(&event.xkey, buffer, sizeof(buffer), &keysym, nullptr);
-                    text_input_since_last_update += buffer;
+                    if (can_be_text_input(keysym)
+                        && !get_input_interface(InputInterface::Key_CTRL)
+                        && !get_input_interface(InputInterface::Key_ALT)
+                        && !get_input_interface(InputInterface::Key_META)) {
+                        text_input_since_last_update += buffer;
+                    }
                     break;
                 }
                 case KeyRelease: {
