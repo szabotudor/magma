@@ -287,6 +287,16 @@ namespace mgm {
 
 	thread_local MgmWindow* updating_window = nullptr;
 
+	bool char_can_be_text_input(char c) {
+		return c >= 32 && c <= 126 // Basic ASCII characters
+			|| c == 128 // Euro sign
+			|| c >=130 && c <= 140 // Special characters/shapes
+			|| c == 142 // Z with caron
+			|| c >= 145 && c <= 156 // Special quotes and lines
+			|| c == 158 || c == 159 // Special Latin characters Z and Y with diacritics
+			|| c >= 161 && c <= 255; // Latin characters with diacritics
+	}
+
 	LRESULT CALLBACK NativeWindow::window_proc(HWND h_window, UINT u_msg, WPARAM w_param, LPARAM l_param) {
 		switch (u_msg) {
 			case WM_SIZE: {
@@ -320,7 +330,8 @@ namespace mgm {
 				break;
 			}
 			case WM_CHAR: {
-				updating_window->text_input_since_last_update += static_cast<char>(w_param);
+				if (char_can_be_text_input(static_cast<char>(w_param)))
+					updating_window->text_input_since_last_update += static_cast<char>(w_param);
 				break;
 			}
 			case WM_LBUTTONDOWN: {
