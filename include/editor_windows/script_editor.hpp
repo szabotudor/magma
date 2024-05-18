@@ -8,17 +8,19 @@ namespace mgm {
         std::string content{};
 
         struct ColorData {
-            size_t start;
-            size_t end;
+            int64_t start;
+            int64_t end;
             vec3u8 color;
         };
         struct Line {
-            size_t start = 0;
+            int64_t start = 0;
             std::vector<ColorData> colors{};
         };
         std::vector<Line> lines{};
 
-        vec2i32 cursor_pos{};
+        vec2i64 cursor_pos{};
+        int64_t old_cursor_x = 0;
+        vec2i64 selection{};
 
         float max_inactivity_time = 3.0f;
         float time_since_last_edit = 0.0f;
