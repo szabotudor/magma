@@ -11,12 +11,8 @@ namespace mgm {
         static Path assets;
         static Path temp;
 
-        constexpr Path(const std::string& path) {
-            data = path;
-        }
-        constexpr Path(const char* path) {
-            data = path;
-        }
+        constexpr Path(const std::string& path);
+        constexpr Path(const char* path);
 
         constexpr Path() : data{assets.data} {}
 
@@ -65,7 +61,7 @@ namespace mgm {
         friend struct Path;
 
         struct Data;
-        static std::string exe_dir();
+        static Path exe_dir();
 
         Data* platform_data = nullptr;
 

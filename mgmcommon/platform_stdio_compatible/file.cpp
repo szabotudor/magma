@@ -52,10 +52,10 @@ namespace mgm {
     std::vector<Path> FileIO::list_files(const Path &path, bool recursive) {
         std::vector<Path> files{};
 
-        if (!std::filesystem::exists(path.platform_path()))
+        const auto path_str = path.platform_path();
+        if (!std::filesystem::exists(path_str))
             return files;
 
-        const auto path_str = path.platform_path();
         auto dir = std::filesystem::directory_iterator{path_str};
         for (const auto& entry : dir) {
             if (entry.is_regular_file())
@@ -72,10 +72,10 @@ namespace mgm {
     std::vector<Path> FileIO::list_folders(const Path &path, bool recursive) {
         std::vector<Path> folders{};
 
-        if (!std::filesystem::exists(path.platform_path()))
+        const auto path_str = path.platform_path();
+        if (!std::filesystem::exists(path_str))
             return folders;
 
-        const auto path_str = path.platform_path();
         auto dir = std::filesystem::directory_iterator{path_str};
         for (const auto& entry : dir) {
             if (entry.is_directory()) {
@@ -92,6 +92,10 @@ namespace mgm {
 
     void FileIO::create_folder(const Path &path) {
         const auto path_str = path.platform_path();
+        if (!std::filesystem::exists(path.back().platform_path())) {
+            Logging{"FileIO"}.error("Folder doesn't exist: ", path.back().platform_path(), "\n\tCannot create new folder: ", path_str);
+            return;
+        }
         if (!std::filesystem::create_directory(path_str))
             Logging{"FileIO"}.error("Failed to create folder: ", path_str);
     }
@@ -104,7 +108,17 @@ namespace mgm {
             return "";
         }
 
-        return std::string{std::istreambuf_iterator<char>{file}, std::istreambuf_iterator<char>{}};
+        std::string result{std::istreambuf_iterator<char>{file}, std::istreambuf_iterator<char>{}};
+        for (size_t i = 0; i < result.size(); i++) {
+            if (result[i] == '\r' && result[i + 1] == '\n'
+                || result[i] == '\n' && result[i + 1] == '\r') {
+                result.replace(i, 2, "\n");
+            }
+            else if (result[i] == '\r') {
+                result[i] = '\n';
+            }
+        }
+        return result;
     }
     void FileIO::write_text(const Path &path, const std::string &text) {
         const auto path_str = path.platform_path();

@@ -2,17 +2,41 @@
 #include <Windows.h>
 
 namespace mgm {
+	constexpr Path::Path(const std::string& path) : data(path) {
+		for (auto& c : data)
+            if (c == '\\')
+                c = '/';
+	}
+
+	constexpr Path::Path(const char* path) : data{path} {
+		for (auto& c : data)
+			if (c == '\\')
+				c = '/';
+	}
+
 	std::string Path::platform_path() const {
 		std::string path = data;
-		path.replace(data.begin(), data.end(), '/', '\\');
+		for (auto& c : path)
+            if (c == '/')
+                c = '\\';
 		return path;
 	}
-    std::string FileIO::exe_dir() {
-	    char buff[256]{};
+    Path FileIO::exe_dir() {
+	    char buff[MAX_PATH]{};
 		constexpr size_t len = sizeof(buff);
 	    const int bytes = GetModuleFileName(nullptr, buff, len);
 		if (!bytes)
 			return "";
-		return buff;
+		for (int i = bytes - 1; i >= 0; --i) {
+			if (buff[i] == '\\') {
+				buff[i] = '\0';
+				break;
+			}
+		}
+		std::string str{buff};
+		for (auto& c : str)
+			if (c == '\\')
+				c = '/';
+		return str;
     }
 }
