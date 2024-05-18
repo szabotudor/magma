@@ -11,22 +11,22 @@ namespace mgm {
 
 
     Path &Path::operator+=(const Path &other) {
-      if (data.back() == '/' && other.data.front() == '/') {
-        data += other.data.substr(1);
-      } else if (data.back() != '/' && other.data.front() != '/') {
-        data += "/" + other.data;
-      } else {
-        data += other.data;
-      }
-      return *this;
+        if (data.back() == '/' && other.data.front() == '/') {
+            data += other.data.substr(1);
+        } else if (data.back() != '/' && other.data.front() != '/') {
+            data += "/" + other.data;
+        } else {
+            data += other.data;
+        }
+        return *this;
     }
     Path Path::operator+(const Path &other) const {
-      if (data.back() == '/' && other.data.front() == '/') {
-        return Path{data + other.data.substr(1)};
-      } else if (data.back() != '/' && other.data.front() != '/') {
-        return Path{data + "/" + other.data};
-      }
-      return Path{data + other.data};
+        if (data.back() == '/' && other.data.front() == '/') {
+            return Path{data + other.data.substr(1)};
+        } else if (data.back() != '/' && other.data.front() != '/') {
+            return Path{data + "/" + other.data};
+        }
+            return Path{data + other.data};
     }
 
     std::string Path::file_name() const {

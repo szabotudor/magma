@@ -11,10 +11,10 @@ namespace mgm {
         static Path assets;
         static Path temp;
 
-        constexpr Path(const std::string& path);
-        constexpr Path(const char* path);
+        Path(const std::string& path);
+        Path(const char* path);
 
-        constexpr Path() : data{assets.data} {}
+        Path() : data{assets.data} {}
 
         Path operator+(const Path &other) const;
         Path &operator+=(const Path &other);

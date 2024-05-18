@@ -2,13 +2,13 @@
 #include <Windows.h>
 
 namespace mgm {
-	constexpr Path::Path(const std::string& path) : data(path) {
+	Path::Path(const std::string& path) : data(path) {
 		for (auto& c : data)
             if (c == '\\')
                 c = '/';
 	}
 
-	constexpr Path::Path(const char* path) : data{path} {
+	Path::Path(const char* path) : data{path} {
 		for (auto& c : data)
 			if (c == '\\')
 				c = '/';
