@@ -18,6 +18,8 @@ namespace mgm {
 
     void MagmaEngine::render_thread_function() {
         while (engine_running) {
+            graphics_mutex.lock();
+
             m_graphics->draw();
 
             imgui_mutex.lock();
@@ -26,6 +28,10 @@ namespace mgm {
             imgui_mutex.unlock();
 
             m_graphics->present();
+
+            graphics_mutex.unlock();
+
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
     }
 
@@ -136,7 +142,19 @@ namespace mgm {
             avg_delta = avg_delta * (1.0f - delta_avg_calc_ratio) + (float)chrono_delta * 0.000001f * delta_avg_calc_ratio;
             instance->current_dt = delta;
 
+            const auto window_old_size = m_window->get_size();
+
             m_window->update();
+
+            const auto window_size = m_window->get_size();
+
+            if (window_size != window_old_size) {
+                graphics_mutex.lock();
+                m_graphics->settings().viewport.top_left = {0, 0};
+                m_graphics->settings().viewport.bottom_right = vec2i32{static_cast<int>(window_size.x()), static_cast<int>(window_size.y())};
+                m_graphics->apply_settings(true);
+                graphics_mutex.unlock();
+            }
 
             ImGui::GetIO().DeltaTime = delta;
             ImGui_ImplMgmGFX_ProcessInput(*m_window);

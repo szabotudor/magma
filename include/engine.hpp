@@ -27,6 +27,8 @@ namespace mgm {
         FileIO* m_file_io = nullptr;
         MgmWindow* m_window = nullptr;
         MgmGPU* m_graphics = nullptr;
+        std::mutex graphics_mutex{};
+
         SystemManager* m_system_manager = nullptr;
 
         std::mutex imgui_mutex;

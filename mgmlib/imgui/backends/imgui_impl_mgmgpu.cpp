@@ -478,6 +478,13 @@ void ImGui_ImplMgmGFX_ProcessInput(mgm::MgmWindow &window) {
     float mouse_pos_x{};
     bool mouse_pos_filled = false;
 
+    const auto window_size = window.get_size();
+
+    if (window_size.x() != io.DisplaySize.x || window_size.y() != io.DisplaySize.y) {
+        io.DisplaySize = {static_cast<float>(window_size.x()), static_cast<float>(window_size.y())};
+        io.DisplayFramebufferScale = {1.0f, 1.0f};
+    }
+
     for (const auto& event : window.get_input_events()) {
         switch (event.from) {
             case mgm::MgmWindow::InputEvent::From::MOUSE: {
