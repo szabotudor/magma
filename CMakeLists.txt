@@ -99,6 +99,14 @@ add_executable(
 )
 enable_warnings(magma_engine)
 
+if (CMAKE_BUILD_TYPE STREQUAL "Debug" AND UNIX AND NOT APPLE)
+    target_compile_options(mgmcommon PRIVATE -O0)
+    target_compile_options(mgmwin PRIVATE -O0)
+    target_compile_options(mgmlib PRIVATE -O0)
+    target_compile_options(magma PRIVATE -O0)
+    target_compile_options(magma_engine PRIVATE -O0)
+endif()
+
 target_include_directories(
     magma_engine
         PRIVATE
