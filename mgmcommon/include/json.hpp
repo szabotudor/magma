@@ -55,7 +55,7 @@ namespace mgm {
             return *this;
         }
 
-        JObject(const std::string& str) : data{ '"' + str + '"' } {}
+        JObject(const std::string& str);
         JObject(const char* str) : JObject{ std::string{str} } {}
         JObject(const char* begin, const char* end) : JObject{ std::string{begin, end} } {}
         JObject(const int32_t i) : data{ std::to_string(i) } {}
@@ -100,6 +100,14 @@ namespace mgm {
         JObject& operator[](size_t index);
 
         /**
+         * @brief Index into the JObject as an array
+         * 
+         * @param index The index to access
+         * @return const JObject& A const reference to the element at the given index
+         */
+        const JObject& operator[](size_t index) const;
+
+        /**
          * @brief Index into the JObject as an object
          * 
          * @param key The key to access
@@ -108,17 +116,17 @@ namespace mgm {
         JObject& operator[](const std::string &key);
 
         /**
+         * @brief Index into the JObject as an object
+         * 
+         * @param key The key to access
+         * @return const JObject& A const reference to the element with the given key
+         */
+        const JObject& operator[](const std::string &key) const;
+
+        /**
          * @brief Clear the JObject, setting it to an empty state
          */
         void clear();
-
-        /**
-         * @brief Parse a JSON string into a JObject
-         * 
-         * @param str The JSON string to parse
-         * @return JObject The parsed JObject
-         */
-        static JObject parse_json(const std::string &str);
 
         struct Iterator;
 

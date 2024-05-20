@@ -147,6 +147,9 @@ namespace mgm {
         std::unordered_map<std::string, JObject> map;
         size_t i = 1;
         while (i < str.size() - 1) {
+            if (str[i] == '}')
+                break;
+
             const auto key_start = str.find('"', i);
             if (key_start == std::string::npos) {
                 Logging{"json"}.error("No key in JSON object, returning empty object");
@@ -181,7 +184,7 @@ namespace mgm {
     }
 
     void JObject::parse() {
-        if (private_type() != PrivateType::SINGLE)
+        if (type() != Type::STRING)
             return;
 
         const auto str = std::any_cast<std::string>(data);
@@ -204,16 +207,47 @@ namespace mgm {
             case PrivateType::SINGLE: {
                 const auto& output = single_value();
                 if (output.empty()) return Type::NULLPTR;
+
+                size_t start = 0;
+                while (is_whitespace(output[start])) start++;
+                size_t end = output.size() - 1;
+                while (is_whitespace(output[end])) end--;
+                if (start >= end) return Type::NULLPTR;
+
+                const auto front = output[start], back = output[end];
+
                 if (is_num(output.front())) return Type::NUMBER;
-                if (output.front() == '"' && output.back() == '"') return Type::STRING;
+                if (front == '"' && back == '"') return Type::STRING;
                 if (output == "true" || output == "false") return Type::BOOLEAN;
-                if (output.front() == '[' && output.back() == ']') return Type::ARRAY;
-                if (output.front() == '{' && output.back() == '}') return Type::OBJECT;
+                if (front == '[' && back == ']') return Type::ARRAY;
+                if (front == '{' && back == '}') return Type::OBJECT;
                 return Type::NULLPTR;
             }
             case PrivateType::ARRAY: return Type::ARRAY;
             case PrivateType::OBJECT: return Type::OBJECT;
             default: return Type::NULLPTR;
+        }
+    }
+
+    JObject::JObject(const std::string& str) : data{ str } {
+        switch (type()) {
+            case Type::ARRAY: {
+                *this = string_to_array(str);
+                break;
+            }
+            case Type::OBJECT: {
+                *this = string_to_object(str);
+                break;
+            }
+            case Type::BOOLEAN:
+            case Type::NUMBER:
+            case Type::STRING: {
+                break;
+            }
+            default: {
+                data = '"' + str + '"';
+                break;
+            }
         }
     }
 
@@ -237,25 +271,16 @@ namespace mgm {
         return !(*this == other);
     }
 
-    JObject& JObject::emplace_back(const JObject &value) {
-        return array().emplace_back(value);
-    }
-    JObject& JObject::operator[](size_t index) {
-        return array()[index];
-    }
-    JObject& JObject::operator[](const std::string &key) {
-        return object()[key];
-    }
+    JObject& JObject::emplace_back(const JObject &value) { return array().emplace_back(value); }
+
+    JObject& JObject::operator[](size_t index) { return array()[index]; }
+    const JObject& JObject::operator[](size_t index) const { return array()[index]; }
+
+    JObject& JObject::operator[](const std::string &key) { return object()[key]; }
+    const JObject& JObject::operator[](const std::string &key) const { return object().at(key); }
 
     void JObject::clear() {
         data.reset();
-    }
-
-    JObject JObject::parse_json(const std::string &str) {
-        JObject obj{};
-        obj.data = str;
-        obj.parse();
-        return obj;
     }
 
     JObject::Iterator JObject::begin() {
@@ -276,7 +301,7 @@ namespace mgm {
     std::istream& operator>>(std::istream &is, JObject &obj) {
         std::string str;
         is >> str;
-        obj = JObject::parse_json(str);
+        obj = JObject{str};
         return is;
     }
 } // namespace mgm
