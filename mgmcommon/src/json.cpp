@@ -13,7 +13,7 @@ namespace mgm {
     vec2u64 get_full_word(const std::string& str, size_t pos) {
         const auto start_pos = pos;
         const auto start = str[pos++];
-        char end;
+        char end{};
         switch (start) {
             case '{': end = '}'; break;
             case '[': end = ']'; break;
