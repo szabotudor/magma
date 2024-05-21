@@ -299,6 +299,11 @@ namespace mgm {
 
 	LRESULT CALLBACK NativeWindow::window_proc(HWND h_window, UINT u_msg, WPARAM w_param, LPARAM l_param) {
 		switch (u_msg) {
+			case WM_CREATE: {
+			    auto* const create_struct = reinterpret_cast<CREATESTRUCT*>(l_param);
+			    SetWindowLongPtr(h_window, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(create_struct->lpCreateParams));
+			    return LRESULT{};
+			}
 			case WM_SIZE: {
 				if (updating_window != nullptr) {
 					RECT rect{};
@@ -412,11 +417,18 @@ namespace mgm {
                 );
 				break;
 			}
+		    case WM_SETCURSOR: {
+                if (LOWORD(l_param) == HTCLIENT) {
+					SetCursor(LoadCursor(nullptr, IDC_ARROW));
+					return TRUE;
+                }
+                break;
+			}
 			default: {
-				return DefWindowProc(h_window, u_msg, w_param, l_param);
+				break;
 			}
 		}
-		return LRESULT{};
+		return DefWindowProc(h_window, u_msg, w_param, l_param);
 	}
 
 	void MgmWindow::update() {
