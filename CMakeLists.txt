@@ -48,11 +48,13 @@ if (ENABLE_EDITOR)
             ${CMAKE_CURRENT_SOURCE_DIR}/src/editor_windows/editor_palette.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/src/editor_windows/file_browser.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/src/editor_windows/script_editor.cpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/src/editor_windows/settings.cpp
 
             ${CMAKE_CURRENT_SOURCE_DIR}/include/inspector.hpp
             ${CMAKE_CURRENT_SOURCE_DIR}/include/editor.hpp
             ${CMAKE_CURRENT_SOURCE_DIR}/include/editor_windows/file_browser.hpp
             ${CMAKE_CURRENT_SOURCE_DIR}/include/editor_windows/script_editor.hpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/include/editor_windows/settings.hpp
     )
 endif()
 
@@ -60,9 +62,11 @@ add_library(
     magma STATIC
         ${CMAKE_CURRENT_SOURCE_DIR}/src/engine.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/systems.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/input.cpp
 
         ${CMAKE_CURRENT_SOURCE_DIR}/include/engine.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/include/systems.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/input.hpp
 
         ${EDITOR_SOURCES}
 )

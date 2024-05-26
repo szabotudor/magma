@@ -3,6 +3,7 @@
 #include "editor.hpp"
 #include "imgui.h"
 #include "imgui_impl_mgmgpu.h"
+#include "input.hpp"
 #include "logging.hpp"
 #include "mgmgpu.hpp"
 #include "mgmwin.hpp"
@@ -34,6 +35,8 @@ namespace mgm {
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
     }
+
+    Input& MagmaEngine::input() { return systems().get<Input>(); }
 
     MagmaEngine::MagmaEngine(const std::vector<std::string>& args) {
         if (!instance) {
@@ -112,12 +115,18 @@ namespace mgm {
     void MagmaEngine::run() {
         if (!initialized) return;
 
+        if (!file_io().exists(Path::assets)) file_io().create_folder(Path::assets);
+        if (!file_io().exists(Path::game_data)) file_io().create_folder(Path::game_data);
+        if (!file_io().exists(Path::temp)) file_io().create_folder(Path::temp);
+
         if (this != instance) {
             Logging{"Engine"}.error("Do not call \"run\" on a secondary instance of MagmaEngine");
             return;
         }
         auto start = std::chrono::high_resolution_clock::now();
         float avg_delta = 1.0f;
+
+        systems().create<Input>();
 
 #if defined(ENABLE_EDITOR)
         if (!systems().try_get<Editor>())

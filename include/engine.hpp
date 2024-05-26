@@ -13,6 +13,7 @@ struct ExtractedDrawData;
 namespace mgm {
     class FileIO;
     class MgmWindow;
+    class Input;
     class MgmGPU;
     class SystemManager;
 
@@ -40,6 +41,7 @@ namespace mgm {
         public:
         FileIO& file_io() { return *m_file_io; }
         MgmWindow& window() { return *m_window; }
+        Input& input();
         MgmGPU& graphics() { return *m_graphics; }
         SystemManager& systems() { return *m_system_manager; }
 

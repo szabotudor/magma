@@ -79,8 +79,8 @@ namespace mgm {
             auto& system = systems[id];
             system = reinterpret_cast<System*>(new T{std::forward<Ts>(args)...});
             T& sys = *reinterpret_cast<T*>(system);
-            if (sys.system_name.empty())
-                sys.system_name = typeid(T).name();
+            if (system->system_name.empty())
+                system->system_name = typeid(T).name();
             return sys;
         }
 
