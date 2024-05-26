@@ -260,7 +260,7 @@ namespace mgm {
             }
             case PrivateType::ARRAY: return array_to_string();
             case PrivateType::OBJECT: return object_to_string();
-            default: return "";
+            default: return "{}";
         }
     }
 
@@ -279,6 +279,18 @@ namespace mgm {
     JObject& JObject::operator[](const std::string &key) { return object()[key]; }
     const JObject& JObject::operator[](const std::string &key) const { return object().at(key); }
 
+    bool JObject::has(const std::string& key) const {
+        if (type() != Type::OBJECT)
+            return false;
+        return object().find(key) != object().end();
+    }
+
+    bool JObject::has(size_t index) const {
+        if (type() != Type::ARRAY)
+            return false;
+        return index < array().size();
+    }
+
     void JObject::clear() {
         data.reset();
     }
@@ -291,6 +303,17 @@ namespace mgm {
         return end();
     }
     JObject::Iterator JObject::end() {
+        return {this, ""};
+    }
+
+    JObject::ConstIterator JObject::begin() const {
+        if (type() == Type::ARRAY)
+            return {this, 0};
+        if (type() == Type::OBJECT)
+            return {this, object().begin()->first};
+        return end();
+    }
+    JObject::ConstIterator JObject::end() const {
         return {this, ""};
     }
 

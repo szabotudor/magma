@@ -113,7 +113,7 @@ namespace mgm {
          * @param key The key to access
          * @return JObject& A reference to the element with the given key
          */
-        JObject& operator[](const std::string &key);
+        JObject& operator[](const std::string& key);
 
         /**
          * @brief Index into the JObject as an object
@@ -121,7 +121,23 @@ namespace mgm {
          * @param key The key to access
          * @return const JObject& A const reference to the element with the given key
          */
-        const JObject& operator[](const std::string &key) const;
+        const JObject& operator[](const std::string& key) const;
+
+        /**
+         * @brief If the JObject is an object, check if it has a key
+         * 
+         * @param key The key to check for
+         * @return true If the key exists
+         */
+        bool has(const std::string& key) const;
+
+        /**
+         * @brief If the JObject is an array, check if it has an index
+         * 
+         * @param index The index to check for
+         * @return true If the index exists
+         */
+        bool has(size_t index) const;
 
         /**
          * @brief Clear the JObject, setting it to an empty state
@@ -129,9 +145,13 @@ namespace mgm {
         void clear();
 
         struct Iterator;
+        struct ConstIterator;
 
         Iterator begin();
         Iterator end();
+
+        ConstIterator begin() const;
+        ConstIterator end() const;
 
         friend std::ostream& operator<<(std::ostream& os, const JObject& obj);
         friend std::istream& operator>>(std::istream& is, JObject& obj);
@@ -199,6 +219,72 @@ namespace mgm {
             return obj == other.obj && key == other.key;
         }
         bool operator!=(const Iterator& other) const {
+            return !(*this == other);
+        }
+    };
+
+    struct JObject::ConstIterator {
+        friend class JObject;
+
+        using iterator_category = std::forward_iterator_tag;
+        using value_type = const JObject;
+        using difference_type = std::ptrdiff_t;
+        using pointer = const JObject*;
+        using reference = const JObject&;
+        
+        const JObject* obj = nullptr;
+        JObject key{};
+
+        ConstIterator() = default;
+        ConstIterator(const JObject* obj, JObject key) : obj{obj}, key{key} {}
+
+        struct Deref {
+            JObject key;
+            const JObject& val;
+        };
+
+        Deref operator*() {
+            switch (key.type()) {
+                case JObject::Type::NUMBER: return {.key = key, .val = (*obj)[static_cast<size_t>(key)]};
+                case JObject::Type::STRING: return {.key = key, .val = (*obj)[std::string{key}]};
+                default: return {.key = key, .val = *obj};
+            }
+        }
+        Deref operator->() { return operator*(); }
+
+        ConstIterator& operator++() {
+            if (key.type() == JObject::Type::NUMBER) {
+                const auto new_key = static_cast<size_t>(key) + 1;
+                if (new_key >= obj->array().size())
+                    key = "";
+                else
+                    key = JObject{new_key};
+            } else {
+                auto& obj_map = obj->object();
+                auto it = obj_map.find(std::string{key});
+                if (it == obj_map.end()) {
+                    key = "";
+                } else {
+                    auto next = std::next(it);
+                    if (next == obj_map.end()) {
+                        key = "";
+                    } else {
+                        key = next->first;
+                    }
+                }
+            }
+            return *this;
+        }
+        ConstIterator operator++(int) {
+            auto copy = *this;
+            operator++();
+            return copy;
+        }
+
+        bool operator==(const ConstIterator& other) const {
+            return obj == other.obj && key == other.key;
+        }
+        bool operator!=(const ConstIterator& other) const {
             return !(*this == other);
         }
     };
