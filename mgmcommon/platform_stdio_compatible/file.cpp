@@ -7,6 +7,7 @@
 namespace mgm {
     Path Path::exe_dir{FileIO::exe_dir()};
     Path Path::assets{Path::exe_dir + Path{"assets/"}};
+    Path Path::game_data{Path::exe_dir + Path{"data/"}};
     Path Path::temp{Path::exe_dir + Path{"temp/"}};
 
 
@@ -110,8 +111,8 @@ namespace mgm {
 
         std::string result{std::istreambuf_iterator<char>{file}, std::istreambuf_iterator<char>{}};
         for (size_t i = 0; i < result.size(); i++) {
-            if (result[i] == '\r' && result[i + 1] == '\n'
-                || result[i] == '\n' && result[i + 1] == '\r') {
+            if ((result[i] == '\r' && result[i + 1] == '\n')
+                || (result[i] == '\n' && result[i + 1] == '\r')) {
                 result.replace(i, 2, "\n");
             }
             else if (result[i] == '\r') {

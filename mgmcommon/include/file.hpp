@@ -9,6 +9,7 @@ namespace mgm {
 
         static Path exe_dir;
         static Path assets;
+        static Path game_data;
         static Path temp;
 
         Path(const std::string& path);
