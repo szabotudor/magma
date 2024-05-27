@@ -1,4 +1,5 @@
 #include <cstring>
+#include <mutex>
 #include <string>
 #include <type_traits>
 #include <unordered_map>
@@ -170,6 +171,8 @@ namespace mgm {
         DLoader dloader{};
 #endif
 
+        std::mutex mutex{};
+
         Logging log{"MgmGPU"};
     };
 
@@ -197,6 +200,13 @@ namespace mgm {
         data->settings_offsets.emplace(GPUSettings::StateAttribute::SCISSOR, Data::StateAttributeOffset{(size_t)&backend_settings.scissor - (size_t)&backend_settings, sizeof(GPUSettings::Scissor)});
 
         connect_to_window(window_to_connect);
+    }
+
+    void MgmGPU::lock_mutex() {
+        data->mutex.lock();
+    }
+    void MgmGPU::unlock_mutex() {
+        data->mutex.unlock();
     }
 
     void MgmGPU::connect_to_window(MgmWindow *window_to_connect) {
@@ -304,7 +314,12 @@ namespace mgm {
 
     void MgmGPU::apply_settings(bool force) {
         if (!is_backend_loaded()) return;
-        if (!settings_changed) return;
+
+        lock_mutex();
+        if (!settings_changed) {
+            unlock_mutex();
+            return;
+        }
 
         if (backend_settings.canvas != data->old_settings.canvas) {
             //TODO: Implement canvas change
@@ -323,6 +338,7 @@ namespace mgm {
 
         data->old_settings = backend_settings;
         settings_changed = false;
+        unlock_mutex();
     }
 
     void MgmGPU::draw() {
@@ -330,8 +346,12 @@ namespace mgm {
         apply_settings();
 
         Texture* canvas = nullptr;
+        lock_mutex();
         if (backend_settings.canvas != INVALID_TEXTURE)
             canvas = data->textures[backend_settings.canvas];
+
+        const auto draw_list = this->draw_list;
+        unlock_mutex();
 
         if (draw_list.empty()) {
             data->clear(data->backend);
@@ -364,7 +384,9 @@ namespace mgm {
                     if (it == call.parameters.end())
                         data->log.error("SETTINGS_CHANGE draw call missing \"settings\" parameter");
                     else {
+                        lock_mutex();
                         settings() = std::any_cast<GPUSettings>(it->second);
+                        unlock_mutex();
                         apply_settings();
                     }
                     break;
@@ -380,11 +402,14 @@ namespace mgm {
     }
 
     void MgmGPU::stash() {
+        lock_mutex();
         stash_list.emplace_back(StashItem{backend_settings, draw_list});
         draw_list.clear();
+        unlock_mutex();
     }
 
     void MgmGPU::pop_stash() {
+        lock_mutex();
         if (stash_list.empty()) {
             data->log.warning("No stashes to pop");
             return;
@@ -393,6 +418,7 @@ namespace mgm {
         settings() = stash_list.back().settings;
         draw_list = stash_list.back().draw_list;
         stash_list.pop_back();
+        unlock_mutex();
 
         apply_settings();
     }

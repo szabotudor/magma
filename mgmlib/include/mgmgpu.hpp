@@ -75,6 +75,16 @@ namespace mgm {
         MgmGPU(MgmWindow* window = nullptr);
 
         /**
+         * @brief If using MgmGPU on multiple threads, it's recommended to lock the mutex before changing settings or draw calls list. Actual rendering is already thread-safe, but changing settings or draw calls list is not.
+         */
+        void lock_mutex();
+
+        /**
+         * @brief If using MgmGPU on multiple threads, it's recommended to lock the mutex before changing settings or draw calls list. Actual rendering is already thread-safe, but changing settings or draw calls list is not.
+         */
+        void unlock_mutex();
+
+        /**
          * @brief Connect to a window to render to
          * 
          * @param window The window to render to
