@@ -1,0 +1,49 @@
+#pragma once
+
+
+#include "systems.hpp"
+#include <string>
+#include <unordered_map>
+namespace mgm {
+    class Notifications : public System {
+        struct Notif {
+            std::string message{};
+            size_t message_hash{};
+            float time{};
+        };
+        std::vector<Notif> notifications{};
+        std::unordered_map<size_t, size_t> notif_ids{};
+
+        float pos = 0.0f;
+
+        public:
+        Notifications() = default;
+
+        /**
+         * @brief If the remaining time in seconds of a notification is less than this value, it will start to fade out
+         */
+        float start_fade = 0.5f;
+
+        /**
+         * @brief If a message exceeds this length, a warning will be displayed
+         */
+        size_t message_length_limit = 512;
+
+        /**
+         * @brief If true, will truncate messages that exceed the length limit
+         */
+        bool truncate_over_length = true;
+
+        /**
+         * @brief Push a notification to the screen (or renew an existing one with the same message)
+         * 
+         * @param message The message to display
+         * @param timeout The time in seconds before the message disappears after the last push of the same message
+         */
+        void push(const std::string& message, float timeout = 2.0f);
+
+        void update(float delta) override;
+
+        ~Notifications() override = default;
+    };
+}
