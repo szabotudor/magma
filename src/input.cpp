@@ -1,19 +1,35 @@
 #include "input.hpp"
+#include "notifications.hpp"
 #include "engine.hpp"
+#include "helper_math.hpp"
+#include "imgui.h"
 #include "json.hpp"
 #include "mgmwin.hpp"
 
 
 namespace mgm {
-    void Input::register_input_action(const std::string &name, MgmWindow::InputInterface input, const std::vector<MgmWindow::InputInterface> &modifiers) {
+    void Input::register_input_action(const std::string &name, MgmWindow::InputInterface input, const std::vector<MgmWindow::InputInterface> &modifiers, bool overwrite) {
         auto& action = input_actions[name];
-        if (!action.inputs.empty()) {
-            Logging{"Input"}.warning("Action \"", name, "\" already registered, overwriting");
-            action.inputs.clear();
+        if (action.inputs.empty()) {
+            if (input != MgmWindow::InputInterface::NONE) {
+                action.inputs.emplace_back(input);
+            }
+            else if (!modifiers.empty()) {
+                Logging{"Input"}.error("Action \"", name, "\" has no input, ignoring modifiers");
+                return;
+            }
+            action.inputs.insert(action.inputs.end(), modifiers.begin(), modifiers.end());
         }
-        input_actions[name].inputs.emplace_back(input);
-        for (auto& modifier : modifiers)
-            input_actions[name].inputs.emplace_back(modifier);
+        else {
+            if (overwrite) {
+                if (!action.inputs.empty())
+                    action = Action{};
+                else
+                    return;
+            }
+            action.inputs.emplace_back(input);
+            action.inputs.insert(action.inputs.end(), modifiers.begin(), modifiers.end());
+        }
     }
 
     void Input::auto_register_input_action(const std::string &name) {
@@ -170,6 +186,32 @@ namespace mgm {
                 if (is_action_just_released(name))
                     for (const auto& callback : action.release_callbacks)
                         callback();
+            }
+        }
+
+        if (!auto_register_queue.empty()) {
+            const auto& name = *auto_register_queue.begin();
+
+            MagmaEngine engine{};
+            engine.notifications().push("Waiting for input for while registering action \"" + name + "\"");
+
+            for (const auto& event : engine.window().get_input_events()) {
+                if (event.mode == MgmWindow::InputEvent::Mode::PRESS) {
+                    const auto it = std::find(input_stack.begin(), input_stack.end(), event.input);
+                    if (it == input_stack.end())
+                        input_stack.emplace_back(event.input);
+                }
+                else if (event.mode == MgmWindow::InputEvent::Mode::RELEASE) {
+                    const auto it = std::find(input_stack.begin(), input_stack.end(), event.input);
+                    if (it == input_stack.begin()) {
+                        const auto action = input_stack.back();
+                        const auto modifiers = std::vector<MgmWindow::InputInterface>{input_stack.begin(), input_stack.end() - 1};
+                        register_input_action(name, action, modifiers, true);
+                        input_stack.clear();
+                        auto_register_queue.erase(name);
+                        break;
+                    }
+                }
             }
         }
     }
