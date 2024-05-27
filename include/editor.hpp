@@ -27,7 +27,9 @@ namespace mgm {
     class Editor : public System {
         friend class EditorWindow;
         friend class Inspector;
+        friend class EditorSettings;
 
+        void* font_id = nullptr;
         float palette_window_height = 0.0f;
         std::vector<EditorWindow*> windows;
 
@@ -40,7 +42,7 @@ namespace mgm {
         void update(float delta) override;
         void on_end_play() override;
 
-        bool palette_options() override;
+        bool draw_palette_options() override;
         
         template<typename T, typename... Ts, std::enable_if_t<std::is_base_of_v<EditorWindow, T> && std::is_constructible_v<T, Ts...>, bool> = true>
         void add_window(bool remove_on_close = false, Ts&&... args) {

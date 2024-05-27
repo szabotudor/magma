@@ -7,6 +7,7 @@
 #include "imgui.h"
 #include "imgui_stdlib.h"
 #include "editor_windows/script_editor.hpp"
+#include "notifications.hpp"
 #include "systems.hpp"
 #include <cmath>
 
@@ -41,7 +42,7 @@ namespace mgm {
             0x25A0, 0x25FF, // Geometric Shapes
             0,
         };
-        io.Fonts->AddFontFromFileTTF("resources/fonts/Hack-Regular.ttf", 20.0f, nullptr, ranges);
+        font_id = io.Fonts->AddFontFromFileTTF("resources/fonts/Hack-Regular.ttf", 20.0f, nullptr, ranges);
         
         auto engine = MagmaEngine{};
         engine.systems().create<Inspector>();
@@ -50,16 +51,21 @@ namespace mgm {
 
         if (!engine.file_io().exists(Path::assets))
             engine.file_io().create_folder(Path::assets);
+
+        engine.notifications().push("Welcome to MagmaEngine. Press 'ctrl+space' to open the editor palette.");
     }
 
     void Editor::update(float delta) {
-        ImGui::PushFont(ImGui::GetIO().Fonts->Fonts[1]);
+        ImGui::PushFont((ImFont*)font_id);
 
         for (const auto window : windows)
             window->draw_window();
 
         auto engine = MagmaEngine{};
         vec2i32 mouse_pos{-1, -1};
+
+        if (engine.window().get_input_interface_delta(MgmWindow::InputInterface::Key_P) == 1.0f)
+            engine.notifications().push("Hello World");
 
 
         if ((engine.window().get_input_interface(MgmWindow::InputInterface::Key_CTRL) == 1.0f
@@ -103,7 +109,7 @@ namespace mgm {
         ImGui::Separator();
         for (const auto& [type_id, system] : engine.systems().systems) {
             system->in_editor_update(delta);
-            if (system->palette_options())
+            if (system->draw_palette_options())
                 palette_open = false;
         }
 
