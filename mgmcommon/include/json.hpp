@@ -4,6 +4,7 @@
 #include <string>
 #include <cstdint>
 #include <unordered_map>
+#include <variant>
 
 
 namespace mgm {
@@ -12,8 +13,11 @@ namespace mgm {
             NONE, SINGLE, ARRAY, OBJECT
         };
         PrivateType private_type() const;
+        PrivateType parsed_data_private_type() const;
 
         std::any data{};
+        mutable std::any parsed_data{};
+
         std::unordered_map<std::string, JObject> &object();
         const std::unordered_map<std::string, JObject> &object() const;
         std::vector<JObject> &array();
@@ -27,6 +31,7 @@ namespace mgm {
         static JObject string_to_object(const std::string& str);
 
         void parse();
+        void parse() const;
 
         public:
         enum class Type {
@@ -38,6 +43,11 @@ namespace mgm {
             NULLPTR
         };
         Type type() const;
+
+        private:
+        Type parsed_data_type() const;
+
+        public:
 
         JObject() = default;
         JObject(const JObject& other) : data{other.data} {}
@@ -144,68 +154,73 @@ namespace mgm {
          */
         void clear();
 
+        template<typename T, typename MapIterator>
         struct Iterator;
-        struct ConstIterator;
 
-        Iterator begin();
-        Iterator end();
+        using JObjectMapIterator = std::unordered_map<std::string, JObject>::iterator;
+        using JObjectConstMapIterator = std::unordered_map<std::string, JObject>::const_iterator;
 
-        ConstIterator begin() const;
-        ConstIterator end() const;
+        Iterator<JObject, JObjectMapIterator> begin();
+        Iterator<JObject, JObjectMapIterator> end();
+
+        Iterator<const JObject, JObjectConstMapIterator> begin() const;
+        Iterator<const JObject, JObjectConstMapIterator> end() const;
 
         friend std::ostream& operator<<(std::ostream& os, const JObject& obj);
         friend std::istream& operator>>(std::istream& is, JObject& obj);
     };
 
+    template<typename T, typename MapIterator>
     struct JObject::Iterator {
         friend class JObject;
 
         using iterator_category = std::forward_iterator_tag;
-        using value_type = JObject;
+        using value_type = T;
         using difference_type = std::ptrdiff_t;
-        using pointer = JObject*;
-        using reference = JObject&;
+        using pointer = T*;
+        using reference = T&;
         
-        JObject* obj = nullptr;
-        JObject key{};
+        pointer obj = nullptr;
+        std::variant<MapIterator, JObject> key{};
 
         Iterator() = default;
-        Iterator(JObject* obj, JObject key) : obj{obj}, key{key} {}
+        Iterator(pointer obj, JObject key) : obj{obj}, key{key} {}
+        Iterator(pointer obj, MapIterator key) : obj{obj}, key{key} {}
 
         struct Deref {
             JObject key;
-            JObject& val;
+            reference val;
         };
 
         Deref operator*() {
-            switch (key.type()) {
-                case JObject::Type::NUMBER: return {.key = key, .val = (*obj)[static_cast<size_t>(key)]};
-                case JObject::Type::STRING: return {.key = key, .val = (*obj)[std::string{key}]};
-                default: return {.key = key, .val = *obj};
-            }
+            if (std::holds_alternative<MapIterator>(key))
+                return {.key = std::get<MapIterator>(key)->first, .val = std::get<MapIterator>(key)->second};
+            if (std::holds_alternative<JObject>(key))
+                return {.key = static_cast<size_t>(std::get<JObject>(key)), .val = (*obj)[static_cast<size_t>(std::get<JObject>(key))]};
+            throw std::runtime_error{"Invalid iterator"};
         }
         Deref operator->() { return operator*(); }
 
         Iterator& operator++() {
-            if (key.type() == JObject::Type::NUMBER) {
-                const auto new_key = static_cast<size_t>(key) + 1;
+            if (std::holds_alternative<MapIterator>(key)) {
+                const auto& obj_map = obj->object();
+                auto it = std::get<MapIterator>(key);
+                if (it == obj_map.end())
+                    key = "";
+                else {
+                    auto next = std::next(it);
+                    if (next == obj_map.end())
+                        key = "";
+                    else
+                        key = next->first;
+                }
+            }
+            else if (std::holds_alternative<JObject>(key)) {
+                const auto new_key = static_cast<size_t>(std::get<JObject>(key)) + 1;
                 if (new_key >= obj->array().size())
                     key = "";
                 else
-                    key = JObject{new_key};
-            } else {
-                auto& obj_map = obj->object();
-                auto it = obj_map.find(std::string{key});
-                if (it == obj_map.end()) {
-                    key = "";
-                } else {
-                    auto next = std::next(it);
-                    if (next == obj_map.end()) {
-                        key = "";
-                    } else {
-                        key = next->first;
-                    }
-                }
+                    key = value_type{new_key};
             }
             return *this;
         }
@@ -219,72 +234,6 @@ namespace mgm {
             return obj == other.obj && key == other.key;
         }
         bool operator!=(const Iterator& other) const {
-            return !(*this == other);
-        }
-    };
-
-    struct JObject::ConstIterator {
-        friend class JObject;
-
-        using iterator_category = std::forward_iterator_tag;
-        using value_type = const JObject;
-        using difference_type = std::ptrdiff_t;
-        using pointer = const JObject*;
-        using reference = const JObject&;
-        
-        const JObject* obj = nullptr;
-        JObject key{};
-
-        ConstIterator() = default;
-        ConstIterator(const JObject* obj, JObject key) : obj{obj}, key{key} {}
-
-        struct Deref {
-            JObject key;
-            const JObject& val;
-        };
-
-        Deref operator*() {
-            switch (key.type()) {
-                case JObject::Type::NUMBER: return {.key = key, .val = (*obj)[static_cast<size_t>(key)]};
-                case JObject::Type::STRING: return {.key = key, .val = (*obj)[std::string{key}]};
-                default: return {.key = key, .val = *obj};
-            }
-        }
-        Deref operator->() { return operator*(); }
-
-        ConstIterator& operator++() {
-            if (key.type() == JObject::Type::NUMBER) {
-                const auto new_key = static_cast<size_t>(key) + 1;
-                if (new_key >= obj->array().size())
-                    key = "";
-                else
-                    key = JObject{new_key};
-            } else {
-                auto& obj_map = obj->object();
-                auto it = obj_map.find(std::string{key});
-                if (it == obj_map.end()) {
-                    key = "";
-                } else {
-                    auto next = std::next(it);
-                    if (next == obj_map.end()) {
-                        key = "";
-                    } else {
-                        key = next->first;
-                    }
-                }
-            }
-            return *this;
-        }
-        ConstIterator operator++(int) {
-            auto copy = *this;
-            operator++();
-            return copy;
-        }
-
-        bool operator==(const ConstIterator& other) const {
-            return obj == other.obj && key == other.key;
-        }
-        bool operator!=(const ConstIterator& other) const {
             return !(*this == other);
         }
     };

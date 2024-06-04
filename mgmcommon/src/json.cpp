@@ -51,12 +51,12 @@ namespace mgm {
 
         size_t depth = 1;
         while (depth > 0) {
-            pos++;
             if (pos >= str.size()) return {start_pos, start_pos};
             if (str[pos] == start) depth++;
             if (str[pos] == end) depth--;
+            pos++;
         }
-        return {start_pos, pos + 1};
+        return {start_pos, pos};
     }
 
 
@@ -71,6 +71,16 @@ namespace mgm {
         return PrivateType::NONE;
     };
 
+    JObject::PrivateType JObject::parsed_data_private_type() const {
+        if (parsed_data.type() == typeid(std::string))
+            return PrivateType::SINGLE;
+        if (parsed_data.type() == typeid(std::vector<JObject>))
+            return PrivateType::ARRAY;
+        if (parsed_data.type() == typeid(std::unordered_map<std::string, JObject>))
+            return PrivateType::OBJECT;
+        return PrivateType::NONE;
+    };
+
 
     std::unordered_map<std::string, JObject> &JObject::object() {
         parse();
@@ -79,6 +89,12 @@ namespace mgm {
         return std::any_cast<std::unordered_map<std::string, JObject> &>(data);
     }
     const std::unordered_map<std::string, JObject> &JObject::object() const {
+        if (private_type() != PrivateType::OBJECT) {
+            parse();
+            if (parsed_data_private_type() == PrivateType::OBJECT)
+                return std::any_cast<const std::unordered_map<std::string, JObject> &>(parsed_data);
+            throw std::runtime_error("Error parsing const object in JObject::object()");
+        }
         return std::any_cast<const std::unordered_map<std::string, JObject> &>(data);
     }
 
@@ -89,6 +105,12 @@ namespace mgm {
         return std::any_cast<std::vector<JObject> &>(data);
     }
     const std::vector<JObject> &JObject::array() const {
+        if (private_type() != PrivateType::ARRAY) {
+            parse();
+            if (parsed_data_private_type() == PrivateType::ARRAY)
+                return std::any_cast<const std::vector<JObject> &>(parsed_data);
+            throw std::runtime_error("Error parsing const array in JObject::array()");
+        }
         return std::any_cast<const std::vector<JObject> &>(data);
     }
 
@@ -99,6 +121,12 @@ namespace mgm {
         return std::any_cast<std::string &>(data);
     }
     const std::string &JObject::single_value() const {
+        if (private_type() != PrivateType::SINGLE) {
+            parse();
+            if (parsed_data_private_type() == PrivateType::SINGLE)
+                return std::any_cast<const std::string &>(parsed_data);
+            throw std::runtime_error("Error parsing const single value in JObject::single_value()");
+        }
         return std::any_cast<const std::string &>(data);
     }
 
@@ -118,7 +146,10 @@ namespace mgm {
         std::string res = "{ ";
         size_t i = 0;
         for (const auto& [key, value] : map) {
-            res += '"' + key + "\": " + std::string{value};
+            if (value.type() == Type::STRING)
+                res += '"' + key + "\": \"" + std::string{value} + '"';
+            else
+                res += '"' + key + "\": " + std::string{value};
             if (i < map.size() - 1) res += ", ";
             i++;
         }
@@ -184,17 +215,43 @@ namespace mgm {
     }
 
     void JObject::parse() {
-        if (type() != Type::STRING)
+        if (private_type() != PrivateType::SINGLE)
+            return;
+
+        if (parsed_data_type() != Type::STRING && parsed_data_type() != Type::NULLPTR) {
+            data = parsed_data;
+            parsed_data.reset();
+        }
+
+        const auto str = std::any_cast<std::string>(data);
+        switch (type()) {
+            case Type::ARRAY: {
+                data = string_to_array(str).data;
+                break;
+            }
+            case Type::OBJECT: {
+                data = string_to_object(str).data;
+                break;
+            }
+            default: break;
+        }
+    }
+
+    void JObject::parse() const {
+        const auto ty = private_type();
+        if (ty != PrivateType::SINGLE)
+            return;
+        if (type() == parsed_data_type())
             return;
 
         const auto str = std::any_cast<std::string>(data);
         switch (type()) {
             case Type::ARRAY: {
-                *this = string_to_array(str);
+                parsed_data = string_to_array(str).data;
                 break;
             }
             case Type::OBJECT: {
-                *this = string_to_object(str);
+                parsed_data = string_to_object(str).data;
                 break;
             }
             default: break;
@@ -227,6 +284,12 @@ namespace mgm {
             case PrivateType::OBJECT: return Type::OBJECT;
             default: return Type::NULLPTR;
         }
+    }
+
+    JObject::Type JObject::parsed_data_type() const {
+        JObject copy{};
+        copy.data = parsed_data;
+        return copy.type();
     }
 
     JObject::JObject(const std::string& str) : data{ str } {
@@ -295,25 +358,32 @@ namespace mgm {
         data.reset();
     }
 
-    JObject::Iterator JObject::begin() {
+    JObject::Iterator<JObject, JObject::JObjectMapIterator> JObject::begin() {
         if (type() == Type::ARRAY)
             return {this, 0};
-        if (type() == Type::OBJECT)
-            return {this, object().begin()->first};
+        if (type() == Type::OBJECT) {
+            const auto it = object().begin();
+            if (it != object().end())
+                return {this, it};
+        }
         return end();
     }
-    JObject::Iterator JObject::end() {
+    JObject::Iterator<JObject, JObject::JObjectMapIterator> JObject::end() {
         return {this, ""};
     }
 
-    JObject::ConstIterator JObject::begin() const {
-        if (type() == Type::ARRAY)
+    JObject::Iterator<const JObject, JObject::JObjectConstMapIterator> JObject::begin() const {
+        if (type() == Type::ARRAY) {
             return {this, 0};
-        if (type() == Type::OBJECT)
-            return {this, object().begin()->first};
+        }
+        if (type() == Type::OBJECT) {
+            const auto it = object().begin();
+            if (it != object().end())
+                return {this, it};
+        }
         return end();
     }
-    JObject::ConstIterator JObject::end() const {
+    JObject::Iterator<const JObject, JObject::JObjectConstMapIterator> JObject::end() const {
         return {this, ""};
     }
 
