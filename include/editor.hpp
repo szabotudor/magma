@@ -38,9 +38,7 @@ namespace mgm {
 
         Editor();
 
-        void on_begin_play() override;
         void update(float delta) override;
-        void on_end_play() override;
 
         bool draw_palette_options() override;
         
@@ -56,6 +54,6 @@ namespace mgm {
             delete window;
         }
 
-        ~Editor() override = default;
+        ~Editor() override;
     };
 }

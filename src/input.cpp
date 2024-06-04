@@ -129,8 +129,9 @@ namespace mgm {
         std::vector<std::string> input_actions{};
         input_actions.emplace_back(obj["input"]);
 
-        for (const auto& [key, value] : obj["modifiers"])
-            input_actions.emplace_back(value);
+        if (obj.has("modifiers"))
+            for (const auto& [key, value] : obj["modifiers"])
+                input_actions.emplace_back(value);
 
         for (const auto& name : input_actions) {
             const auto ii = MgmWindow::input_interface_from_name(name);
@@ -140,12 +141,16 @@ namespace mgm {
             else
                 Logging{"Input"}.error("Invalid input interface name: \"", name, "\" in \"inputs.json\" file");
         }
-        action.analog = (bool)obj["analog"];
+        if (obj.has("analog"))
+            action.analog = (bool)obj["analog"];
+        else
+            action.analog = false;
 
         return action;
     }
 
-    void Input::on_begin_play() {
+    Input::Input() {
+        system_name = "Input";
         MagmaEngine engine{};
         if (!engine.file_io().exists(Path::game_data / "inputs.json"))
             return;
@@ -216,7 +221,7 @@ namespace mgm {
         }
     }
 
-    void Input::on_end_play() {
+    Input::~Input() {
         MagmaEngine engine{};
         JObject json{};
         auto& json_actions = json["actions"];

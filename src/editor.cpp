@@ -1,6 +1,7 @@
 #include "editor.hpp"
 #include "engine.hpp"
 #include "helper_math.hpp"
+#include "imgui_impl_mgmgpu.h"
 #include "inspector.hpp"
 #include "logging.hpp"
 #include "mgmwin.hpp"
@@ -18,7 +19,7 @@ namespace mgm {
             return;
 
         bool prev_open = open;
-        ImGui::Begin(name.c_str(), &open);
+        ImGui::BeginResizeable(name.c_str(), &open);
 
         if (!open && prev_open && remove_on_close) {
             ImGui::End();
@@ -33,9 +34,7 @@ namespace mgm {
 
     Editor::Editor() {
         system_name = "Editor";
-    }
 
-    void Editor::on_begin_play() {
         ImGuiIO& io = ImGui::GetIO();
         static const ImWchar ranges[] = {
             0x0020, 0x00FF, // Basic Latin + Latin Supplement
@@ -49,23 +48,21 @@ namespace mgm {
 
         Logging{"Editor"}.log("Editor initialized");
 
-        if (!engine.file_io().exists(Path::assets))
-            engine.file_io().create_folder(Path::assets);
-
         engine.notifications().push("Welcome to MagmaEngine. Press 'ctrl+space' to open the editor palette.");
     }
 
     void Editor::update(float delta) {
         ImGui::PushFont((ImFont*)font_id);
 
+
         for (const auto window : windows)
             window->draw_window();
 
         auto engine = MagmaEngine{};
-        vec2i32 mouse_pos{-1, -1};
+        for (const auto& [type_id, system] : engine.systems().systems)
+            system->in_editor_update(delta);
 
-        if (engine.window().get_input_interface_delta(MgmWindow::InputInterface::Key_P) == 1.0f)
-            engine.notifications().push("Hello World");
+        vec2i32 mouse_pos{-1, -1};
 
 
         if ((engine.window().get_input_interface(MgmWindow::InputInterface::Key_CTRL) == 1.0f
@@ -108,7 +105,6 @@ namespace mgm {
         ImGui::Text("Palette");
         ImGui::Separator();
         for (const auto& [type_id, system] : engine.systems().systems) {
-            system->in_editor_update(delta);
             if (system->draw_palette_options())
                 palette_open = false;
         }
@@ -124,7 +120,7 @@ namespace mgm {
         ImGui::PopFont();
     }
 
-    void Editor::on_end_play() {
+    Editor::~Editor() {
         for (const auto window : windows)
             delete window;
         Logging{"Editor"}.log("Editor closed");

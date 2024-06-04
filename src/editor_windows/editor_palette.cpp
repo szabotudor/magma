@@ -1,4 +1,5 @@
 #include "editor.hpp"
+#include "editor_windows/settings.hpp"
 #include "inspector.hpp"
 #include "engine.hpp"
 #include "imgui.h"
@@ -18,16 +19,7 @@ namespace mgm {
         return false;
     }
 
-    template<>
-    bool Inspector::inspect(const std::string&, Path& value) {
-        if (ImGui::SmallButton((value - Path::assets).data.c_str())) {
-            MagmaEngine{}.systems().get<Editor>().add_window<ScriptEditor>(true, value);
-            return true;
-        }
-        return false;
-    }
-
-    bool Editor::palette_options() {
+    bool Editor::draw_palette_options() {
         bool something_selected = false;
 
         auto& inspector = MagmaEngine{}.systems().get<Inspector>();
@@ -41,6 +33,11 @@ namespace mgm {
 
             if (ImGui::SmallButton("New")) {
                 add_window<FileBrowser>(true, FileBrowser::Mode::WRITE, "new_script");
+                something_selected = true;
+            }
+
+            if (ImGui::SmallButton("Settings")) {
+                add_window<EditorSettings>(true);
                 something_selected = true;
             }
 

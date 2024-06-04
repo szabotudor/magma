@@ -42,6 +42,9 @@ namespace mgm {
          */
         void push(const std::string& message, float timeout = 2.0f);
 
+#if defined(ENABLE_EDITOR)
+        virtual void in_editor_update(float delta) override { update(delta); }
+#endif
         void update(float delta) override;
 
         ~Notifications() override = default;

@@ -7,6 +7,8 @@
 #include "logging.hpp"
 #include "mgmgpu.hpp"
 #include "mgmwin.hpp"
+#include "notifications.hpp"
+#include "engine_manager.hpp"
 
 #include <chrono>
 #include <iostream>
@@ -19,8 +21,6 @@ namespace mgm {
 
     void MagmaEngine::render_thread_function() {
         while (engine_running) {
-            graphics_mutex.lock();
-
             m_graphics->draw();
 
             imgui_mutex.lock();
@@ -29,14 +29,12 @@ namespace mgm {
             imgui_mutex.unlock();
 
             m_graphics->present();
-
-            graphics_mutex.unlock();
-
-            std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
     }
 
     Input& MagmaEngine::input() { return systems().get<Input>(); }
+    Notifications& MagmaEngine::notifications() { return systems().get<Notifications>(); }
+    EngineManager& MagmaEngine::engine_manager() { return systems().get<EngineManager>(); }
 
     MagmaEngine::MagmaEngine(const std::vector<std::string>& args) {
         if (!instance) {
@@ -56,29 +54,16 @@ namespace mgm {
         m_system_manager = new SystemManager{};
 
         bool help_called = false;
-        std::unordered_map<std::string, std::function<void(MagmaEngine*)>> args_map{
-            {"--help", [&](MagmaEngine* engine) {
-                (void)engine;
-                std::cout << "Usage: " << "magma [options]\n"
-                    << "Options:\n"
-                    << "\t--help\t\tShow this help message\n"
-                    << "\t--editor\tStart the editor\n";
-                help_called = true;
-            }},
-#if defined(ENABLE_EDITOR)
-            {"--editor", [](MagmaEngine* engine) {
-                engine->systems().create<Editor>();
-            }}
-#endif
-        };
 
-        for (const auto& arg : args) {
-            const auto it = args_map.find(arg);
-            if (it == args_map.end()) {
-                Logging{"main"}.warning("Unknown argument: ", arg);
-                continue;
-            }
-            it->second(this);
+        if (std::find(args.begin(), args.end(), "--help") != args.end()) {
+            std::cout << "Usage: " << Path::exe_dir.file_name() << " [options]\n"
+                << "Options:\n"
+                << "\t--help\t\tShow this help message\n"
+#if defined(ENABLE_EDITOR)
+                << "\t--editor\tStart the editor\n"
+#endif
+            ;
+            help_called = true;
         }
 
         if (help_called) return;
@@ -109,6 +94,15 @@ namespace mgm {
         
         ImGui_ImplMgmGFX_Init(*m_graphics);
 
+        systems().create<Input>();
+        systems().create<Notifications>();
+        systems().create<EngineManager>();
+
+#if defined(ENABLE_EDITOR)
+        if (std::find(args.begin(), args.end(), "--editor") != args.end())
+            systems().create<Editor>();
+#endif
+
         initialized = true;
     }
 
@@ -124,9 +118,6 @@ namespace mgm {
             return;
         }
         auto start = std::chrono::high_resolution_clock::now();
-        float avg_delta = 1.0f;
-
-        systems().create<Input>();
 
 #if defined(ENABLE_EDITOR)
         if (!systems().try_get<Editor>())
@@ -143,12 +134,10 @@ namespace mgm {
         std::thread render_thread{&MagmaEngine::render_thread_function, this};
 
         while (!m_window->should_close()) {
-            constexpr auto delta_avg_calc_ratio = 0.001f;
             const auto now = std::chrono::high_resolution_clock::now();
             const auto chrono_delta = std::chrono::duration_cast<std::chrono::microseconds>(now - start).count();
             start = now;
             const float delta = (float)chrono_delta * 0.000001f;
-            avg_delta = avg_delta * (1.0f - delta_avg_calc_ratio) + (float)chrono_delta * 0.000001f * delta_avg_calc_ratio;
             instance->current_dt = delta;
 
             const auto window_old_size = m_window->get_size();
@@ -158,11 +147,11 @@ namespace mgm {
             const auto window_size = m_window->get_size();
 
             if (window_size != window_old_size) {
-                graphics_mutex.lock();
+                m_graphics->lock_mutex();
                 m_graphics->settings().viewport.top_left = {0, 0};
                 m_graphics->settings().viewport.bottom_right = vec2i32{static_cast<int>(window_size.x()), static_cast<int>(window_size.y())};
+                m_graphics->unlock_mutex();
                 m_graphics->apply_settings(true);
-                graphics_mutex.unlock();
             }
 
             ImGui::GetIO().DeltaTime = delta;
@@ -171,24 +160,24 @@ namespace mgm {
             ImGui::NewFrame();
 
             ImGui::DockSpaceOverViewport(nullptr, ImGuiDockNodeFlags_PassthruCentralNode);
+            
+            if (engine_manager().font)
+                ImGui::PushFont(engine_manager().font);
 
-            for (const auto& [id, sys] : systems().systems) {
-                sys->update(delta);
+#if defined(ENABLE_EDITOR)
+            if (systems().try_get<Editor>())
+                systems().get<Editor>().update(delta);
+            else {
+                for (const auto& [id, sys] : systems().systems)
+                    sys->update(delta);
             }
+#else
+            for (const auto& [id, sys] : systems().systems)
+                sys->update(delta);
+#endif
 
-            ImGui::SetNextWindowPos({0, 0});
-            ImGui::Begin("Debug", nullptr, ImGuiWindowFlags_AlwaysAutoResize
-                | ImGuiWindowFlags_NoResize
-                | ImGuiWindowFlags_NoMove
-                | ImGuiWindowFlags_NoCollapse
-                | ImGuiWindowFlags_NoTitleBar
-                | ImGuiWindowFlags_NoBackground
-                | ImGuiWindowFlags_NoSavedSettings
-                | ImGuiWindowFlags_NoInputs
-                | ImGuiWindowFlags_NoDocking
-            );
-            ImGui::Text("%i FPS", static_cast<int>(1.0f / avg_delta));
-            ImGui::End();
+            if (engine_manager().font)
+                ImGui::PopFont();
 
             ImGui::EndFrame();
             ImGui::Render();
@@ -196,17 +185,23 @@ namespace mgm {
             imgui_mutex.lock();
             if (m_imgui_draw_data->is_set)
                 m_imgui_draw_data->clear();
-            extract_draw_data(ImGui::GetDrawData(), *m_imgui_draw_data, *m_graphics);
+
+            m_graphics->lock_mutex();
+            const auto viewport = m_graphics->settings().viewport;
+            m_graphics->unlock_mutex();
+            extract_draw_data(ImGui::GetDrawData(), *m_imgui_draw_data, viewport);
+
             imgui_mutex.unlock();
         }
 
         engine_running = false;
         render_thread.join();
 
-#if !defined(ENABLE_EDITOR)
-        for (const auto& [id, sys] : systems().systems)
-            sys->on_end_play();
+#if defined(ENABLE_EDITOR)
+        if (!systems().try_get<Editor>())
 #endif
+            for (const auto& [id, sys] : systems().systems)
+                sys->on_end_play();
     }
 
     float MagmaEngine::delta_time() const {

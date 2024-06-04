@@ -33,7 +33,7 @@ namespace mgm {
         std::vector<MgmWindow::InputInterface> input_stack{};
 
         public:
-        Input() { system_name = "Input"; }
+        Input();
 
         /**
          * @brief Register an input action
@@ -129,10 +129,11 @@ namespace mgm {
         const std::vector<Callback>& release_callbacks(const std::string& name) const;
 
 
-        virtual void on_begin_play() override;
+#if defined(ENABLE_EDITOR)
+        virtual void in_editor_update(float delta) override { update(delta); }
+#endif
         virtual void update(float) override;
-        virtual void on_end_play() override;
 
-        ~Input() = default;
+        ~Input();
     };
 }

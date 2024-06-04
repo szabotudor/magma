@@ -8,17 +8,22 @@
 
 struct ImDrawData;
 struct ExtractedDrawData;
+struct ImFont;
 
 
 namespace mgm {
     class FileIO;
     class MgmWindow;
     class Input;
+    class Notifications;
     class MgmGPU;
     class SystemManager;
+    class EngineManager;
 
 
     class MagmaEngine {
+        friend class EngineManager;
+
         bool initialized = false;
 
         static MagmaEngine* instance;
@@ -28,7 +33,6 @@ namespace mgm {
         FileIO* m_file_io = nullptr;
         MgmWindow* m_window = nullptr;
         MgmGPU* m_graphics = nullptr;
-        std::mutex graphics_mutex{};
 
         SystemManager* m_system_manager = nullptr;
 
@@ -42,6 +46,8 @@ namespace mgm {
         FileIO& file_io() { return *m_file_io; }
         MgmWindow& window() { return *m_window; }
         Input& input();
+        Notifications& notifications();
+        EngineManager& engine_manager();
         MgmGPU& graphics() { return *m_graphics; }
         SystemManager& systems() { return *m_system_manager; }
 

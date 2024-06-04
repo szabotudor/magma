@@ -109,7 +109,7 @@ void ImGui_ImplMgmGFX_NewFrame() {
     }
 }
 
-void extract_draw_data(ImDrawData* draw_data, ExtractedDrawData& out, const mgm::MgmGPU& backend) {
+void extract_draw_data(ImDrawData* draw_data, ExtractedDrawData& out, const mgm::Settings::Viewport& viewport) {
     float L = draw_data->DisplayPos.x;
     float R = draw_data->DisplayPos.x + draw_data->DisplaySize.x;
     float T = draw_data->DisplayPos.y;
@@ -166,8 +166,8 @@ void extract_draw_data(ImDrawData* draw_data, ExtractedDrawData& out, const mgm:
                 if (clip_max.x <= clip_min.x || clip_max.y <= clip_min.y)
                     continue;
 
-                cmd_data.scissor.top_left = {static_cast<int>(clip_min.x), backend.settings().viewport.bottom_right.y() - static_cast<int>(clip_max.y)};
-                cmd_data.scissor.bottom_right = {static_cast<int>(clip_max.x), backend.settings().viewport.bottom_right.y() - static_cast<int>(clip_min.y)};
+                cmd_data.scissor.top_left = {static_cast<int>(clip_min.x), viewport.bottom_right.y() - static_cast<int>(clip_max.y)};
+                cmd_data.scissor.bottom_right = {static_cast<int>(clip_max.x), viewport.bottom_right.y() - static_cast<int>(clip_min.y)};
 
                 cmd_data.idx_offset = im_cmd->IdxOffset;
                 cmd_data.elem_count = im_cmd->ElemCount;
@@ -539,4 +539,92 @@ void ImGui_ImplMgmGFX_ProcessInput(mgm::MgmWindow &window) {
     
     const auto& text = window.get_text_input();
     io.AddInputCharactersUTF8(text.c_str());
+}
+
+namespace ImGui {
+    void BeginResizeable(const char *name, bool *p_open, ImGuiWindowFlags flags) {
+        ImGui::Begin(name, p_open, flags);
+
+        if ((ImGuiWindowFlags_NoResize & flags) || (ImGuiWindowFlags_NoMove & flags))
+            return;
+
+        const ImVec2 margin_size{4.0f, 4.0f};
+
+        const bool bottom = ImGui::IsMouseHoveringRect(
+            ImGui::GetWindowPos() + ImVec2{0.0f, ImGui::GetWindowSize().y} - margin_size,
+            ImGui::GetWindowPos() + ImGui::GetWindowSize() + margin_size,
+            false
+        );
+        const bool left = ImGui::IsMouseHoveringRect(
+            ImGui::GetWindowPos() - margin_size,
+            ImGui::GetWindowPos() + ImVec2{0.0f, ImGui::GetWindowSize().y} + margin_size,
+            false
+        );
+        const bool right = ImGui::IsMouseHoveringRect(
+            ImGui::GetWindowPos() + ImVec2{ImGui::GetWindowSize().x, 0.0f} - margin_size,
+            ImGui::GetWindowPos() + ImGui::GetWindowSize() + margin_size,
+            false
+        );
+
+
+        const auto delta = ImGui::GetIO().MouseDelta;
+        const auto bottom_drag = ImGui::IsMouseHoveringRect(
+            ImGui::GetWindowPos() + ImVec2{0.0f, ImGui::GetWindowSize().y} - margin_size + delta,
+            ImGui::GetWindowPos() + ImGui::GetWindowSize() + margin_size + delta,
+            false
+        );
+        const auto left_drag = ImGui::IsMouseHoveringRect(
+            ImGui::GetWindowPos() - margin_size + delta,
+            ImGui::GetWindowPos() + ImVec2{0.0f, ImGui::GetWindowSize().y} + margin_size + delta,
+            false
+        );
+        const auto right_drag = ImGui::IsMouseHoveringRect(
+            ImGui::GetWindowPos() + ImVec2{ImGui::GetWindowSize().x, 0.0f} - margin_size + delta,
+            ImGui::GetWindowPos() + ImGui::GetWindowSize() + margin_size + delta,
+            false
+        );
+
+        const bool dragging = ImGui::IsMouseDragging(ImGuiMouseButton_Left);
+        if (dragging && (bottom_drag || left_drag || right_drag)) {
+            ImGui::SetWindowFocus();
+        }
+
+        if (dragging) {
+            if (bottom_drag) {
+                ImGui::SetWindowSize(ImGui::GetWindowSize() + ImVec2{0.0f, delta.y});
+            }
+            if (left_drag) {
+                ImGui::SetWindowPos(ImGui::GetWindowPos() + ImVec2{delta.x, 0.0f});
+                ImGui::SetWindowSize(ImGui::GetWindowSize() - ImVec2{delta.x, 0.0f});
+            }
+            if (right_drag) {
+                ImGui::SetWindowSize(ImGui::GetWindowSize() + ImVec2{delta.x, 0.0f});
+            }
+        }
+
+        if (bottom || (dragging && bottom_drag)) {
+            ImGui::GetForegroundDrawList()->AddLine(
+                ImGui::GetWindowPos() + ImVec2{0.0f, ImGui::GetWindowSize().y},
+                ImGui::GetWindowPos() + ImVec2{ImGui::GetWindowSize().x, ImGui::GetWindowSize().y},
+                IM_COL32(255, 255, 255, 255),
+                margin_size.y * 2.0f
+            );
+        }
+        if (left || (dragging && left_drag)) {
+            ImGui::GetForegroundDrawList()->AddLine(
+                ImGui::GetWindowPos(),
+                ImGui::GetWindowPos() + ImVec2{0.0f, ImGui::GetWindowSize().y},
+                IM_COL32(255, 255, 255, 255),
+                margin_size.x * 2.0f
+            );
+        }
+        if (right || (dragging && right_drag)) {
+            ImGui::GetForegroundDrawList()->AddLine(
+                ImGui::GetWindowPos() + ImVec2{ImGui::GetWindowSize().x, 0.0f},
+                ImGui::GetWindowPos() + ImVec2{ImGui::GetWindowSize().x, ImGui::GetWindowSize().y},
+                IM_COL32(255, 255, 255, 255),
+                margin_size.x * 2.0f
+            );
+        }
+    }
 }

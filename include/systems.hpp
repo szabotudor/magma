@@ -39,7 +39,12 @@ namespace mgm {
          * @brief Called when the palette is open, to inspect options for the system
          * @return True If the palette should be closed (an option was selected)
          */
-        virtual bool palette_options() { return false; /* Unused */ };
+        virtual bool draw_palette_options() { return false; /* Unused */ };
+
+        /**
+         * @brief Called when the settings window is open, to inspect options for the system
+         */
+        virtual void draw_settings_window_contents() { /* Unused */ }
 #endif
 
         /**
