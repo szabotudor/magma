@@ -1,10 +1,29 @@
 #pragma once
 #include <string>
 #include <vector>
+#include <unordered_map>
 
 
 namespace mgm {
     struct Path {
+        private:
+        std::string parse_prefix() const {
+            const auto it = data.find_first_of("://");
+            if (it == std::string::npos) {
+                return data;
+            }
+            if (it > 0) {
+                const auto prefix = data.substr(0, it);
+                const auto prefix_it = prefixes.find(prefix);
+                if (prefix_it != prefixes.end())
+                    return prefix_it->second.data + data.substr(it + 3);
+            }
+            if (it == 0)
+                return prefixes.at("assets").data + data.substr(3);
+            return data;
+        }
+
+        public:
         std::string data{};
 
         static Path exe_dir;
@@ -12,10 +31,27 @@ namespace mgm {
         static Path game_data;
         static Path temp;
 
+        static const std::unordered_map<std::string, Path> prefixes;
+
         Path(const std::string& path);
         Path(const char* path);
 
-        Path() : data{assets.data} {}
+        Path() {}
+
+        Path(const Path& other) : data{other.data} {}
+        Path(Path&& other) : data{std::move(other.data)} {}
+        Path& operator=(const Path& other) {
+            if (this == &other)
+                return *this;
+            data = other.data;
+            return *this;
+        }
+        Path& operator=(Path&& other) {
+            if (this == &other)
+                return *this;
+            data = std::move(other.data);
+            return *this;
+        }
 
         Path operator+(const Path &other) const;
         Path &operator+=(const Path &other);
@@ -37,6 +73,9 @@ namespace mgm {
             }
             return Path{data.substr(0, where - 1)};
         }
+        Path& operator-=(const Path &other) {
+            return *this = *this - other;
+        }
 
         Path back() const {
             const auto last_slash = data.find_last_of('/');
@@ -53,9 +92,52 @@ namespace mgm {
         }
 
         std::string platform_path() const;
+        
+        static Path from_platform_path(const std::string& path);
 
         std::string file_name() const;
+
+        bool empty() const {
+            return data.empty();
+        }
+
+        enum class Validity {
+            // The path is empty (not valid, but not invalid either)
+            EMPTY,
+
+            // The path is invalid
+            INVALID,
+
+            // The path is valid, but it points to a file or folder outside of the allowed directories.
+            // This is fine most of the time, but could be a problem on some platforms
+            OUTSIDE_ALLOWED,
+
+            // The path is valid and points to a file or folder inside the allowed directories
+            VALID
+        };
+        Validity validity() const {
+            if (data.empty())
+                return Validity::EMPTY;
+            if (data.find_first_of("://") == std::string::npos)
+                return Validity::OUTSIDE_ALLOWED;
+            return Validity::VALID;
+        }
     };
+
+    inline const std::unordered_map<std::string, Path> Path::prefixes = {
+        {"exe", exe_dir},
+        {"assets", assets},
+        {"game_data", game_data},
+        {"temp", temp}
+    };
+
+#define CHECK_PATH(path, default_return_value) \
+    if (path.validity() == Path::Validity::OUTSIDE_ALLOWED) \
+        Logging{"FileIO"}.warning("Path is outside allowed directories: ", path.data, "\n\tThis is fine on most platforms, but could be a problem on some"); \
+    if (path.validity() == Path::Validity::INVALID) { \
+        Logging{"FileIO"}.error("Invalid path: ", path.data); \
+        return default_return_value; \
+    }
 
 
     class FileIO {

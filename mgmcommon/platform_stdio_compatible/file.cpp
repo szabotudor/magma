@@ -1,14 +1,13 @@
 #include <fstream>
-#include <filesystem>
 #include "file.hpp"
 #include "logging.hpp"
 
 
 namespace mgm {
     Path Path::exe_dir{FileIO::exe_dir()};
-    Path Path::assets{Path::exe_dir + Path{"assets/"}};
-    Path Path::game_data{Path::exe_dir + Path{"data/"}};
-    Path Path::temp{Path::exe_dir + Path{"temp/"}};
+    Path Path::assets{exe_dir + Path{"assets/"}};
+    Path Path::game_data{exe_dir + Path{"data/"}};
+    Path Path::temp{exe_dir + Path{"temp/"}};
 
 
     Path &Path::operator+=(const Path &other) {
@@ -50,58 +49,9 @@ namespace mgm {
         platform_data = new Data{};
     }
 
-    std::vector<Path> FileIO::list_files(const Path &path, bool recursive) {
-        std::vector<Path> files{};
-
-        const auto path_str = path.platform_path();
-        if (!std::filesystem::exists(path_str))
-            return files;
-
-        auto dir = std::filesystem::directory_iterator{path_str};
-        for (const auto& entry : dir) {
-            if (entry.is_regular_file())
-                files.emplace_back(entry.path().string());
-            else if (recursive && entry.is_directory()) {
-                auto sub_files = list_files(entry.path().string(), true);
-                files.insert(files.end(), sub_files.begin(), sub_files.end());
-            }
-        }
-
-        return files;
-    }
-
-    std::vector<Path> FileIO::list_folders(const Path &path, bool recursive) {
-        std::vector<Path> folders{};
-
-        const auto path_str = path.platform_path();
-        if (!std::filesystem::exists(path_str))
-            return folders;
-
-        auto dir = std::filesystem::directory_iterator{path_str};
-        for (const auto& entry : dir) {
-            if (entry.is_directory()) {
-                folders.emplace_back(entry.path().string());
-                if (recursive) {
-                    auto sub_folders = list_folders(entry.path().string(), true);
-                    folders.insert(folders.end(), sub_folders.begin(), sub_folders.end());
-                }
-            }
-        }
-
-        return folders;
-    }
-
-    void FileIO::create_folder(const Path &path) {
-        const auto path_str = path.platform_path();
-        if (!std::filesystem::exists(path.back().platform_path())) {
-            Logging{"FileIO"}.error("Folder doesn't exist: ", path.back().platform_path(), "\n\tCannot create new folder: ", path_str);
-            return;
-        }
-        if (!std::filesystem::create_directory(path_str))
-            Logging{"FileIO"}.error("Failed to create folder: ", path_str);
-    }
-
     std::string FileIO::read_text(const Path &path) {
+        CHECK_PATH(path, "");
+
         const auto path_str = path.platform_path();
         auto file = std::ifstream{path_str};
         if (!file.is_open()) {
@@ -122,6 +72,8 @@ namespace mgm {
         return result;
     }
     void FileIO::write_text(const Path &path, const std::string &text) {
+        CHECK_PATH(path, );
+
         const auto path_str = path.platform_path();
         auto file = std::ofstream{path_str};
         if (!file.is_open()) {
@@ -133,6 +85,8 @@ namespace mgm {
     }
 
     std::vector<uint8_t> FileIO::read_binary(const Path &path) {
+        CHECK_PATH(path, {});
+
         const auto path_str = path.platform_path();
         auto file = std::ifstream{path_str, std::ios::binary};
         if (!file.is_open()) {
@@ -143,6 +97,8 @@ namespace mgm {
         return std::vector<uint8_t>{std::istreambuf_iterator<char>{file}, std::istreambuf_iterator<char>{}};
     }
     void FileIO::write_binary(const Path &path, const std::vector<uint8_t> &data) {
+        CHECK_PATH(path, );
+
         const auto path_str = path.platform_path();
         auto file = std::ofstream{path_str, std::ios::binary};
         if (!file.is_open()) {
@@ -153,11 +109,9 @@ namespace mgm {
         file.write(reinterpret_cast<const char*>(data.data()), data.size());
     }
 
-    bool FileIO::exists(const Path &path) {
-        return std::filesystem::exists(path.platform_path());
-    }
-
     void FileIO::delete_file(const Path &path) {
+        CHECK_PATH(path, );
+
         const auto path_str = path.platform_path();
         if (std::remove(path_str.c_str()) != 0)
             Logging{"FileIO"}.error("Failed to delete file: ", path_str);
@@ -165,6 +119,8 @@ namespace mgm {
 
 
     void FileIO::begin_read_stream(const Path &path) {
+        CHECK_PATH(path, );
+
         auto& read_file = platform_data->read_files.emplace_back();
 
         const auto path_str = path.platform_path();
@@ -186,6 +142,8 @@ namespace mgm {
     }
 
     void FileIO::begin_write_stream(const Path &path) {
+        CHECK_PATH(path, );
+
         auto& write_file = platform_data->write_files.emplace_back();
 
         const auto path_str = path.platform_path();

@@ -12,6 +12,10 @@ namespace mgm {
         return data;
     }
 
+    Path Path::from_platform_path(const std::string &path) {
+        return Path{path};
+    }
+
     Path FileIO::exe_dir() {
         char buffer[PATH_MAX];
         ssize_t count = readlink("/proc/self/exe", buffer, sizeof(buffer));

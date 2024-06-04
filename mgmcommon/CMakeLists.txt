@@ -8,12 +8,14 @@ if(UNIX AND NOT APPLE)
             ${CMAKE_CURRENT_SOURCE_DIR}/platform_linux/file.cpp
     )
     set(STDIO_COMPATIBLE ON)
+    set(FILESYSTEM_COMPATIBLE ON)
 elseif(WIN32)
     set(
         PLATFORM_SOURCES
             ${CMAKE_CURRENT_SOURCE_DIR}/platform_windows/file.cpp
     )
     set(STDIO_COMPATIBLE ON)
+    set(FILESYSTEM_COMPATIBLE ON)
 endif()
 
 if(STDIO_COMPATIBLE)
@@ -21,6 +23,12 @@ if(STDIO_COMPATIBLE)
         PLATFORM_SOURCES
             ${CMAKE_CURRENT_SOURCE_DIR}/platform_stdio_compatible/logging.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/platform_stdio_compatible/file.cpp
+        )
+endif()
+if(FILESYSTEM_COMPATIBLE)
+    list(APPEND
+        PLATFORM_SOURCES
+            ${CMAKE_CURRENT_SOURCE_DIR}/platform_filesystem_compatible/file.cpp
         )
 endif()
 

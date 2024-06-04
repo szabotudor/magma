@@ -21,6 +21,15 @@ namespace mgm {
                 c = '\\';
 		return path;
 	}
+
+	Path Path::from_platform_path(const std::string& path) {
+		Path res{path};
+		for (auto& c : res.data)
+			if (c == '\\')
+				c = '/';
+		return res;
+	}
+
     Path FileIO::exe_dir() {
 	    char buff[MAX_PATH]{};
 		constexpr size_t len = sizeof(buff);
