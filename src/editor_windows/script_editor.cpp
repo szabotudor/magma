@@ -3,6 +3,7 @@
 #include "imgui.h"
 #include "logging.hpp"
 #include "mgmwin.hpp"
+#include "notifications.hpp"
 
 
 namespace mgm {
@@ -154,6 +155,7 @@ namespace mgm {
         if (time_since_last_edit > max_inactivity_time && !file_saved) {
             file_saved = true;
             engine.file_io().write_text(path, content);
+            engine.notifications().push("File \"" + path.data + "\" saved");
         }
 
         if (!engine.window().get_text_input().empty()) {
