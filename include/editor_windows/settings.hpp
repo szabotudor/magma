@@ -21,12 +21,21 @@ namespace mgm {
             return subsections;
         }
 
+        static std::string beautify_name(std::string name);
+
         template<typename T>
         RegisterSubsectionFunction(const std::string& name, const T& func) {
             using Class = typename MemberFunctionTraits<T>::Class;
+
+            const auto beautified_name = beautify_name(name);
+
             const auto type_id = typeid(Class).hash_code();
-            get_subsections_map()[type_id][name] = [func](System* sys) {
-                (((Class*)sys)->*func)();
+            const auto it = get_subsections_map()[type_id].find(beautified_name);
+            if (it != get_subsections_map()[type_id].end())
+                return;
+
+            get_subsections_map()[type_id][beautified_name] = [func](System* sys) {
+                (static_cast<Class*>(sys)->*func)();
             };
         }
     };
