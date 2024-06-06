@@ -1,6 +1,8 @@
 #pragma once
+#include "editor_windows/settings.hpp"
 #include "systems.hpp"
 #include "engine.hpp"
+#include "helpers.hpp"
 
 
 namespace mgm {
@@ -13,9 +15,14 @@ namespace mgm {
         public:
         EngineManager();
 
+        void general_settings() { Logging{"EngineManager"}.log("General settings opened"); }
+        SETTINGS_SUBSECTION_DRAW_FUNC(general_settings)
+
+        void render_settings() { Logging{"EngineManager"}.log("Render settings opened"); }
+        SETTINGS_SUBSECTION_DRAW_FUNC(render_settings)
+
 #if defined(ENABLE_EDITOR)
         virtual void in_editor_update(float delta) override { update(delta); }
-        void draw_settings_window_contents() override;
 #endif
         void update(float delta) override;
 

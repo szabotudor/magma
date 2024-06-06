@@ -12,21 +12,27 @@ namespace mgm {
             if (selected_system == 0)
                 selected_system = type_id;
 
-            if (type_id == selected_system)
-                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{0.2f, 0.2f, 0.2f, 1.0f});
+            const auto it = RegisterSubsectionFunction::get_subsections_map().find(type_id);
+            if (it == RegisterSubsectionFunction::get_subsections_map().end()) {
+                ImGui::TreeNodeEx(system->system_name.c_str(), ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen);
+                continue;
+            }
 
-            ImGui::SmallButton(system->system_name.c_str());
-
-            if (type_id == selected_system)
-                ImGui::PopStyleColor();
-            if (ImGui::IsItemClicked())
-                selected_system = type_id;
+            if (ImGui::TreeNodeEx(system->system_name.c_str(), ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_DefaultOpen)) {
+                if (it != RegisterSubsectionFunction::get_subsections_map().end()) {
+                    for (auto& [name, func] : it->second) {
+                        ImGui::TreeNodeEx(name.c_str(), ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen);
+                        if (ImGui::IsItemClicked())
+                            func(system);
+                    }
+                }
+                ImGui::TreePop();
+            }
         }
         ImGui::EndChild();
 
         ImGui::SameLine();
         ImGui::BeginChild("Settings", {}, ImGuiChildFlags_Border);
-        engine.systems().systems[selected_system]->draw_settings_window_contents();
         ImGui::EndChild();
     }
 }

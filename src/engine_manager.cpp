@@ -1,4 +1,5 @@
 #include "engine_manager.hpp"
+#include "editor_windows/settings.hpp"
 #include "engine.hpp"
 #include "imgui.h"
 #include "json.hpp"
@@ -19,9 +20,6 @@ namespace mgm {
             if (!font_file.empty())
                 font = ImGui::GetIO().Fonts->AddFontFromFileTTF(font_file.platform_path().c_str(), 16.0f);
         }
-    }
-
-    void EngineManager::draw_settings_window_contents() {
     }
 
     void EngineManager::update(float) {
