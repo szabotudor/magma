@@ -4,7 +4,7 @@ project(magma C CXX)
 macro(enable_warnings target)
     target_compile_options(${target} PRIVATE
         $<$<CXX_COMPILER_ID:MSVC>:/W4 /WX>
-        $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra -Wpedantic>
+        $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra -Wpedantic -Wshadow -Wfloat-equal -Wcast-align -Wstrict-prototypes -Wmissing-prototypes -Wredundant-decls -Wconversion -Wsign-conversion -Wformat=2 -Wswitch-default -Wswitch-enum -Wunreachable-code -Wundef -Wbad-function-cast -Wcast-qual -Wwrite-strings -Wpointer-arith -Winit-self -Wlogical-op -Wstrict-aliasing=2 -Wno-unknown-pragmas -Wold-style-definition -Wmissing-field-initializers -Waggregate-return -Wmissing-noreturn -Wduplicated-branches -Wodr -Wdouble-promotion -Wzero-as-null-pointer-constant -Wuseless-cast -Wno-multichar -Wnull-dereference -Wformat-overflow=2 -Walloc-zero -Walloca -Werror>
     )
 endmacro()
 
