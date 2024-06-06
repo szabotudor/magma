@@ -39,7 +39,7 @@ add_library(
         ${PLATFORM_SOURCES}
 
         ${CMAKE_CURRENT_SOURCE_DIR}/include/file.hpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/helper_math.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/helpers.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/include/json.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/include/logging.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/include/mgmath.hpp
