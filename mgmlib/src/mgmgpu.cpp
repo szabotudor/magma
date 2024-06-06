@@ -459,7 +459,11 @@ namespace mgm {
         for (const auto& buf : buffers)
             raw_buffers.emplace_back(data->buffers[buf].buffer);
 
-        return static_cast<BuffersObjectHandle>(data->buffers_objects.create(data->create_buffers_object(data->backend, raw_buffers.data(), raw_buffers.size())));
+        const auto obj = data->create_buffers_object(data->backend, raw_buffers.data(), raw_buffers.size());
+        lock_mutex();
+        const auto handle = static_cast<BuffersObjectHandle>(data->buffers_objects.create(obj));
+        unlock_mutex();
+        return handle;
     }
 
     void MgmGPU::destroy_buffers_object(BuffersObjectHandle buffers_object) {
@@ -468,14 +472,20 @@ namespace mgm {
         if (buffers_object == INVALID_BUFFERS_OBJECT) return;
 
         data->destroy_buffers_object(data->backend, data->buffers_objects[buffers_object]);
+        lock_mutex();
         data->buffers_objects.destroy(buffers_object);
+        unlock_mutex();
     }
 
     MgmGPU::ShaderHandle MgmGPU::create_shader(const ShaderCreateInfo &info) {
         if (!is_backend_loaded()) return INVALID_SHADER;
         apply_settings();
 
-        return static_cast<ShaderHandle>(data->shaders.create(data->create_shader(data->backend, info)));
+        const auto shader = data->create_shader(data->backend, info);
+        lock_mutex();
+        const auto handle = static_cast<ShaderHandle>(data->shaders.create(shader));
+        unlock_mutex();
+        return handle;
     }
 
     void MgmGPU::destroy_shader(ShaderHandle shader) {
@@ -484,14 +494,20 @@ namespace mgm {
         if (shader == INVALID_SHADER) return;
 
         data->destroy_shader(data->backend, data->shaders[shader]);
+        lock_mutex();
         data->shaders.destroy(shader);
+        unlock_mutex();
     }
 
     MgmGPU::TextureHandle MgmGPU::create_texture(const TextureCreateInfo &info) {
         if (!is_backend_loaded()) return INVALID_TEXTURE;
         apply_settings();
 
-        return static_cast<TextureHandle>(data->textures.create(data->create_texture(data->backend, info)));
+        const auto texture = data->create_texture(data->backend, info);
+        lock_mutex();
+        const auto handle = static_cast<TextureHandle>(data->textures.create(texture));
+        unlock_mutex();
+        return handle;
     }
 
     void MgmGPU::destroy_texture(TextureHandle texture) {
@@ -500,7 +516,9 @@ namespace mgm {
         if (texture == INVALID_TEXTURE) return;
 
         data->destroy_texture(data->backend, data->textures[texture]);
+        lock_mutex();
         data->textures.destroy(texture);
+        unlock_mutex();
     }
 
     MgmGPU::~MgmGPU() {
