@@ -15,9 +15,8 @@ constexpr bool is_type_complete_v = false;
 template<typename T>
 constexpr inline bool is_type_complete_v <T, std::void_t<decltype(sizeof(T))>> = true;
 
-/// Thanks to https://stackoverflow.com/a/70701479/10978039 (by user HolyBlackCat on stack overflow) for this version of the self macro.
-/// And thanks to https://github.com/MitalAshok/self_macro/ (by user MitalAshok on GitHub) for the first solution to the self macro.
-/// Original implementation by MitalAshok is licenced under MIT License, as can be seen in the repository.
+/// Thanks to https://github.com/MitalAshok/self_macro/ (by user MitalAshok on GitHub) for being the first to discover the solution to the self macro.
+/// Original implementation by MitalAshok is licenced under MIT License. Original license can be found on the repository linked above.
 #if !defined(DEFINE_SELF)
 namespace SelfType
     {
@@ -44,7 +43,6 @@ namespace SelfType
     using Self = SelfType::Read<__self_type_tag>;
 
 #define DEFINE_SELF_WITH_NAME(name) \
-    constexpr auto __##name##_type_helper() -> decltype(SelfType::Writer<struct __self_type_tag, decltype(this)>{}); \
+    constexpr auto __##name##_type_helper() -> decltype(SelfType::Writer<struct __self_type_tag, decltype(this)>{}) { return {}; } \
     using name = SelfType::Read<__self_type_tag>;
 #endif
-

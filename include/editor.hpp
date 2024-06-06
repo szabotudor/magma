@@ -12,7 +12,7 @@ namespace mgm {
         bool remove_on_close = false;
 
         public:
-        std::string name = "EditorWindow";
+        std::string window_name = "EditorWindow";
         bool open = true;
 
         EditorWindow() = default;

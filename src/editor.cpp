@@ -19,7 +19,7 @@ namespace mgm {
             return;
 
         bool prev_open = open;
-        ImGui::BeginResizeable(name.c_str(), &open);
+        ImGui::BeginResizeable(window_name.c_str(), &open);
 
         if (!open && prev_open && remove_on_close) {
             ImGui::End();

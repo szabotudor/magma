@@ -350,16 +350,16 @@ namespace mgm {
         if (backend_settings.canvas != INVALID_TEXTURE)
             canvas = data->textures[backend_settings.canvas];
 
-        const auto draw_list = this->draw_list;
+        const auto draw_list_copy = draw_list;
         unlock_mutex();
 
-        if (draw_list.empty()) {
+        if (draw_list_copy.empty()) {
             data->clear(data->backend);
             data->execute(data->backend, canvas);
             return;
         }
 
-        for (const auto& call : draw_list) {
+        for (const auto& call : draw_list_copy) {
             switch (call.type) {
                 case DrawCall::Type::CLEAR: {
                     data->execute(data->backend, canvas);

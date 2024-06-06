@@ -197,7 +197,6 @@ namespace mgm {
         if (!auto_register_queue.empty()) {
             const auto& name = *auto_register_queue.begin();
 
-            MagmaEngine engine{};
             engine.notifications().push("Waiting for input for while registering action \"" + name + "\"");
 
             for (const auto& event : engine.window().get_input_events()) {

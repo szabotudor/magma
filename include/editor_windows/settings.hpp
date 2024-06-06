@@ -40,7 +40,7 @@ namespace mgm {
 
     public:
         EditorSettings() {
-            name = "Settings";
+            window_name = "Settings";
         }
 
         void draw_contents() override;

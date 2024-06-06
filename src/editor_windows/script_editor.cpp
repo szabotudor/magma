@@ -7,7 +7,7 @@
 
 namespace mgm {
     ScriptEditor::ScriptEditor(const Path& path, float save_after_inactivity_seconds) : path{path}, max_inactivity_time{save_after_inactivity_seconds} {
-        name = path.file_name();
+        window_name = path.file_name();
 
         MagmaEngine engine{};
         content = engine.file_io().read_text(path);

@@ -19,7 +19,7 @@ namespace mgm {
 
         FileBrowser(Mode mode, const std::string& default_name = "New File", const std::vector<uint8_t>& default_contents = {})
         : default_contents{default_contents}, file_name{default_name}, mode{mode} {
-            name = "File Browser";
+            window_name = "File Browser";
         }
 
         void draw_contents() override;

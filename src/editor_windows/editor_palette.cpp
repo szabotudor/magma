@@ -10,7 +10,7 @@
 namespace mgm {
     template<>
     bool Inspector::inspect(const std::string&, EditorWindow*& value) {
-        ImGui::Checkbox(value->name.c_str(), &value->open);
+        ImGui::Checkbox(value->window_name.c_str(), &value->open);
         if (!value->open && value->remove_on_close) {
             MagmaEngine{}.systems().get<Editor>().remove_window(value);
             return true;
