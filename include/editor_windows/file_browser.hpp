@@ -17,8 +17,8 @@ namespace mgm {
             WRITE,
         } mode{};
 
-        FileBrowser(Mode mode, const std::string& default_name = "New File", const std::vector<uint8_t>& default_contents = {})
-        : default_contents{default_contents}, file_name{default_name}, mode{mode} {
+        FileBrowser(Mode browser_mode, const std::string& default_name = "New File", const std::vector<uint8_t>& default_file_contents = {})
+        : default_contents{default_file_contents}, file_name{default_name}, mode{browser_mode} {
             window_name = "File Browser";
         }
 

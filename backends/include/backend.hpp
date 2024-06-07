@@ -3,9 +3,7 @@
 #include <unordered_map>
 
 #include "backend_settings.hpp"
-#include "mgmath.hpp"
 #include "native_window.hpp"
-#include "types.hpp"
 
 #if !defined(WIN32)
 #define EXPORT extern "C"

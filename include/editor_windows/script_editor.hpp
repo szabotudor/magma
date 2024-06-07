@@ -18,6 +18,46 @@ namespace mgm {
         };
         std::vector<Line> lines{};
 
+        Line& get_line(int64_t line_number) {
+            if ((size_t)line_number >= lines.size()) {
+                lines.resize((size_t)(line_number + 1));
+            }
+            return lines[(size_t)(line_number)];
+        }
+        const Line& get_line(int64_t line_number) const {
+            if ((size_t)line_number >= lines.size()) {
+                return lines[0];
+            }
+            return lines[(size_t)(line_number)];
+        }
+
+        int64_t line_count() const {
+            return (int64_t)lines.size();
+        }
+
+        char& content_get(int64_t index) {
+            if (index < 0) {
+                return content[0];
+            }
+            if ((size_t)index >= content.size()) {
+                return content[content.size() - 1];
+            }
+            return content[(size_t)index];
+        }
+        const char& content_get(int64_t index) const {
+            if (index < 0) {
+                return content[0];
+            }
+            if ((size_t)index >= content.size()) {
+                return content[content.size() - 1];
+            }
+            return content[(size_t)index];
+        }
+
+        int64_t content_size() const {
+            return (int64_t)content.size();
+        }
+
         vec2i64 cursor_pos{};
         int64_t cursor = 0;
         int64_t old_cursor_x = 0;

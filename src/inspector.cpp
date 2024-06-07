@@ -6,7 +6,6 @@
 #include "mgmath.hpp"
 #include <cstdint>
 #include <string>
-#include <utility>
 
 
 namespace mgm {
@@ -260,7 +259,7 @@ namespace mgm {
 
         bool start_window = false;
 
-        ImGui::SmallButton((name + (char*)(u8"\u25B6")).c_str());
+        ImGui::SmallButton((name + (const char*)(u8"\u25B6")).c_str());
 
         name += std::to_string(pos.y);
 

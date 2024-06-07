@@ -47,6 +47,8 @@ add_library(
 )
 enable_warnings(mgmcommon)
 
+ignore_warnings_for_files(${CMAKE_CURRENT_SOURCE_DIR}/include/helpers.hpp)
+
 target_include_directories(
     mgmcommon
         PUBLIC

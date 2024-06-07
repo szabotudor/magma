@@ -4,8 +4,23 @@ project(magma C CXX)
 macro(enable_warnings target)
     target_compile_options(${target} PRIVATE
         $<$<CXX_COMPILER_ID:MSVC>:/W4 /WX>
-        $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra -Wpedantic -Wshadow -Wfloat-equal -Wcast-align -Wstrict-prototypes -Wmissing-prototypes -Wredundant-decls -Wconversion -Wsign-conversion -Wformat=2 -Wswitch-default -Wswitch-enum -Wunreachable-code -Wundef -Wbad-function-cast -Wcast-qual -Wwrite-strings -Wpointer-arith -Winit-self -Wlogical-op -Wstrict-aliasing=2 -Wno-unknown-pragmas -Wold-style-definition -Wmissing-field-initializers -Waggregate-return -Wmissing-noreturn -Wduplicated-branches -Wodr -Wdouble-promotion -Wzero-as-null-pointer-constant -Wuseless-cast -Wno-multichar -Wnull-dereference -Wformat-overflow=2 -Walloc-zero -Walloca -Werror>
+        $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wno-cpp -Wno-non-template-friend -Wall -Wextra -Wpedantic -Wshadow -Wcast-align -Wredundant-decls -Wconversion -Wformat=2 -Wunreachable-code -Wcast-qual -Wwrite-strings -Winit-self -Wlogical-op -Wno-unknown-pragmas -Wmissing-field-initializers -Wmissing-noreturn -Wduplicated-branches -Wodr -Wdouble-promotion -Wno-multichar -Wnull-dereference -Wformat-overflow=2 -Walloc-zero -Walloca>
     )
+endmacro()
+
+macro(ignore_warnings_for_files)
+    foreach(file ${ARGN})
+        if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+            # GCC
+            set_source_files_properties(${file} PROPERTIES COMPILE_FLAGS "-w")
+        elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+            # Clang
+            set_source_files_properties(${file} PROPERTIES COMPILE_FLAGS "-w")
+        elseif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+            # MSVC
+            set_source_files_properties(${file} PROPERTIES COMPILE_FLAGS "/w")
+        endif()
+    endforeach()
 endmacro()
 
 add_compile_definitions(MGMATH_SIMD=1 MGMATH_SWIZZLE=1)

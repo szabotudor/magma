@@ -1,10 +1,11 @@
 #pragma once
-#include "logging.hpp"
 #include <any>
+#include <stdexcept>
 #include <string>
 #include <cstdint>
 #include <unordered_map>
 #include <variant>
+#include <vector>
 
 
 namespace mgm {
@@ -80,7 +81,7 @@ namespace mgm {
 
         operator std::string() const;
         explicit operator int32_t() const { return std::stoi(single_value()); }
-        explicit operator uint32_t() const { return std::stoul(single_value()); }
+        explicit operator uint32_t() const { return (uint32_t)std::stoul(single_value()); }
         explicit operator int64_t() const { return std::stoll(single_value()); }
         explicit operator uint64_t() const { return std::stoull(single_value()); }
         explicit operator float() const { return std::stof(single_value()); }
@@ -184,8 +185,8 @@ namespace mgm {
         std::variant<MapIterator, JObject> key{};
 
         Iterator() = default;
-        Iterator(pointer obj, JObject key) : obj{obj}, key{key} {}
-        Iterator(pointer obj, MapIterator key) : obj{obj}, key{key} {}
+        Iterator(pointer object, JObject member_key) : obj{object}, key{member_key} {}
+        Iterator(pointer object, MapIterator member_key) : obj{object}, key{member_key} {}
 
         struct Deref {
             JObject key;

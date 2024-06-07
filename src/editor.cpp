@@ -6,11 +6,8 @@
 #include "logging.hpp"
 #include "mgmwin.hpp"
 #include "imgui.h"
-#include "imgui_stdlib.h"
-#include "editor_windows/script_editor.hpp"
 #include "notifications.hpp"
 #include "systems.hpp"
-#include <cmath>
 
 
 namespace mgm {
@@ -70,8 +67,8 @@ namespace mgm {
             || (palette_open && engine.window().get_input_interface(MgmWindow::InputInterface::Key_ESC) == 1.0f)) {
             palette_open = !palette_open;
             mouse_pos = {
-                static_cast<int>((engine.window().get_input_interface(MgmWindow::InputInterface::Mouse_POS_X) + 1.0f) * 0.5f * engine.window().get_size().x()),
-                static_cast<int>((engine.window().get_input_interface(MgmWindow::InputInterface::Mouse_POS_Y) + 1.0f) * 0.5f * engine.window().get_size().y())
+                static_cast<int>((engine.window().get_input_interface(MgmWindow::InputInterface::Mouse_POS_X) + 1.0f) * 0.5f * (float)engine.window().get_size().x()),
+                static_cast<int>((engine.window().get_input_interface(MgmWindow::InputInterface::Mouse_POS_Y) + 1.0f) * 0.5f * (float)engine.window().get_size().y())
             };
             if (palette_open) {
                 ImGui::SetNextWindowPos(ImVec2{static_cast<float>(mouse_pos.x() + 16), static_cast<float>(mouse_pos.y())});

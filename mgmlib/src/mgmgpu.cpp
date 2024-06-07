@@ -52,8 +52,8 @@ namespace mgm {
         }
 
         public:
-        SimpleSparseSet(size_t capacity = 0) : capacity{capacity} {
-            alloc(capacity);
+        SimpleSparseSet(size_t set_capacity = 0) : capacity{set_capacity} {
+            alloc(set_capacity);
         }
 
         template<typename... Ts>

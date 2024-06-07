@@ -30,6 +30,8 @@ add_library(
 )
 enable_warnings(backend_OpenGL)
 
+ignore_warnings_for_files(${CMAKE_CURRENT_SOURCE_DIR}/backend_OpenGL/glad/src/glad.c)
+
 get_target_property(MGMCOMMON_INCLUDE_DIRS mgmcommon INTERFACE_INCLUDE_DIRECTORIES)
 get_target_property(MGMWIN_INCLUDE_DIRS mgmwin INCLUDE_DIRECTORIES)
 target_include_directories(

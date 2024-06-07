@@ -6,8 +6,6 @@
 #include <X11/XKBlib.h>
 #include <bits/chrono.h>
 #include <chrono>
-#include <iostream>
-#include <ratio>
 #include <string>
 
 
@@ -362,7 +360,7 @@ namespace mgm {
             XNextEvent(data->display, &event);
             switch (event.type) {
                 case KeyPress: {
-                    const auto key = convert_x11_key(XkbKeycodeToKeysym(data->display, event.xkey.keycode, 0, 0));
+                    const auto key = convert_x11_key(XkbKeycodeToKeysym(data->display, (KeyCode)event.xkey.keycode, 0, 0));
                     if (key == InputInterface::NONE)
                         break;
                     input_interfaces[(size_t)key] = 1.0f;
@@ -372,15 +370,15 @@ namespace mgm {
                     KeySym keysym;
                     XLookupString(&event.xkey, buffer, sizeof(buffer), &keysym, nullptr);
                     if (can_be_text_input(keysym)
-                        && !get_input_interface(InputInterface::Key_CTRL)
-                        && !get_input_interface(InputInterface::Key_ALT)
-                        && !get_input_interface(InputInterface::Key_META)) {
+                        && get_input_interface(InputInterface::Key_CTRL) == 0.0f
+                        && get_input_interface(InputInterface::Key_ALT) == 0.0f
+                        && get_input_interface(InputInterface::Key_META) == 0.0f) {
                         text_input_since_last_update += buffer;
                     }
                     break;
                 }
                 case KeyRelease: {
-                    const auto key = convert_x11_key(XkbKeycodeToKeysym(data->display, event.xkey.keycode, 0, 0));
+                    const auto key = convert_x11_key(XkbKeycodeToKeysym(data->display, (KeyCode)event.xkey.keycode, 0, 0));
                     if (key == InputInterface::NONE)
                         break;
                     input_interfaces[(size_t)key] = 0.0f;
@@ -436,9 +434,9 @@ namespace mgm {
             }
         }
 
-        for (const auto& event : input_events_since_last_update)
-            for (auto& callback : input_callbacks(event.input))
-                callback(event);
+        for (const auto& input_event : input_events_since_last_update)
+            for (auto& callback : input_callbacks(input_event.input))
+                callback(input_event);
     }
 
     MgmWindow::~MgmWindow() {

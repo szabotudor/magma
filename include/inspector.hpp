@@ -37,26 +37,26 @@ namespace mgm {
 
         public:
         template<typename T>
-        void register_type_info(std::string name = {}, bool replace_existing = true) {
-            if (name.empty())
-                name = typeid(T).name();
+        void register_type_info(std::string type_name = {}, bool replace_existing = true) {
+            if (type_name.empty())
+                type_name = typeid(T).name();
 
             const auto it = any_inspectors.find(typeid(T).hash_code());
             if (it != any_inspectors.end()) {
                 if (!replace_existing)
                     return;
-                Logging{"Inspector"}.warning("Replacing already existing inspectable type \"", it->second.name, "\" with \"", name, "\"");
+                Logging{"Inspector"}.warning("Replacing already existing inspectable type \"", it->second.name, "\" with \"", type_name, "\"");
             }
 
             any_inspectors[typeid(T).hash_code()] = TypeInfo {
-                .name = name,
+                .name = type_name,
                 .inspector = [this](const std::string name, std::any& value) {
                     T& v = std::any_cast<T&>(value);
                     return inspect(name, v);
                 }
             };
             any_inspectors[typeid(T&).hash_code()] = TypeInfo {
-                .name = name,
+                .name = type_name,
                 .inspector = [this](const std::string name, std::any& value) {
                     T& v = std::any_cast<T&>(value);
                     return inspect(name, v);
@@ -88,8 +88,8 @@ namespace mgm {
         struct MinMaxNum {
             T& value;
             S min, max, speed;
-            MinMaxNum(T& value, S min, S max, S speed = static_cast<S>(1))
-                : value(value), min(min), max(max), speed(speed) {}
+            MinMaxNum(T& value_ref, S min_value, S max_value, S step_speed = static_cast<S>(1))
+                : value(value_ref), min(min_value), max(max_value), speed(step_speed) {}
         };
 
         template<typename T>

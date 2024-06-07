@@ -15,9 +15,9 @@ public:
 #endif
     _uint id = 0;
 
-    constexpr explicit ID_t(_uint id = 0) : id(id) {}
+    constexpr explicit ID_t(_uint value = 0) : id(value) {}
     constexpr operator _uint() const { return id; }
-    constexpr operator _int() const { return id; }
+    constexpr operator _int() const { return (_int)id; }
     constexpr operator bool() const { return id != 0; }
 
     constexpr _uint& operator*() { return id; }

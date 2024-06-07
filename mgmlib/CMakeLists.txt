@@ -57,6 +57,11 @@ add_library(
 )
 enable_warnings(mgmlib)
 
+ignore_warnings_for_files(
+    ${IMGUI_SOURCES}
+    ${IMGUI_HEADERS}
+)
+
 target_compile_definitions(mgmlib PUBLIC IMGUI_DEFINE_MATH_OPERATORS)
 
 if (EMBED_BACKEND)

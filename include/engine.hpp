@@ -2,8 +2,7 @@
 #include <atomic>
 #include <mutex>
 #include <vector>
-
-#include "logging.hpp"
+#include <string>
 
 
 struct ImDrawData;

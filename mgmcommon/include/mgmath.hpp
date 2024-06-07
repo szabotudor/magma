@@ -1082,8 +1082,12 @@ namespace mgm {
         }
 
         explicit mat(const T x = T()) {
-            for (size_t i = 0; i < l && i < c; i++)
-                data[i][i] = x;
+            if constexpr (l == c)
+                for (size_t i = 0; i < l; i++)
+                    data[i][i] = x;
+            else
+                for (size_t i = 0; i < l && i < c; i++)
+                    data[i][i] = x;
         }
 
         explicit mat(const T* k) {

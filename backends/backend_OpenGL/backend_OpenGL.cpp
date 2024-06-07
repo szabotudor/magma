@@ -41,7 +41,7 @@ namespace mgm {
             GRAPHICS, COMPUTE
         } type = Type::GRAPHICS;
         GLuint prog = 0;
-        std::unordered_map<std::string, GLuint> uniform_locations{};
+        std::unordered_map<std::string, GLint> uniform_locations{};
 
         ~Shader() {
             if (prog)
@@ -209,7 +209,7 @@ namespace mgm {
         mutex.unlock();
     }
 
-    void set_uniform(const GLuint uniform, const std::any& value) {
+    void set_uniform(const GLint uniform, const std::any& value) {
         if (value.type() == typeid(int)) {
             glUniform1i(uniform, std::any_cast<int>(value));
         }
@@ -230,15 +230,15 @@ namespace mgm {
         }
         else if (value.type().hash_code() == typeid(mat2f).hash_code()) {
             const auto& mat = std::any_cast<mat2f>(value);
-            glUniformMatrix2fv(uniform, 1, GL_FALSE, (float*)&mat.data);
+            glUniformMatrix2fv(uniform, 1, GL_FALSE, (const float*)&mat.data);
         }
         else if (value.type().hash_code() == typeid(mat3f).hash_code()) {
             const auto& mat = std::any_cast<mat3f>(value);
-            glUniformMatrix3fv(uniform, 1, GL_FALSE, (float*)&mat.data);
+            glUniformMatrix3fv(uniform, 1, GL_FALSE, (const float*)&mat.data);
         }
         else if (value.type().hash_code() == typeid(mat4f).hash_code()) {
             const auto& mat = std::any_cast<mat4f>(value);
-            glUniformMatrix4fv(uniform, 1, GL_FALSE, (float*)&mat.data);
+            glUniformMatrix4fv(uniform, 1, GL_FALSE, (const float*)&mat.data);
         }
         else
             log.error("Unsupported shader parameter type '", value.type().name(), "'");
@@ -300,7 +300,7 @@ namespace mgm {
                 }
             }
 
-            for (GLint i = 0; (size_t)i < draw_call.buffers_object->buffers.size(); i++) {
+            for (size_t i = 0; i < draw_call.buffers_object->buffers.size(); i++) {
                 const auto buf = draw_call.buffers_object->buffers[i];
                 if (buf->is_element_array) {
                     if (draw_call.buffers_object->size != buf->size) {
@@ -308,7 +308,7 @@ namespace mgm {
                         break;
                     }
                 }
-                else if (buf->bind_location != i) {
+                else if (buf->bind_location != (GLint)i) {
                     setup_vao_attrib_pointers(draw_call.buffers_object);
                     break;
                 }
@@ -384,7 +384,6 @@ namespace mgm {
         return point_count;
     }
 
-    EXPORT void buffer_data(BackendData* backend, Buffer* buffer, void* data, size_t size);
     EXPORT void* create_buffer(BackendData* backend, const BufferCreateInfo& info) {
         const auto gl_buffer_type = info.type() == BufferCreateInfo::Type::RAW ? GL_ARRAY_BUFFER : GL_ELEMENT_ARRAY_BUFFER;
         if (gl_buffer_type == GL_INVALID)
@@ -411,12 +410,12 @@ namespace mgm {
     }
 
     EXPORT void buffer_data(BackendData* backend, Buffer* buffer, void* data, size_t size) {
-        const auto gl_buffer_type = buffer->is_element_array ? GL_ELEMENT_ARRAY_BUFFER : GL_ARRAY_BUFFER;
+        const GLenum gl_buffer_type = buffer->is_element_array ? GL_ELEMENT_ARRAY_BUFFER : GL_ARRAY_BUFFER;
         mutex.lock();
         backend->platform->make_current();
 
         glBindBuffer(gl_buffer_type, buffer->buffer);
-        glBufferData(gl_buffer_type, size * buffer->data_point_size, data, GL_STATIC_DRAW);
+        glBufferData(gl_buffer_type, (GLsizeiptr)(size * buffer->data_point_size), data, GL_STATIC_DRAW);
         glBindBuffer(gl_buffer_type, 0);
         buffer->size = size;
         buffer->bind_location = -1;
@@ -466,7 +465,7 @@ namespace mgm {
         for (size_t i = 0; i < vertex_buffers.size(); i++) {
             const auto buf = vertex_buffers[i];
             glBindBuffer(GL_ARRAY_BUFFER, buf->buffer);
-            glVertexAttribPointer(static_cast<GLuint>(i), static_cast<GLint>(buf->gl_data_type_point_count), buf->gl_data_type, GL_FALSE, 0, nullptr);
+            glVertexAttribPointer(static_cast<GLuint>(i), static_cast<GLint>(buf->gl_data_type_point_count), (GLenum)buf->gl_data_type, GL_FALSE, 0, nullptr);
             glEnableVertexAttribArray(static_cast<GLuint>(i));
             buf->bind_location = static_cast<GLint>(i);
         }
@@ -613,7 +612,7 @@ namespace mgm {
 
         glTexImage2D(
             GL_TEXTURE_2D, 0, internal_format, info.size.x(), info.size.y(), 0,
-            internal_format, channel_size, info.data
+            (GLenum)internal_format, (GLenum)channel_size, info.data
         );
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
