@@ -1,7 +1,5 @@
 #include "editor_windows/settings.hpp"
 
-#include <iostream>
-
 #include "engine.hpp"
 #include "imgui.h"
 

@@ -1,8 +1,6 @@
 #include "input.hpp"
 #include "notifications.hpp"
 #include "engine.hpp"
-#include "helpers.hpp"
-#include "imgui.h"
 #include "json.hpp"
 #include "mgmwin.hpp"
 
@@ -34,6 +32,10 @@ namespace mgm {
 
     void Input::auto_register_input_action(const std::string &name) {
         auto_register_queue.insert(name);
+    }
+
+    bool Input::action_exists(const std::string& name) const {
+        return input_actions.find(name) != input_actions.end();
     }
 
     bool Input::is_action_pressed(const std::string &name) const {

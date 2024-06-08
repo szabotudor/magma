@@ -8,6 +8,7 @@
 #include "imgui.h"
 #include "notifications.hpp"
 #include "systems.hpp"
+#include "input.hpp"
 
 
 namespace mgm {
@@ -46,6 +47,11 @@ namespace mgm {
         Logging{"Editor"}.log("Editor initialized");
 
         engine.notifications().push("Welcome to MagmaEngine. Press 'ctrl+space' to open the editor palette.");
+
+        if (!engine.input().action_exists("open_palette"))
+            engine.input().register_input_action("open_palette", MgmWindow::InputInterface::Key_SPACE, {MgmWindow::InputInterface::Key_CTRL});
+        if (!engine.input().action_exists("escape"))
+            engine.input().register_input_action("escape", MgmWindow::InputInterface::Key_ESC);
     }
 
     void Editor::update(float delta) {
@@ -62,9 +68,7 @@ namespace mgm {
         vec2i32 mouse_pos{-1, -1};
 
 
-        if ((engine.window().get_input_interface(MgmWindow::InputInterface::Key_CTRL) == 1.0f
-            && engine.window().get_input_interface_delta(MgmWindow::InputInterface::Key_SPACE) == 1.0f)
-            || (palette_open && engine.window().get_input_interface(MgmWindow::InputInterface::Key_ESC) == 1.0f)) {
+        if (engine.input().is_action_just_pressed("open_palette") || (palette_open && engine.input().is_action_just_pressed("escape"))) {
             palette_open = !palette_open;
             mouse_pos = {
                 static_cast<int>((engine.window().get_input_interface(MgmWindow::InputInterface::Mouse_POS_X) + 1.0f) * 0.5f * (float)engine.window().get_size().x()),

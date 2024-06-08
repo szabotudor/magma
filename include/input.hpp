@@ -53,6 +53,13 @@ namespace mgm {
         void auto_register_input_action(const std::string& name);
 
         /**
+         * @brief Check if an action exists
+         * 
+         * @param name The name of the action
+         */
+        bool action_exists(const std::string& name) const;
+
+        /**
          * @brief Check if an action is pressed
          * 
          * @param name The name of the action
