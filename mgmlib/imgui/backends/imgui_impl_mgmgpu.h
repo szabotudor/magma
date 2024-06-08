@@ -37,7 +37,6 @@ void extract_draw_data(ImDrawData* draw_data, ExtractedDrawData& out, const mgm:
 IMGUI_IMPL_API bool     ImGui_ImplMgmGFX_Init(mgm::MgmGPU& backend);
 IMGUI_IMPL_API void     ImGui_ImplMgmGFX_Shutdown();
 IMGUI_IMPL_API void     ImGui_ImplMgmGFX_NewFrame();
-IMGUI_IMPL_API void     ImGui_ImplMgmGFX_RenderDrawData(ImDrawData* draw_data);
 IMGUI_IMPL_API void     ImGui_ImplMgmGFX_RenderDrawData(ExtractedDrawData& draw_data);
 IMGUI_IMPL_API void     ImGui_ImplMgmGFX_ProcessInput(mgm::MgmWindow& window);
 

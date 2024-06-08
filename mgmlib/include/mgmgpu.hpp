@@ -1,5 +1,4 @@
 #pragma once
-#include "mgmath.hpp"
 #include "mgmwin.hpp"
 #include "types.hpp"
 #include "backend_settings.hpp"
@@ -47,25 +46,15 @@ namespace mgm {
         struct Data;
         Data* data = nullptr;
         MgmWindow* window = nullptr;
-        
-        struct GPUSettings : public Settings {
-            using Settings::Settings;
 
-            TextureHandle canvas = INVALID_TEXTURE;
-        };
-
-        GPUSettings backend_settings{};
-        bool settings_changed = true;
-
-        struct StashItem {
-            GPUSettings settings;
-            std::vector<DrawCall> draw_list;
-        };
-        std::vector<StashItem> stash_list{};
+        /**
+         * @brief Apply the settings, if any changes were made.
+         * 
+         * @param backend_settings The settings to apply
+         */
+        void apply_settings(const Settings& backend_settings);
 
         public:
-        std::vector<DrawCall> draw_list{};
-
         MgmGPU(const MgmGPU&) = delete;
         MgmGPU& operator=(const MgmGPU&) = delete;
 
@@ -73,16 +62,6 @@ namespace mgm {
         MgmGPU& operator=(MgmGPU& gpu);
 
         MgmGPU(MgmWindow* window = nullptr);
-
-        /**
-         * @brief If using MgmGPU on multiple threads, it's recommended to lock the mutex before changing settings or draw calls list. Actual rendering is already thread-safe, but changing settings or draw calls list is not.
-         */
-        void lock_mutex();
-
-        /**
-         * @brief If using MgmGPU on multiple threads, it's recommended to lock the mutex before changing settings or draw calls list. Actual rendering is already thread-safe, but changing settings or draw calls list is not.
-         */
-        void unlock_mutex();
 
         /**
          * @brief Connect to a window to render to
@@ -115,49 +94,20 @@ namespace mgm {
         void unload_backend();
 
         /**
-         * @brief Rendering settings
-         * 
-         * @return A reference to the settings struct
-         */
-        GPUSettings& settings() {
-            settings_changed = true;
-            return backend_settings;
-        }
-
-        /**
-         * @brief Rendering settings
-         * 
-         * @return A reference to the settings struct
-         */
-        const GPUSettings& settings() const { return backend_settings; }
-
-        /**
-         * @brief Apply the settings, if any changes were made.
-         * 
-         * @param force If true, the settings will be applied even if no changes were made
-         */
-        void apply_settings(bool force = false);
-
-        /**
          * @brief Run all draw calls in the list, and present the rendered image.
          * Execution is not guaranteed to be immediate, synchronious, or in order, except for clear calls, which are regarded as separators within the same frame.
          */
-        void draw();
+        void draw(const std::vector<DrawCall>& draw_calls, const Settings& settings);
+
+        /**
+         * @brief Get the settings given when "draw" was last called
+         */
+        Settings get_settings() const;
 
         /**
          * @brief Present the rendered image to the window (switch buffers, etc.)
          */
         void present();
-
-        /**
-         * @brief Stash draw calls and settings, so they can be restored later (WILL CLEAR THE DRAW LIST)
-         */
-        void stash();
-
-        /**
-         * @brief Restore the stashed draw calls and settings
-         */
-        void pop_stash();
 
         /**
          * @brief Create a buffer

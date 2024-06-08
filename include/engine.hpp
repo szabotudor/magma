@@ -23,32 +23,25 @@ namespace mgm {
     class MagmaEngine {
         friend class EngineManager;
 
+        struct Data;
+        static Data* data;
         bool initialized = false;
 
-        static MagmaEngine* instance;
-
-        ExtractedDrawData* m_imgui_draw_data = nullptr;
-
-        FileIO* m_file_io = nullptr;
-        MgmWindow* m_window = nullptr;
-        MgmGPU* m_graphics = nullptr;
-
-        SystemManager* m_system_manager = nullptr;
-
-        std::mutex imgui_mutex;
+        std::mutex imgui_mutex{};
+        std::mutex graphics_settings_mutex{};
         std::atomic_bool engine_running{};
         void render_thread_function();
 
         float current_dt = 0.0f;
 
         public:
-        FileIO& file_io() { return *m_file_io; }
-        MgmWindow& window() { return *m_window; }
+        FileIO& file_io();
+        MgmWindow& window();
         Input& input();
         Notifications& notifications();
         EngineManager& engine_manager();
-        MgmGPU& graphics() { return *m_graphics; }
-        SystemManager& systems() { return *m_system_manager; }
+        MgmGPU& graphics();
+        SystemManager& systems();
 
         MagmaEngine(const MagmaEngine&) = delete;
         MagmaEngine(MagmaEngine&&) = delete;

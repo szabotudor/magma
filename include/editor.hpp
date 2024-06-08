@@ -1,6 +1,5 @@
 #pragma once
 #include "systems.hpp"
-#include <functional>
 #include <type_traits>
 
 

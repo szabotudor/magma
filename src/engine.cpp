@@ -1,5 +1,4 @@
 #include "engine.hpp"
-#include "backend_settings.hpp"
 #include "editor.hpp"
 #include "imgui.h"
 #include "imgui_impl_mgmgpu.h"
@@ -16,41 +15,55 @@
 
 
 namespace mgm {
-    MagmaEngine* MagmaEngine::instance = nullptr;
+    struct MagmaEngine::Data {
+        ExtractedDrawData* imgui_draw_data = nullptr;
+
+        FileIO* file_io = nullptr;
+        MgmWindow* window = nullptr;
+        MgmGPU* graphics = nullptr;
+        Settings graphics_settings{};
+        std::vector<MgmGPU::DrawCall> draw_list{};
+
+        SystemManager* system_manager = nullptr;
+
+        float current_dt = 0.0f;
+    };
+
+    MagmaEngine::Data* MagmaEngine::data = nullptr;
 
     void MagmaEngine::render_thread_function() {
         while (engine_running) {
-            m_graphics->draw();
+            graphics_settings_mutex.lock();
+            const auto settings = data->graphics_settings;
+            graphics_settings_mutex.unlock();
+            graphics().draw(data->draw_list, settings);
 
             imgui_mutex.lock();
-            if (m_imgui_draw_data->is_set)
-                ImGui_ImplMgmGFX_RenderDrawData(*m_imgui_draw_data);
+            if (data->imgui_draw_data->is_set)
+                ImGui_ImplMgmGFX_RenderDrawData(*data->imgui_draw_data);
             imgui_mutex.unlock();
 
-            m_graphics->present();
+            graphics().present();
         }
     }
 
+    FileIO& MagmaEngine::file_io() { return *data->file_io; }
+    MgmWindow& MagmaEngine::window() { return *data->window; }
     Input& MagmaEngine::input() { return systems().get<Input>(); }
     Notifications& MagmaEngine::notifications() { return systems().get<Notifications>(); }
     EngineManager& MagmaEngine::engine_manager() { return systems().get<EngineManager>(); }
+    MgmGPU& MagmaEngine::graphics() { return *data->graphics; }
+    SystemManager& MagmaEngine::systems() { return *data->system_manager; }
 
     MagmaEngine::MagmaEngine(const std::vector<std::string>& args) {
-        if (!instance) {
-            instance = this;
-        } else {
-            m_imgui_draw_data = instance->m_imgui_draw_data;
-            m_file_io = instance->m_file_io;
-            m_window = instance->m_window;
-            m_graphics = instance->m_graphics;
-            m_system_manager = instance->m_system_manager;
-            initialized = true;
+        if (!data)
+            data = new Data{};
+        else
             return;
-        }
 
-        m_imgui_draw_data = new ExtractedDrawData{};
+        data->imgui_draw_data = new ExtractedDrawData{};
 
-        m_system_manager = new SystemManager{};
+        data->system_manager = new SystemManager{};
 
         bool help_called = false;
 
@@ -68,30 +81,28 @@ namespace mgm {
         if (help_called) return;
 
 
-        m_window = new MgmWindow{"Magma", vec2u32{800, 600}, MgmWindow::Mode::NORMAL};
-        m_graphics = new MgmGPU{};
-        m_graphics->connect_to_window(m_window);
+        data->window = new MgmWindow{"Magma", vec2u32{800, 600}, MgmWindow::Mode::NORMAL};
+        data->graphics = new MgmGPU{};
+        graphics().connect_to_window(&window());
 
 #if !defined(EMBED_BACKEND)
 #if defined(__linux__)
-        m_graphics->load_backend("shared/libbackend_OpenGL.so");
+        graphics().load_backend("shared/libbackend_OpenGL.so");
 #elif defined (WIN32) || defined(_WIN32)
         m_graphics->load_backend("shared/backend_OpenGL.dll");
 #endif
 #endif
 
-        auto& settings = m_graphics->settings();
-        settings.clear.color = {0.1f, 0.2f, 0.3f, 1.0f};
-        settings.viewport.top_left = {0, 0};
-        settings.viewport.bottom_right = vec2i32{static_cast<int>(m_window->get_size().x()), static_cast<int>(m_window->get_size().y())};
+        data->graphics_settings.clear.color = {0.1f, 0.2f, 0.3f, 1.0f};
+        data->graphics_settings.viewport.top_left = {0, 0};
+        data->graphics_settings.viewport.bottom_right = vec2i32{static_cast<int>(window().get_size().x()), static_cast<int>(window().get_size().y())};
 
-        m_graphics->apply_settings(true);
-        m_graphics->draw_list.emplace_back(MgmGPU::DrawCall{
+        data->draw_list.emplace_back(MgmGPU::DrawCall{
             .type = MgmGPU::DrawCall::Type::CLEAR
         });
 
         
-        ImGui_ImplMgmGFX_Init(*m_graphics);
+        ImGui_ImplMgmGFX_Init(graphics());
 
         systems().create<Input>();
         systems().create<Notifications>();
@@ -106,16 +117,15 @@ namespace mgm {
     }
 
     void MagmaEngine::run() {
-        if (!initialized) return;
+        if (!initialized) {
+            Logging{"Engine"}.error("Do not call \"run\" on a secondary instance of MagmaEngine");
+            return;
+        }
 
         if (!file_io().exists(Path::assets)) file_io().create_folder(Path::assets);
         if (!file_io().exists(Path::game_data)) file_io().create_folder(Path::game_data);
         if (!file_io().exists(Path::temp)) file_io().create_folder(Path::temp);
 
-        if (this != instance) {
-            Logging{"Engine"}.error("Do not call \"run\" on a secondary instance of MagmaEngine");
-            return;
-        }
         auto start = std::chrono::high_resolution_clock::now();
 
 #if defined(ENABLE_EDITOR)
@@ -132,29 +142,28 @@ namespace mgm {
         engine_running = true;
         std::thread render_thread{&MagmaEngine::render_thread_function, this};
 
-        while (!m_window->should_close()) {
+        while (!window().should_close()) {
             const auto now = std::chrono::high_resolution_clock::now();
             const auto chrono_delta = std::chrono::duration_cast<std::chrono::microseconds>(now - start).count();
             start = now;
             const float delta = (float)chrono_delta * 0.000001f;
-            instance->current_dt = delta;
+            data->current_dt = delta;
 
-            const auto window_old_size = m_window->get_size();
+            const auto window_old_size = window().get_size();
 
-            m_window->update();
+            window().update();
 
-            const auto window_size = m_window->get_size();
+            const auto window_size = window().get_size();
 
             if (window_size != window_old_size) {
-                m_graphics->lock_mutex();
-                m_graphics->settings().viewport.top_left = {0, 0};
-                m_graphics->settings().viewport.bottom_right = vec2i32{static_cast<int>(window_size.x()), static_cast<int>(window_size.y())};
-                m_graphics->unlock_mutex();
-                m_graphics->apply_settings(true);
+                graphics_settings_mutex.lock();
+                data->graphics_settings.viewport.top_left = {0, 0};
+                data->graphics_settings.viewport.bottom_right = vec2i32{static_cast<int>(window_size.x()), static_cast<int>(window_size.y())};
+                graphics_settings_mutex.unlock();
             }
 
             ImGui::GetIO().DeltaTime = delta;
-            ImGui_ImplMgmGFX_ProcessInput(*m_window);
+            ImGui_ImplMgmGFX_ProcessInput(window());
             ImGui_ImplMgmGFX_NewFrame();
             ImGui::NewFrame();
 
@@ -182,13 +191,13 @@ namespace mgm {
             ImGui::Render();
 
             imgui_mutex.lock();
-            if (m_imgui_draw_data->is_set)
-                m_imgui_draw_data->clear();
+            if (data->imgui_draw_data->is_set)
+                data->imgui_draw_data->clear();
 
-            m_graphics->lock_mutex();
-            const auto viewport = m_graphics->settings().viewport;
-            m_graphics->unlock_mutex();
-            extract_draw_data(ImGui::GetDrawData(), *m_imgui_draw_data, viewport);
+            graphics_settings_mutex.lock();
+            const auto viewport = data->graphics_settings.viewport;
+            graphics_settings_mutex.unlock();
+            extract_draw_data(ImGui::GetDrawData(), *data->imgui_draw_data, viewport);
 
             imgui_mutex.unlock();
         }
@@ -204,18 +213,19 @@ namespace mgm {
     }
 
     float MagmaEngine::delta_time() const {
-        return instance->current_dt;
+        return data->current_dt;
     }
 
     MagmaEngine::~MagmaEngine() {
-        if (this != instance) return;
+        if (!initialized) return;
 
         if (!initialized) return;
-        delete m_file_io;
-        delete m_graphics;
-        delete m_window;
-        delete m_system_manager;
-        delete m_imgui_draw_data;
-        instance = nullptr;
+        delete data->file_io;
+        delete data->graphics;
+        delete data->window;
+        delete data->system_manager;
+        delete data->imgui_draw_data;
+        delete data;
+        data = nullptr;
     }
 }
