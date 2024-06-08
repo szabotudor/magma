@@ -50,10 +50,18 @@ namespace mgm {
         }
 
         size_t depth = 1;
+        bool within_quotes = false;
         while (depth > 0) {
             if (pos >= str.size()) return {start_pos, start_pos};
-            if (str[pos] == start) depth++;
-            if (str[pos] == end) depth--;
+
+            if (str[pos] == '"' && str[pos - 1] != '\\')
+                within_quotes = !within_quotes;
+
+            if (str[pos] == start && !within_quotes)
+                depth++;
+            if (str[pos] == end && !within_quotes)
+                depth--;
+
             pos++;
         }
         return {start_pos, pos};
@@ -132,16 +140,32 @@ namespace mgm {
 
 
     std::string JObject::array_to_string() const {
+        if (private_type() == PrivateType::SINGLE && type() == Type::ARRAY)
+            return single_value();
+
         const auto& vec = array();
         std::string res = "[ ";
         for (size_t i = 0; i < vec.size(); i++) {
-            res += std::string{vec[i]};
-            if (i < vec.size() - 1) res += ", ";
+            std::string str = std::string{vec[i]};
+            if (vec[i].type() == Type::STRING)
+                for (size_t j = 0; j < str.size(); j++)
+                    if (str[j] == '"')
+                        str.insert(j++, 1, '\\');
+            if (vec[i].type() == Type::STRING)
+                res += '"' + str + '"';
+            else
+                res += str;
+
+            if (i < vec.size() - 1)
+                res += ", ";
         }
         res += " ]";
         return res;
     }
     std::string JObject::object_to_string() const {
+        if (private_type() == PrivateType::SINGLE && type() == Type::OBJECT)
+            return single_value();
+
         const auto& map = object();
         std::string res = "{ ";
         size_t i = 0;
@@ -150,7 +174,9 @@ namespace mgm {
                 res += '"' + key + "\": \"" + std::string{value} + '"';
             else
                 res += '"' + key + "\": " + std::string{value};
-            if (i < map.size() - 1) res += ", ";
+
+            if (i < map.size() - 1)
+                res += ", ";
             i++;
         }
         res += " }";
@@ -161,6 +187,9 @@ namespace mgm {
         std::vector<JObject> vec;
         size_t i = 1;
         while (i < str.size() - 1) {
+            if (str[i] == ']')
+                break;
+
             size_t value_start = i;
             while (is_whitespace(str[value_start])) value_start++;
             const auto value = get_full_word(str, value_start);
@@ -168,8 +197,15 @@ namespace mgm {
                 Logging{"json"}.error("Broken value in JSON array, returning empty array");
                 return {};
             }
-            vec.emplace_back(str.substr(value.x(), value.y() - value.x()));
+
+            const auto value_str = str.substr(value.x(), value.y() - value.x());
+            vec.emplace_back(value_str);
             i = value.y() + 1;
+            while (is_whitespace(str[i])) i++;
+
+            if (str[i] == ',')
+                i++;
+            while (is_whitespace(str[i])) i++;
         }
         return vec;
     }

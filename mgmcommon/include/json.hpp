@@ -213,7 +213,7 @@ namespace mgm {
                     if (next == obj_map.end())
                         key = "";
                     else
-                        key = next->first;
+                        key = next;
                 }
             }
             else if (std::holds_alternative<JObject>(key)) {
