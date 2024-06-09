@@ -7,7 +7,6 @@
 #include "mgmgpu.hpp"
 #include "mgmwin.hpp"
 #include "notifications.hpp"
-#include "engine_manager.hpp"
 
 #include <chrono>
 #include <iostream>
@@ -21,7 +20,7 @@ namespace mgm {
         FileIO* file_io = nullptr;
         MgmWindow* window = nullptr;
         MgmGPU* graphics = nullptr;
-        Settings graphics_settings{};
+        GPUSettings graphics_settings{};
         std::vector<MgmGPU::DrawCall> draw_list{};
 
         SystemManager* system_manager = nullptr;
@@ -51,7 +50,6 @@ namespace mgm {
     MgmWindow& MagmaEngine::window() { return *data->window; }
     Input& MagmaEngine::input() { return systems().get<Input>(); }
     Notifications& MagmaEngine::notifications() { return systems().get<Notifications>(); }
-    EngineManager& MagmaEngine::engine_manager() { return systems().get<EngineManager>(); }
     MgmGPU& MagmaEngine::graphics() { return *data->graphics; }
     SystemManager& MagmaEngine::systems() { return *data->system_manager; }
 
@@ -106,7 +104,6 @@ namespace mgm {
 
         systems().create<Input>();
         systems().create<Notifications>();
-        systems().create<EngineManager>();
 
 #if defined(ENABLE_EDITOR)
         if (std::find(args.begin(), args.end(), "--editor") != args.end())
@@ -168,9 +165,7 @@ namespace mgm {
             ImGui::NewFrame();
 
             ImGui::DockSpaceOverViewport(nullptr, ImGuiDockNodeFlags_PassthruCentralNode);
-            
-            if (engine_manager().font)
-                ImGui::PushFont(engine_manager().font);
+
 
 #if defined(ENABLE_EDITOR)
             if (systems().try_get<Editor>())
@@ -183,9 +178,6 @@ namespace mgm {
             for (const auto& [id, sys] : systems().systems)
                 sys->update(delta);
 #endif
-
-            if (engine_manager().font)
-                ImGui::PopFont();
 
             ImGui::EndFrame();
             ImGui::Render();

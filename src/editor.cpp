@@ -3,6 +3,7 @@
 #include "helpers.hpp"
 #include "imgui_impl_mgmgpu.h"
 #include "inspector.hpp"
+#include "json.hpp"
 #include "logging.hpp"
 #include "mgmwin.hpp"
 #include "imgui.h"
@@ -46,12 +47,15 @@ namespace mgm {
 
         Logging{"Editor"}.log("Editor initialized");
 
-        engine.notifications().push("Welcome to MagmaEngine. Press 'ctrl+space' to open the editor palette.");
+        engine.input().register_input_action("open_palette", MgmWindow::InputInterface::Key_SPACE, {MgmWindow::InputInterface::Key_CTRL});
+        engine.input().register_input_action("escape", MgmWindow::InputInterface::Key_ESC);
 
-        if (!engine.input().action_exists("open_palette"))
-            engine.input().register_input_action("open_palette", MgmWindow::InputInterface::Key_SPACE, {MgmWindow::InputInterface::Key_CTRL});
-        if (!engine.input().action_exists("escape"))
-            engine.input().register_input_action("escape", MgmWindow::InputInterface::Key_ESC);
+        if (engine.file_io().exists("exe://project.json")) {
+            const auto project_properties_file = engine.file_io().read_text("exe://project.json");
+            const JObject project_properties {project_properties_file};
+
+            project_initialized = (bool)project_properties["initialized"];
+        }
     }
 
     void Editor::update(float delta) {
@@ -62,6 +66,10 @@ namespace mgm {
             window->draw_window();
 
         auto engine = MagmaEngine{};
+
+        if (!project_initialized)
+            engine.notifications().push("Welcome to MagmaEngine. Press 'ctrl+space' to open the editor palette and start editing your project.");
+
         for (const auto& [type_id, system] : engine.systems().systems)
             system->in_editor_update(delta);
 
@@ -70,6 +78,8 @@ namespace mgm {
 
         if (engine.input().is_action_just_pressed("open_palette") || (palette_open && engine.input().is_action_just_pressed("escape"))) {
             palette_open = !palette_open;
+            if (!project_initialized)
+                project_initialized = true;
             mouse_pos = {
                 static_cast<int>((engine.window().get_input_interface(MgmWindow::InputInterface::Mouse_POS_X) + 1.0f) * 0.5f * (float)engine.window().get_size().x()),
                 static_cast<int>((engine.window().get_input_interface(MgmWindow::InputInterface::Mouse_POS_Y) + 1.0f) * 0.5f * (float)engine.window().get_size().y())
@@ -125,5 +135,12 @@ namespace mgm {
         for (const auto window : windows)
             delete window;
         Logging{"Editor"}.log("Editor closed");
+
+        auto engine = MagmaEngine{};
+
+        JObject project_properties{};
+        project_properties["initialized"] = project_initialized;
+
+        engine.file_io().write_text("exe://project.json", project_properties);
     }
 } // namespace mgm

@@ -105,7 +105,7 @@ namespace mgm {
     struct Texture;
 
     struct MgmGPU::Data {
-        Settings old_settings{};
+        GPUSettings old_settings{};
         bool initialized = false;
 
         struct BackendData;
@@ -113,7 +113,7 @@ namespace mgm {
 
         using CreateBackend = BackendData*(*)(NativeWindow* window);
         using DestroyBackend = void(*)(BackendData* backend);
-        using SetAttribute = bool(*)(BackendData* backend, const Settings::StateAttribute& attr, const void* data);
+        using SetAttribute = bool(*)(BackendData* backend, const GPUSettings::StateAttribute& attr, const void* data);
 
         using Clear = void(*)(BackendData* backend);
         using Execute = void(*)(BackendData* backend, Texture* canvas);
@@ -166,7 +166,7 @@ namespace mgm {
             size_t offset{};
             size_t size{};
         };
-        std::unordered_map<Settings::StateAttribute, StateAttributeOffset> settings_offsets{};
+        std::unordered_map<GPUSettings::StateAttribute, StateAttributeOffset> settings_offsets{};
 
 #if !defined(EMBED_BACKEND)
         DLoader dloader{};
@@ -191,16 +191,16 @@ namespace mgm {
 
     MgmGPU::MgmGPU(MgmWindow* window_to_connect) {
         data = new Data{};
-        Settings backend_settings{};
-        data->settings_offsets.emplace(Settings::StateAttribute::CLEAR, Data::StateAttributeOffset{(size_t)&backend_settings.clear - (size_t)&backend_settings, sizeof(Settings::Clear)});
-        data->settings_offsets.emplace(Settings::StateAttribute::BLENDING, Data::StateAttributeOffset{(size_t)&backend_settings.blending - (size_t)&backend_settings, sizeof(Settings::Blending)});
-        data->settings_offsets.emplace(Settings::StateAttribute::VIEWPORT, Data::StateAttributeOffset{(size_t)&backend_settings.viewport - (size_t)&backend_settings, sizeof(Settings::Viewport)});
-        data->settings_offsets.emplace(Settings::StateAttribute::SCISSOR, Data::StateAttributeOffset{(size_t)&backend_settings.scissor - (size_t)&backend_settings, sizeof(Settings::Scissor)});
+        GPUSettings backend_settings{};
+        data->settings_offsets.emplace(GPUSettings::StateAttribute::CLEAR, Data::StateAttributeOffset{(size_t)&backend_settings.clear - (size_t)&backend_settings, sizeof(GPUSettings::Clear)});
+        data->settings_offsets.emplace(GPUSettings::StateAttribute::BLENDING, Data::StateAttributeOffset{(size_t)&backend_settings.blending - (size_t)&backend_settings, sizeof(GPUSettings::Blending)});
+        data->settings_offsets.emplace(GPUSettings::StateAttribute::VIEWPORT, Data::StateAttributeOffset{(size_t)&backend_settings.viewport - (size_t)&backend_settings, sizeof(GPUSettings::Viewport)});
+        data->settings_offsets.emplace(GPUSettings::StateAttribute::SCISSOR, Data::StateAttributeOffset{(size_t)&backend_settings.scissor - (size_t)&backend_settings, sizeof(GPUSettings::Scissor)});
 
         connect_to_window(window_to_connect);
     }
 
-    void MgmGPU::apply_settings(const Settings& backend_settings) {
+    void MgmGPU::apply_settings(const GPUSettings& backend_settings) {
         if (!is_backend_loaded()) return;
 
         for (const auto& [attr, offset] : data->settings_offsets) {
@@ -321,7 +321,7 @@ namespace mgm {
         data->log.log("Unloaded backend");
     }
 
-    void MgmGPU::draw(const std::vector<DrawCall>& draw_list, const Settings& backend_settings) {
+    void MgmGPU::draw(const std::vector<DrawCall>& draw_list, const GPUSettings& backend_settings) {
         if (!is_backend_loaded()) return;
 
         data->mutex.lock();
@@ -352,7 +352,7 @@ namespace mgm {
                     if (it == call.parameters.end())
                         data->log.error("SETTINGS_CHANGE draw call missing \"settings\" parameter");
                     else {
-                        apply_settings(std::any_cast<const Settings&>(it->second));
+                        apply_settings(std::any_cast<const GPUSettings&>(it->second));
                     }
                     break;
                 }
@@ -363,7 +363,7 @@ namespace mgm {
         data->mutex.unlock();
     }
 
-    Settings MgmGPU::get_settings() const {
+    GPUSettings MgmGPU::get_settings() const {
         data->mutex.lock();
         const auto settings = data->old_settings;
         data->mutex.unlock();

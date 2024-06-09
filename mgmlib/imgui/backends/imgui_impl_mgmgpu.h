@@ -16,7 +16,7 @@ struct ExtractedDrawData {
         
         struct CmdData {
             uint32_t idx_offset{}, elem_count{};
-            mgm::Settings::Scissor scissor{};
+            mgm::GPUSettings::Scissor scissor{};
         };
         std::vector<CmdData> cmd_data{};
     };
@@ -31,7 +31,7 @@ struct ExtractedDrawData {
     }
 };
 
-void extract_draw_data(ImDrawData* draw_data, ExtractedDrawData& out, const mgm::Settings::Viewport& viewport);
+void extract_draw_data(ImDrawData* draw_data, ExtractedDrawData& out, const mgm::GPUSettings::Viewport& viewport);
 
 // Backend API
 IMGUI_IMPL_API bool     ImGui_ImplMgmGFX_Init(mgm::MgmGPU& backend);

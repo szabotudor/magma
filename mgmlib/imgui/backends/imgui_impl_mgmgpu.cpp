@@ -109,7 +109,7 @@ void ImGui_ImplMgmGFX_NewFrame() {
     }
 }
 
-void extract_draw_data(ImDrawData* draw_data, ExtractedDrawData& out, const mgm::Settings::Viewport& viewport) {
+void extract_draw_data(ImDrawData* draw_data, ExtractedDrawData& out, const mgm::GPUSettings::Viewport& viewport) {
     float L = draw_data->DisplayPos.x;
     float R = draw_data->DisplayPos.x + draw_data->DisplaySize.x;
     float T = draw_data->DisplayPos.y;
@@ -183,12 +183,12 @@ void ImGui_ImplMgmGFX_RenderDrawData(ExtractedDrawData& draw_data) {
     auto base_graphics_settings = backend.get_settings();
 
     base_graphics_settings.blending.enabled = true;
-    base_graphics_settings.blending.color_equation = mgm::Settings::Blending::Equation::ADD;
-    base_graphics_settings.blending.alpha_equation = mgm::Settings::Blending::Equation::ADD;
-    base_graphics_settings.blending.src_color_factor = mgm::Settings::Blending::Factor::SRC_ALPHA;
-    base_graphics_settings.blending.dst_color_factor = mgm::Settings::Blending::Factor::ONE_MINUS_SRC_ALPHA;
-    base_graphics_settings.blending.src_alpha_factor = mgm::Settings::Blending::Factor::ONE;
-    base_graphics_settings.blending.dst_alpha_factor = mgm::Settings::Blending::Factor::ONE;
+    base_graphics_settings.blending.color_equation = mgm::GPUSettings::Blending::Equation::ADD;
+    base_graphics_settings.blending.alpha_equation = mgm::GPUSettings::Blending::Equation::ADD;
+    base_graphics_settings.blending.src_color_factor = mgm::GPUSettings::Blending::Factor::SRC_ALPHA;
+    base_graphics_settings.blending.dst_color_factor = mgm::GPUSettings::Blending::Factor::ONE_MINUS_SRC_ALPHA;
+    base_graphics_settings.blending.src_alpha_factor = mgm::GPUSettings::Blending::Factor::ONE;
+    base_graphics_settings.blending.dst_alpha_factor = mgm::GPUSettings::Blending::Factor::ONE;
 
     for (const auto& cmd : draw_data.cmds) {
         const auto mesh_verts = backend.create_buffer({mgm::BufferCreateInfo::Type::RAW, cmd.verts.data(), cmd.verts.size()});

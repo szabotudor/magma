@@ -39,7 +39,6 @@ namespace mgm {
         MgmWindow& window();
         Input& input();
         Notifications& notifications();
-        EngineManager& engine_manager();
         MgmGPU& graphics();
         SystemManager& systems();
 

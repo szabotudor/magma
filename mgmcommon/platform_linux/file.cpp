@@ -1,5 +1,4 @@
 #include "file.hpp"
-
 #include <limits.h>
 #include <unistd.h>
 
@@ -9,7 +8,7 @@ namespace mgm {
     Path::Path(const char* path) : data{path} {}
 
     std::string Path::platform_path() const {
-        return data;
+        return parse_prefix();
     }
 
     Path Path::from_platform_path(const std::string &path) {

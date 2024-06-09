@@ -154,12 +154,12 @@ namespace mgm {
     Input::Input() {
         system_name = "Input";
         MagmaEngine engine{};
-        if (!engine.file_io().exists(Path::game_data / "inputs.json"))
+        if (!engine.file_io().exists("data://inputs.json"))
             return;
 
         Logging{"Input"}.log("Loading input actions from \"inputs.json\" file");
 
-        const auto data = engine.file_io().read_text(Path::game_data / "inputs.json");
+        const auto data = engine.file_io().read_text("data://inputs.json");
         const auto json = JObject{data};
 
         for (const auto& [key, value] : json["actions"]) {
@@ -175,22 +175,32 @@ namespace mgm {
     void Input::update(float) {
         MagmaEngine engine{};
         for (auto& [name, action] : input_actions) {
-            action.value = engine.window().get_input_interface(action.inputs.front());
-            action.previously_pressed = action.pressed;
+            if (action.inputs.empty())
+                continue;
 
-            action.pressed = action.value != 0.0f;
-            for (size_t i = 1; i < action.inputs.size(); i++) {
-                if (engine.window().get_input_interface(action.inputs[i]) == 0.0f) {
-                    action.pressed = false;
-                    break;
+            // Will always be trus if there are no modifiers
+            bool modifiers = true;
+            if (!action.pressed && action.value != 0.0f)
+                modifiers = false;
+
+            if (modifiers && action.inputs.size() > 1) {
+                for (size_t i = 1; i < action.inputs.size(); i++) {
+                    if (engine.window().get_input_interface(action.inputs[i]) == 0.0f) {
+                        modifiers = false;
+                        break;
+                    }
                 }
             }
+            action.value = engine.window().get_input_interface(action.inputs.front());
+
+            action.previously_pressed = action.pressed;
+            action.pressed = action.value != 0.0f && modifiers;
 
             if (!action.analog) {
-                if (is_action_just_pressed(name))
+                if (action.pressed && !action.previously_pressed)
                     for (const auto& callback : action.press_callbacks)
                         callback();
-                if (is_action_just_released(name))
+                else if (!action.pressed && action.previously_pressed)
                     for (const auto& callback : action.release_callbacks)
                         callback();
             }
@@ -240,6 +250,6 @@ namespace mgm {
             json_action["analog"] = action.analog;
         }
 
-        engine.file_io().write_text(Path::game_data / "inputs.json", json);
+        engine.file_io().write_text("data://inputs.json", json);
     }
 }

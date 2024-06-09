@@ -52,7 +52,7 @@ namespace mgm {
      * @param data The data to set the attribute to
      * @return true if the attribute was set successfully, false otherwise
      */
-    EXPORT bool set_attribute(BackendData* backend, const Settings::StateAttribute& attr, const void* data);
+    EXPORT bool set_attribute(BackendData* backend, const GPUSettings::StateAttribute& attr, const void* data);
 
     /**
      * @brief Clear the screen

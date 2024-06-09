@@ -9,7 +9,7 @@ namespace mgm {
     struct Path {
         private:
         std::string parse_prefix() const {
-            const auto it = data.find_first_of("://");
+            const auto it = data.find("://");
             if (it == std::string::npos) {
                 return data;
             }
@@ -128,7 +128,7 @@ namespace mgm {
     inline const std::unordered_map<std::string, Path> Path::prefixes = {
         {"exe", exe_dir},
         {"assets", assets},
-        {"game_data", game_data},
+        {"data", game_data},
         {"temp", temp}
     };
 

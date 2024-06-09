@@ -32,6 +32,8 @@ namespace mgm {
         float palette_window_height = 0.0f;
         std::vector<EditorWindow*> windows;
 
+        bool project_initialized = false;
+
         public:
         bool palette_open = false;
 

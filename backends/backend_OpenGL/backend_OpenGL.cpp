@@ -103,33 +103,33 @@ namespace mgm {
     // Backend graphics functions
     //============================
 
-    GLenum gl_blending_factor(Settings::Blending::Factor factor) {
+    GLenum gl_blending_factor(GPUSettings::Blending::Factor factor) {
         switch (factor) {
-            case Settings::Blending::Factor::ZERO: return GL_ZERO;
-            case Settings::Blending::Factor::ONE: return GL_ONE;
-            case Settings::Blending::Factor::SRC_COLOR: return GL_SRC_COLOR;
-            case Settings::Blending::Factor::ONE_MINUS_SRC_COLOR: return GL_ONE_MINUS_SRC_COLOR;
-            case Settings::Blending::Factor::DST_COLOR: return GL_DST_COLOR;
-            case Settings::Blending::Factor::ONE_MINUS_DST_COLOR: return GL_ONE_MINUS_DST_COLOR;
-            case Settings::Blending::Factor::SRC_ALPHA: return GL_SRC_ALPHA;
-            case Settings::Blending::Factor::ONE_MINUS_SRC_ALPHA: return GL_ONE_MINUS_SRC_ALPHA;
-            case Settings::Blending::Factor::DST_ALPHA: return GL_DST_ALPHA;
-            case Settings::Blending::Factor::ONE_MINUS_DST_ALPHA: return GL_ONE_MINUS_DST_ALPHA;
+            case GPUSettings::Blending::Factor::ZERO: return GL_ZERO;
+            case GPUSettings::Blending::Factor::ONE: return GL_ONE;
+            case GPUSettings::Blending::Factor::SRC_COLOR: return GL_SRC_COLOR;
+            case GPUSettings::Blending::Factor::ONE_MINUS_SRC_COLOR: return GL_ONE_MINUS_SRC_COLOR;
+            case GPUSettings::Blending::Factor::DST_COLOR: return GL_DST_COLOR;
+            case GPUSettings::Blending::Factor::ONE_MINUS_DST_COLOR: return GL_ONE_MINUS_DST_COLOR;
+            case GPUSettings::Blending::Factor::SRC_ALPHA: return GL_SRC_ALPHA;
+            case GPUSettings::Blending::Factor::ONE_MINUS_SRC_ALPHA: return GL_ONE_MINUS_SRC_ALPHA;
+            case GPUSettings::Blending::Factor::DST_ALPHA: return GL_DST_ALPHA;
+            case GPUSettings::Blending::Factor::ONE_MINUS_DST_ALPHA: return GL_ONE_MINUS_DST_ALPHA;
         }
         return GL_INVALID_ENUM;
     }
-    GLenum gl_blending_equation(Settings::Blending::Equation equation) {
+    GLenum gl_blending_equation(GPUSettings::Blending::Equation equation) {
         switch (equation) {
-            case Settings::Blending::Equation::ADD: return GL_FUNC_ADD;
-            case Settings::Blending::Equation::SRC_MINUS_DST: return GL_FUNC_SUBTRACT;
-            case Settings::Blending::Equation::DST_MINUS_SRC: return GL_FUNC_REVERSE_SUBTRACT;
-            case Settings::Blending::Equation::MIN: return GL_MIN;
-            case Settings::Blending::Equation::MAX: return GL_MAX;
+            case GPUSettings::Blending::Equation::ADD: return GL_FUNC_ADD;
+            case GPUSettings::Blending::Equation::SRC_MINUS_DST: return GL_FUNC_SUBTRACT;
+            case GPUSettings::Blending::Equation::DST_MINUS_SRC: return GL_FUNC_REVERSE_SUBTRACT;
+            case GPUSettings::Blending::Equation::MIN: return GL_MIN;
+            case GPUSettings::Blending::Equation::MAX: return GL_MAX;
         }
         return GL_INVALID_ENUM;
     }
 
-    EXPORT bool set_attribute(BackendData* backend, const Settings::StateAttribute& attr, const void* data) {
+    EXPORT bool set_attribute(BackendData* backend, const GPUSettings::StateAttribute& attr, const void* data) {
         mutex.lock();
         backend->platform->make_current();
 
@@ -137,8 +137,8 @@ namespace mgm {
         constexpr bool success = true;
 
         switch (attr) {
-            case Settings::StateAttribute::CLEAR: {
-                const auto& clear = *static_cast<const Settings::Settings::Clear*>(data);
+            case GPUSettings::StateAttribute::CLEAR: {
+                const auto& clear = *static_cast<const GPUSettings::GPUSettings::Clear*>(data);
                 backend->clear_color = clear.color;
                 backend->clear_mask = clear.color_buffer * GL_COLOR_BUFFER_BIT
                     | clear.depth_buffer * GL_DEPTH_BUFFER_BIT
@@ -148,8 +148,8 @@ namespace mgm {
                 glClearStencil(0);
                 break;
             }
-            case Settings::StateAttribute::BLENDING: {
-                const auto& blending = *static_cast<const Settings::Settings::Blending*>(data);
+            case GPUSettings::StateAttribute::BLENDING: {
+                const auto& blending = *static_cast<const GPUSettings::GPUSettings::Blending*>(data);
                 if (blending.enabled) {
                     glEnable(GL_BLEND);
                     glBlendFuncSeparate(
@@ -167,8 +167,8 @@ namespace mgm {
                     glDisable(GL_BLEND);
                 break;
             }
-            case Settings::StateAttribute::VIEWPORT: {
-                const auto& viewport = *static_cast<const Settings::Settings::Viewport*>(data);
+            case GPUSettings::StateAttribute::VIEWPORT: {
+                const auto& viewport = *static_cast<const GPUSettings::GPUSettings::Viewport*>(data);
                 backend->viewport.pos = viewport.top_left;
                 backend->viewport.size = viewport.bottom_right - viewport.top_left;
                 glViewport(
@@ -177,8 +177,8 @@ namespace mgm {
                 );
                 break;
             }
-            case Settings::StateAttribute::SCISSOR: {
-                const auto& scissor = *static_cast<const Settings::Settings::Scissor*>(data);
+            case GPUSettings::StateAttribute::SCISSOR: {
+                const auto& scissor = *static_cast<const GPUSettings::GPUSettings::Scissor*>(data);
                 if ((scissor.top_left == vec2i32{0, 0} && scissor.bottom_right == vec2i32{0, 0}) || !scissor.enabled)
                     glDisable(GL_SCISSOR_TEST);
                 else {

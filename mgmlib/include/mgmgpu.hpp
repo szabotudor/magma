@@ -52,7 +52,7 @@ namespace mgm {
          * 
          * @param backend_settings The settings to apply
          */
-        void apply_settings(const Settings& backend_settings);
+        void apply_settings(const GPUSettings& backend_settings);
 
         public:
         MgmGPU(const MgmGPU&) = delete;
@@ -97,12 +97,12 @@ namespace mgm {
          * @brief Run all draw calls in the list, and present the rendered image.
          * Execution is not guaranteed to be immediate, synchronious, or in order, except for clear calls, which are regarded as separators within the same frame.
          */
-        void draw(const std::vector<DrawCall>& draw_calls, const Settings& settings);
+        void draw(const std::vector<DrawCall>& draw_calls, const GPUSettings& settings);
 
         /**
          * @brief Get the settings given when "draw" was last called
          */
-        Settings get_settings() const;
+        GPUSettings get_settings() const;
 
         /**
          * @brief Present the rendered image to the window (switch buffers, etc.)

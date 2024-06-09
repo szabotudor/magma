@@ -6,7 +6,7 @@
 
 
 namespace mgm {
-    struct Settings {
+    struct GPUSettings {
         enum class StateAttribute {
             // Clear data
             CLEAR,

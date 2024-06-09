@@ -3,7 +3,6 @@
 #include "inspector.hpp"
 #include "engine.hpp"
 #include "imgui.h"
-#include "editor_windows/script_editor.hpp"
 #include "editor_windows/file_browser.hpp"
 
 

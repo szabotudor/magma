@@ -76,13 +76,11 @@ endif()
 add_library(
     magma STATIC
         ${CMAKE_CURRENT_SOURCE_DIR}/src/engine.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/engine_manager.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/systems.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/input.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/notifications.cpp
 
         ${CMAKE_CURRENT_SOURCE_DIR}/include/engine.hpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/engine_manager.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/include/systems.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/include/input.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/include/notifications.hpp
