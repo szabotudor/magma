@@ -138,6 +138,41 @@ namespace mgm {
         return std::any_cast<const std::string &>(data);
     }
 
+    void string_escape_codes_to_chars(std::string& str) {
+        for (size_t i = 0; i < str.size(); i++) {
+            if (str[i] != '\\')
+                continue;
+
+            if (i + 1 >= str.size())
+                break;
+
+            switch (str[i + 1]) {
+                case 'n': str.replace(i, 2, "\n"); break;
+                case 'r': str.replace(i, 2, "\r"); break;
+                case 't': str.replace(i, 2, "\t"); break;
+                case 'f': str.replace(i, 2, "\f"); break;
+                case 'v': str.replace(i, 2, "\v"); break;
+                case '\\': str.replace(i, 2, "\\"); break;
+                case '"': str.replace(i, 2, "\""); break;
+                default: break;
+            }
+        }
+    }
+    void string_chars_to_escape_codes(std::string& str) {
+        for (size_t i = 0; i < str.size(); i++) {
+            switch (str[i]) {
+                case '\n': str.replace(i, 1, "\\n"); break;
+                case '\r': str.replace(i, 1, "\\r"); break;
+                case '\t': str.replace(i, 1, "\\t"); break;
+                case '\f': str.replace(i, 1, "\\f"); break;
+                case '\v': str.replace(i, 1, "\\v"); break;
+                case '\\': str.replace(i, 1, "\\\\"); break;
+                case '"': str.replace(i, 1, "\\\""); break;
+                default: break;
+            }
+        }
+    }
+
 
     std::string JObject::array_to_string() const {
         if (private_type() == PrivateType::SINGLE && type() == Type::ARRAY)
@@ -147,12 +182,10 @@ namespace mgm {
         std::string res = "[ ";
         for (size_t i = 0; i < vec.size(); i++) {
             std::string str = std::string{vec[i]};
-            if (vec[i].type() == Type::STRING)
-                for (size_t j = 0; j < str.size(); j++)
-                    if (str[j] == '"')
-                        str.insert(j++, 1, '\\');
-            if (vec[i].type() == Type::STRING)
+            if (vec[i].type() == Type::STRING) {
+                string_chars_to_escape_codes(str);
                 res += '"' + str + '"';
+            }
             else
                 res += str;
 
@@ -170,10 +203,13 @@ namespace mgm {
         std::string res = "{ ";
         size_t i = 0;
         for (const auto& [key, value] : map) {
-            if (value.type() == Type::STRING)
-                res += '"' + key + "\": \"" + std::string{value} + '"';
+            std::string str = std::string{value};
+            if (value.type() == Type::STRING) {
+                string_chars_to_escape_codes(str);
+                res += '"' + key + "\": \"" + str + '"';
+            }
             else
-                res += '"' + key + "\": " + std::string{value};
+                res += '"' + key + "\": " + str;
 
             if (i < map.size() - 1)
                 res += ", ";
@@ -198,7 +234,9 @@ namespace mgm {
                 return {};
             }
 
-            const auto value_str = str.substr(value.x(), value.y() - value.x());
+            auto value_str = str.substr(value.x(), value.y() - value.x());
+            if (value_str.front() == '"' && value_str.back() == '"')
+                string_escape_codes_to_chars(value_str);
             vec.emplace_back(value_str);
             i = value.y() + 1;
             while (is_whitespace(str[i])) i++;
@@ -242,7 +280,9 @@ namespace mgm {
             }
 
             const auto key_str = str.substr(key.x() + 1, key.y() - key.x() - 2);
-            const auto value_str = str.substr(value.x(), value.y() - value.x());
+            auto value_str = str.substr(value.x(), value.y() - value.x());
+            if (value_str.front() == '"' && value_str.back() == '"')
+                string_escape_codes_to_chars(value_str);
             map[key_str].data = value_str;
             i = value.y() + 1;
             while (is_whitespace(str[i])) i++;
