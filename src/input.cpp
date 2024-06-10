@@ -1,6 +1,7 @@
 #include "input.hpp"
 #include "notifications.hpp"
 #include "engine.hpp"
+#include "imgui.h"
 #include "json.hpp"
 #include "mgmwin.hpp"
 
@@ -120,6 +121,10 @@ namespace mgm {
             return input_actions.at("__none_action__").release_callbacks;
         }
         return it->second.release_callbacks;
+    }
+
+    void Input::input_map() {
+        ImGui::Text("Test");
     }
 
     Input::Action load(const JObject& obj) {

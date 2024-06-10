@@ -5,6 +5,8 @@
 #include <unordered_map>
 #include <unordered_set>
 
+#include "editor_windows/settings.hpp"
+
 
 namespace mgm {
     class Input : System {
@@ -134,6 +136,9 @@ namespace mgm {
          * @return const std::vector<Callback>& A const reference to the list of callbacks
          */
         const std::vector<Callback>& release_callbacks(const std::string& name) const;
+
+        void input_map();
+        SETTINGS_SUBSECTION_DRAW_FUNC(input_map)
 
 
 #if defined(ENABLE_EDITOR)

@@ -87,7 +87,7 @@ namespace mgm {
 #if defined(__linux__)
         graphics().load_backend("shared/libbackend_OpenGL.so");
 #elif defined (WIN32) || defined(_WIN32)
-        m_graphics->load_backend("shared/backend_OpenGL.dll");
+        graphics().load_backend("shared/backend_OpenGL.dll");
 #endif
 #endif
 

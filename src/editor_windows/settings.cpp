@@ -39,21 +39,21 @@ namespace mgm {
 
         ImGui::BeginChild("Systems", {}, ImGuiChildFlags_AutoResizeX);
         for (auto& [type_id, system] : engine.systems().systems) {
-            if (selected_system == 0)
-                selected_system = type_id;
+            if (selected_system == nullptr)
+                selected_system = system;
 
             const auto it = RegisterSubsectionFunction::get_subsections_map().find(type_id);
-            if (it == RegisterSubsectionFunction::get_subsections_map().end()) {
-                ImGui::TreeNodeEx(system->system_name.c_str(), ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen);
+            if (it == RegisterSubsectionFunction::get_subsections_map().end())
                 continue;
-            }
 
             if (ImGui::TreeNodeEx(system->system_name.c_str(), ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_DefaultOpen)) {
                 if (it != RegisterSubsectionFunction::get_subsections_map().end()) {
                     for (auto& [name, func] : it->second) {
                         ImGui::TreeNodeEx(name.c_str(), ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen);
-                        if (ImGui::IsItemClicked())
-                            func(system);
+                        if (ImGui::IsItemClicked()) {
+                            draw_settings_func = func;
+                            selected_system = system;
+                        }
                     }
                 }
                 ImGui::TreePop();
@@ -63,6 +63,8 @@ namespace mgm {
 
         ImGui::SameLine();
         ImGui::BeginChild("Settings", {}, ImGuiChildFlags_Border);
+        if (draw_settings_func)
+            draw_settings_func(selected_system);
         ImGui::EndChild();
     }
 }

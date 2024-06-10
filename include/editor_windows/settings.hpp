@@ -35,7 +35,7 @@ namespace mgm {
                 return;
 
             get_subsections_map()[type_id][beautified_name] = [func](System* sys) {
-                (static_cast<Class*>(sys)->*func)();
+                (reinterpret_cast<Class*>(sys)->*func)();
             };
         }
     };
@@ -45,7 +45,8 @@ namespace mgm {
     static inline RegisterSubsectionFunction __register_subsection_function__##function{#function, &Self_##function::function}; \
 
     class EditorSettings : public EditorWindow {
-        size_t selected_system = 0;
+        System* selected_system = nullptr;
+        std::function<void(System*)> draw_settings_func{};
 
     public:
         EditorSettings() {
