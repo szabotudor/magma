@@ -445,7 +445,7 @@ namespace mgm {
         return end();
     }
     JObject::Iterator<JObject, JObject::JObjectMapIterator> JObject::end() {
-        return {this, ""};
+        return {this, static_cast<size_t>(-1)};
     }
 
     JObject::Iterator<const JObject, JObject::JObjectConstMapIterator> JObject::begin() const {
@@ -460,7 +460,7 @@ namespace mgm {
         return end();
     }
     JObject::Iterator<const JObject, JObject::JObjectConstMapIterator> JObject::end() const {
-        return {this, ""};
+        return {this, static_cast<size_t>(-1)};
     }
 
     std::ostream& operator<<(std::ostream &os, const JObject &obj) {

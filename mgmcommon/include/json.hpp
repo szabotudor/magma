@@ -1,5 +1,6 @@
 #pragma once
 #include <any>
+#include <cstddef>
 #include <stdexcept>
 #include <string>
 #include <cstdint>
@@ -182,10 +183,10 @@ namespace mgm {
         using reference = T&;
         
         pointer obj = nullptr;
-        std::variant<MapIterator, JObject> key{};
+        std::variant<MapIterator, size_t> key{};
 
         Iterator() = default;
-        Iterator(pointer object, JObject member_key) : obj{object}, key{member_key} {}
+        Iterator(pointer object, size_t member_key) : obj{object}, key{member_key} {}
         Iterator(pointer object, MapIterator member_key) : obj{object}, key{member_key} {}
 
         struct Deref {
@@ -196,8 +197,8 @@ namespace mgm {
         Deref operator*() {
             if (std::holds_alternative<MapIterator>(key))
                 return {.key = std::get<MapIterator>(key)->first, .val = std::get<MapIterator>(key)->second};
-            if (std::holds_alternative<JObject>(key))
-                return {.key = static_cast<size_t>(std::get<JObject>(key)), .val = (*obj)[static_cast<size_t>(std::get<JObject>(key))]};
+            if (std::holds_alternative<size_t>(key))
+                return {.key = static_cast<size_t>(std::get<size_t>(key)), .val = (*obj)[static_cast<size_t>(std::get<size_t>(key))]};
             throw std::runtime_error{"Invalid iterator"};
         }
         Deref operator->() { return operator*(); }
@@ -207,21 +208,21 @@ namespace mgm {
                 const auto& obj_map = obj->object();
                 auto it = std::get<MapIterator>(key);
                 if (it == obj_map.end())
-                    key = "";
+                    key = static_cast<size_t>(-1);
                 else {
                     auto next = std::next(it);
                     if (next == obj_map.end())
-                        key = "";
+                        key = static_cast<size_t>(-1);
                     else
                         key = next;
                 }
             }
-            else if (std::holds_alternative<JObject>(key)) {
-                const auto new_key = static_cast<size_t>(std::get<JObject>(key)) + 1;
+            else if (std::holds_alternative<size_t>(key)) {
+                const auto new_key = std::get<size_t>(key) + 1;
                 if (new_key >= obj->array().size())
-                    key = "";
+                    key = static_cast<size_t>(-1);
                 else
-                    key = value_type{new_key};
+                    key = new_key;
             }
             return *this;
         }
