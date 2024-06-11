@@ -16,11 +16,14 @@ namespace mgm {
             if (it > 0) {
                 const auto prefix = data.substr(0, it);
                 const auto prefix_it = prefixes.find(prefix);
-                if (prefix_it != prefixes.end())
-                    return prefix_it->second.data + data.substr(it + 3);
+                if (prefix_it != prefixes.end()) {
+                    const auto real_name = prefix_it->first;
+                    const auto real_path = prefix_it->second->data;
+                    return real_path + data.substr(it + 3);
+                }
             }
             if (it == 0)
-                return prefixes.at("assets").data + data.substr(3);
+                return prefixes.at("assets")->data + data.substr(3);
             return data;
         }
 
@@ -32,7 +35,7 @@ namespace mgm {
         static Path game_data;
         static Path temp;
 
-        static const std::unordered_map<std::string, Path> prefixes;
+        static const std::unordered_map<std::string, const Path*> prefixes;
 
         Path(const std::string& path);
         Path(const char* path);
@@ -125,11 +128,11 @@ namespace mgm {
         }
     };
 
-    inline const std::unordered_map<std::string, Path> Path::prefixes = {
-        {"exe", exe_dir},
-        {"assets", assets},
-        {"data", game_data},
-        {"temp", temp}
+    inline const std::unordered_map<std::string, const Path*> Path::prefixes = {
+        {"exe", &Path::exe_dir},
+        {"assets", &Path::assets},
+        {"data", &Path::game_data},
+        {"temp", &Path::temp}
     };
 
 #define CHECK_PATH(path, default_return_value) \
