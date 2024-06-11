@@ -2,6 +2,7 @@
 #include "notifications.hpp"
 #include "engine.hpp"
 #include "imgui.h"
+#include "imgui_stdlib.h"
 #include "json.hpp"
 #include "mgmwin.hpp"
 
@@ -21,13 +22,10 @@ namespace mgm {
         }
         else {
             if (overwrite) {
-                if (!action.inputs.empty())
-                    action = Action{};
-                else
-                    return;
+                action = Action{};
+                action.inputs.emplace_back(input);
+                action.inputs.insert(action.inputs.end(), modifiers.begin(), modifiers.end());
             }
-            action.inputs.emplace_back(input);
-            action.inputs.insert(action.inputs.end(), modifiers.begin(), modifiers.end());
         }
     }
 
@@ -124,7 +122,29 @@ namespace mgm {
     }
 
     void Input::input_map() {
-        ImGui::Text("Test");
+        static thread_local std::string name{};
+
+        bool create_action = ImGui::InputText("Input Action Name", &name, ImGuiInputTextFlags_EnterReturnsTrue);
+        ImGui::SameLine();
+        if (ImGui::Button("Register") || create_action) {
+            if (name.empty())
+                Logging{"Input"}.error("Action name cannot be empty");
+            else if (action_exists(name))
+                Logging{"Input"}.error("Action \"", name, "\" already exists");
+            else {
+                auto_register_input_action(name);
+                name.clear();
+            }
+        }
+
+        for (const auto& action : input_actions) {
+            ImGui::Text("%s", action.first.c_str());
+            ImGui::SameLine();
+            if (ImGui::Button("Delete")) {
+                input_actions.erase(action.first);
+                break;
+            }
+        }
     }
 
     Input::Action load(const JObject& obj) {
