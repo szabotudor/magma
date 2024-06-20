@@ -137,11 +137,10 @@ namespace mgm {
          */
         const std::vector<Callback>& release_callbacks(const std::string& name) const;
 
+#if defined(ENABLE_EDITOR)
         void input_map();
         SETTINGS_SUBSECTION_DRAW_FUNC(input_map)
 
-
-#if defined(ENABLE_EDITOR)
         virtual void in_editor_update(float delta) override { update(delta); }
 #endif
         virtual void update(float) override;

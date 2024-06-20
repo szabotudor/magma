@@ -53,7 +53,7 @@ namespace mgm {
         static inline void mul_one(const T& a, const T& b, T& r, size_t& i) { r = a * b; ++i; }
         static inline void div_one(const T& a, const T& b, T& r, size_t& i) { r = a / b; ++i; }
         static inline void mod_one(const T& a, const T& b, T& r, size_t& i) { r = a % b; ++i; }
-        static inline void eq_one(const T& a, const T& b, bool& r, size_t& i) { r = a == b; ++i; }
+        static inline void eq_one(const T& a, const T& b, bool& r, size_t& i) { r = r && a == b; ++i; }
 
 
         template<typename... Ts>

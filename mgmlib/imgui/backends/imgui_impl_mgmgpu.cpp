@@ -426,7 +426,7 @@ namespace ImGui {
         if ((ImGuiWindowFlags_NoResize & flags) || (ImGuiWindowFlags_NoMove & flags))
             return;
 
-        const ImVec2 margin_size{4.0f, 4.0f};
+        const ImVec2 margin_size{8.0f, 8.0f};
 
         const bool bottom = ImGui::IsMouseHoveringRect(
             ImGui::GetWindowPos() + ImVec2{0.0f, ImGui::GetWindowSize().y} - margin_size,
@@ -485,7 +485,7 @@ namespace ImGui {
                 ImGui::GetWindowPos() + ImVec2{0.0f, ImGui::GetWindowSize().y},
                 ImGui::GetWindowPos() + ImVec2{ImGui::GetWindowSize().x, ImGui::GetWindowSize().y},
                 IM_COL32(255, 255, 255, 255),
-                margin_size.y * 2.0f
+                margin_size.y
             );
         }
         if (left || (dragging && left_drag)) {
@@ -493,7 +493,7 @@ namespace ImGui {
                 ImGui::GetWindowPos(),
                 ImGui::GetWindowPos() + ImVec2{0.0f, ImGui::GetWindowSize().y},
                 IM_COL32(255, 255, 255, 255),
-                margin_size.x * 2.0f
+                margin_size.x
             );
         }
         if (right || (dragging && right_drag)) {
@@ -501,7 +501,7 @@ namespace ImGui {
                 ImGui::GetWindowPos() + ImVec2{ImGui::GetWindowSize().x, 0.0f},
                 ImGui::GetWindowPos() + ImVec2{ImGui::GetWindowSize().x, ImGui::GetWindowSize().y},
                 IM_COL32(255, 255, 255, 255),
-                margin_size.x * 2.0f
+                margin_size.x
             );
         }
     }
