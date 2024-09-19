@@ -1,6 +1,5 @@
 #pragma once
 #include "logging.hpp"
-#include "mgmath.hpp"
 
 
 namespace mgm {
@@ -21,14 +20,14 @@ namespace mgm {
 
         /**
          * @brief Load a shared/dynamic library
-         * 
+         *
          * @param file_path Path to the so/dll file
          */
         void load(const char* file_path);
 
         /**
          * @brief Read a symbol from the library if a library is loaded
-         * 
+         *
          * @tparam T Type of the symbol to load
          * @param sym_name String with the symbol name
          * @param sym Pointer to a symbol adress to fill

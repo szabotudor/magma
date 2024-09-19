@@ -121,11 +121,11 @@ namespace mgm {
         return it->second.release_callbacks;
     }
 
+#if defined(ENABLE_EDITOR)
     void Input::input_map() {
         static thread_local std::string name{};
 
         bool create_action = ImGui::InputText("Input Action Name", &name, ImGuiInputTextFlags_EnterReturnsTrue);
-        ImGui::SameLine();
         if (ImGui::Button("Register") || create_action) {
             if (name.empty())
                 Logging{"Input"}.error("Action name cannot be empty");
@@ -137,15 +137,33 @@ namespace mgm {
             }
         }
 
-        for (const auto& action : input_actions) {
-            ImGui::Text("%s", action.first.c_str());
-            ImGui::SameLine();
-            if (ImGui::Button("Delete")) {
-                input_actions.erase(action.first);
-                break;
+        for (const auto& [key, action] : input_actions) {
+            ImGui::Text("%s", key.c_str());
+            if (ImGui::IsItemHovered()) {
+                ImGui::SetItemTooltip("Right click to remove action");
+                if (ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
+                    input_actions.erase(key);
+                    break;
+                }
             }
+            ImGui::Indent();
+            ImGui::TextColored({0.2f, 0.5f, 0.9f, 1.0f}, "Input: ");
+            ImGui::SameLine();
+            ImGui::Text("%s", MgmWindow::get_input_interface_name(action.inputs.front()).c_str());
+            if (action.inputs.size() > 1) {
+                ImGui::TextColored({0.2f, 0.5f, 0.9f, 1.0f}, "Modifiers: ");
+                for (size_t i = 1; i < action.inputs.size(); i++) {
+                    ImGui::SameLine();
+                    if (i < action.inputs.size() - 1)
+                        ImGui::Text("%s, ", MgmWindow::get_input_interface_name(action.inputs[i]).c_str());
+                    else
+                        ImGui::Text("%s", MgmWindow::get_input_interface_name(action.inputs[i]).c_str());
+                }
+            }
+            ImGui::Unindent();
         }
     }
+#endif
 
     Input::Action load(const JObject& obj) {
         Input::Action action{};
@@ -243,7 +261,11 @@ namespace mgm {
                         input_stack.emplace_back(event.input);
                 }
                 else if (event.mode == MgmWindow::InputEvent::Mode::RELEASE) {
+                    if (input_stack.empty())
+                        continue;
                     const auto it = std::find(input_stack.begin(), input_stack.end(), event.input);
+                    if (it == input_stack.end())
+                        continue;
                     if (it == input_stack.begin()) {
                         const auto action = input_stack.back();
                         const auto modifiers = std::vector<MgmWindow::InputInterface>{input_stack.begin(), input_stack.end() - 1};

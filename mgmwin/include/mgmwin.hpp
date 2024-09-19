@@ -3,6 +3,7 @@
 #include "mgmath.hpp"
 #include <functional>
 #include <vector>
+#include <algorithm>
 
 
 namespace mgm {
@@ -61,7 +62,7 @@ namespace mgm {
         static InputInterface input_interface_from_name(const std::string& name) {
             const auto it = std::find(input_interface_names.begin(), input_interface_names.end(), name);
             if (it != input_interface_names.end()) {
-                const size_t index = it - input_interface_names.begin();
+                const size_t index = (size_t)(it - input_interface_names.begin());
                 if (index < (size_t)InputInterface::_NUM_INPUT_INTERFACES)
                     return (InputInterface)index;
             }

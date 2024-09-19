@@ -54,6 +54,7 @@ namespace mgm {
     };
 
     struct BufferCreateInfo {
+        friend class MgmGPU;
         enum class Type {
             INVALID, RAW, INDEX
         };

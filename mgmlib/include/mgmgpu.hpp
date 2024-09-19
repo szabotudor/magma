@@ -96,8 +96,12 @@ namespace mgm {
         /**
          * @brief Run all draw calls in the list, and present the rendered image.
          * Execution is not guaranteed to be immediate, synchronious, or in order, except for clear calls, which are regarded as separators within the same frame.
+         * @param draw_calls The list of draw calls to execute
+        * @param settings The settings to apply to the GPU before executing the draw calls
+        * @param wait_for_incomplete_objects If true, the function will wait for any required buffers, textures, or shaders that haven't finished being created yet.
+        * Otherwise, these objects will be skipped, and only the objects that aren't busy will be used.
          */
-        void draw(const std::vector<DrawCall>& draw_calls, const GPUSettings& settings);
+        void draw(const std::vector<DrawCall>& draw_calls, const GPUSettings& settings, bool wait_for_incomplete_objects = false);
 
         /**
          * @brief Get the settings given when "draw" was last called
@@ -115,7 +119,7 @@ namespace mgm {
          * @param info The buffer creation info
          * @return BufferHandle A handle to the created buffer
          */
-        BufferHandle create_buffer(const BufferCreateInfo &info);
+        BufferHandle create_buffer(BufferCreateInfo info);
 
         /**
          * @brief Update a buffer with new data
@@ -123,14 +127,14 @@ namespace mgm {
          * @param buffer The buffer to update
          * @param info The new buffer creation info
          */
-        void update_buffer(BufferHandle buffer, const BufferCreateInfo &info);
+        void update_buffer(BufferHandle handle, BufferCreateInfo info);
 
         /**
-         * @brief Create a buffers object
+         * @brief Destroy a buffer
          * 
-         * @return BuffersObjectHandle A handle to the buffer to destroy
+         * @param handle A handle to the buffer to destroy
          */
-        void destroy_buffer(BufferHandle buffer);
+        void destroy_buffer(BufferHandle handle);
 
         /**
          * @brief Create a buffers object from a list of buffers
@@ -143,9 +147,9 @@ namespace mgm {
         /**
          * @brief Destroy a buffers object (This will not destroy the buffers bound to it)
          * 
-         * @param buffers_object A handle to the buffers object to destroy
+         * @param handle A handle to the buffers object to destroy
          */
-        void destroy_buffers_object(BuffersObjectHandle buffers_object);
+        void destroy_buffers_object(BuffersObjectHandle handle);
 
         /**
          * @brief Create a shader using the given info
@@ -168,14 +172,14 @@ namespace mgm {
          * @param info The texture creation info
          * @return TextureHandle A handle to the created texture
          */
-        TextureHandle create_texture(const TextureCreateInfo &info);
+        TextureHandle create_texture(TextureCreateInfo info);
 
         /**
          * @brief Destroy a texture
          * 
          * @param texture A handle to the texture to destroy
          */
-        void destroy_texture(TextureHandle texture);
+        void destroy_texture(TextureHandle handle);
 
         ~MgmGPU();
     };

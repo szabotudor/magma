@@ -1,6 +1,7 @@
 #pragma once
 #include "systems.hpp"
 #include <type_traits>
+#include <algorithm>
 
 
 namespace mgm {
@@ -51,7 +52,7 @@ namespace mgm {
         }
 
         void remove_window(EditorWindow* window) {
-            windows.erase(std::remove(windows.begin(), windows.end(), window), windows.end());
+            windows.erase(std::find(windows.begin(), windows.end(), window));
             delete window;
         }
 

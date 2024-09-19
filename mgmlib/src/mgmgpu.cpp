@@ -1,3 +1,5 @@
+#include <chrono>
+#include <condition_variable>
 #include <cstring>
 #include <mutex>
 #include <string>
@@ -9,6 +11,7 @@
 #include "mgmgpu.hpp"
 
 #include "mgmwin.hpp"
+#include "threadpool.hpp"
 
 #if defined(EMBED_BACKEND)
 #include "backend.hpp"
@@ -28,12 +31,15 @@ namespace mgm {
         size_t capacity = 0;
         size_t size = 0;
         std::vector<ID_t> free_ids{};
+        std::recursive_mutex mutex{};
 
+        template<std::enable_if_t<std::is_move_constructible_v<T> || std::is_move_assignable_v<T>, bool> = true>
         void alloc(size_t count) {
+            std::lock_guard lock{mutex};
             if (count == 0)
                 return;
 
-            const auto new_data = reinterpret_cast<Container*>(new char[count * sizeof(Container)]);
+            const auto new_data = reinterpret_cast<Container*>(new char[count * sizeof(Container)]{});
             if constexpr (!std::is_trivially_constructible_v<T>) {
                 for (size_t i = 0; i < size; i++) {
                     if (data[i].alive) {
@@ -56,8 +62,10 @@ namespace mgm {
             alloc(set_capacity);
         }
 
-        template<typename... Ts>
+        template<typename... Ts, std::enable_if_t<std::is_constructible_v<T, Ts...>, bool> = true>
         ID_t create(Ts&&... args) {
+            std::lock_guard lock{mutex};
+
             if (free_ids.empty()) {
                 if (size == capacity)
                     alloc(capacity ? capacity * 2 : 8);
@@ -74,23 +82,32 @@ namespace mgm {
         }
 
         void destroy(ID_t id) {
+            std::lock_guard lock{mutex};
+
             if (!data[id].alive)
                 return;
 
-            data[id].data.~T();
+            if constexpr (!std::is_trivially_destructible_v<T>)
+                data[id].data.~T();
+            else if constexpr (!std::is_pointer_v<T>)
+                memset(&data[id].data, 0, sizeof(T));
+
             data[id].alive = false;
             free_ids.emplace_back(id);
         }
-        
+
         T& operator[](ID_t id) {
+            std::unique_lock lock{mutex};
             return data[id].data;
         }
 
         const T& operator[](ID_t id) const {
+            std::unique_lock lock{mutex};
             return data[id].data;
         }
 
         ~SimpleSparseSet() {
+            std::lock_guard lock{mutex};
             if constexpr (!std::is_trivially_destructible_v<T>)
                 for (size_t i = 0; i < size; i++)
                     if (data[i].alive)
@@ -155,12 +172,84 @@ namespace mgm {
         struct RawBufferInfo {
             Buffer* buffer = nullptr;
             BufferCreateInfo original_info{};
+            int ref_count = 0;
+        };
+        struct BufferObjectInfo {
+            BuffersObject* object = nullptr;
+            std::vector<BufferHandle> buffers{};
         };
 
-        SimpleSparseSet<RawBufferInfo> buffers{};
-        SimpleSparseSet<BuffersObject*> buffers_objects{};
+        template<typename T>
+        struct ObjectHandleInfo {
+            std::mutex mutex{};
+            std::condition_variable cv{};
+            T object{};
+            bool good = false;
+            bool busy = true;
+
+            ObjectHandleInfo() = default;
+
+            ObjectHandleInfo(ObjectHandleInfo&& other) : object{std::move(other.object)}, good{other.good} {
+                std::unique_lock<std::mutex> lock{other.mutex};
+                other.cv.wait(lock, [&other]{return !other.busy;});
+                other.good = false;
+                lock.unlock();
+                other.cv.notify_all();
+            }
+            ObjectHandleInfo& operator=(ObjectHandleInfo&& other) {
+                if (this == &other)
+                    return *this;
+
+                std::unique_lock<std::mutex> lock{mutex};
+                std::unique_lock<std::mutex> other_lock{other.mutex};
+                cv.wait(lock, [this]{return !busy;});
+                other.cv.wait(other_lock, [&other]{return !other.busy;});
+
+                object = std::move(other.object);
+                good = other.good;
+                other.good = false;
+
+                lock.unlock();
+                other_lock.unlock();
+                cv.notify_all();
+                other.cv.notify_all();
+
+                return *this;
+            }
+
+            ObjectHandleInfo(T& t) : object{std::move(t)}, good{true} {}
+            ObjectHandleInfo(const T& t) : object{t}, good{true} {}
+            ObjectHandleInfo& operator=(T& t) {
+                std::unique_lock<std::mutex> lock{mutex};
+                cv.wait(lock, [this]{return !busy;});
+
+                object = std::move(t);
+                good = true;
+
+                lock.unlock();
+                cv.notify_all();
+
+                return *this;
+            }
+            ObjectHandleInfo& operator=(const T& t) {
+                std::unique_lock<std::mutex> lock{mutex};
+                cv.wait(lock, [this]{return !busy;});
+
+                object = t;
+                good = true;
+
+                lock.unlock();
+                cv.notify_all();
+
+                return *this;
+            }
+            ~ObjectHandleInfo() = default;
+        };
+
+        SimpleSparseSet<ObjectHandleInfo<RawBufferInfo>> buffers{};
+        SimpleSparseSet<BufferObjectInfo> buffers_objects{};
         SimpleSparseSet<Shader*> shaders{};
-        SimpleSparseSet<Texture*> textures{};
+        SimpleSparseSet<ObjectHandleInfo<Texture*>> textures{};
 
         struct StateAttributeOffset {
             size_t offset{};
@@ -172,7 +261,9 @@ namespace mgm {
         DLoader dloader{};
 #endif
 
-        std::mutex mutex{};
+        std::mutex draw_mutex{};
+
+        ThreadPool create_destroy_objects{20};
 
         Logging log{"MgmGPU"};
     };
@@ -321,10 +412,38 @@ namespace mgm {
         data->log.log("Unloaded backend");
     }
 
-    void MgmGPU::draw(const std::vector<DrawCall>& draw_list, const GPUSettings& backend_settings) {
+    template<typename T, typename U>
+    bool take_object(SimpleSparseSet<T>& set, const U& handle, bool wait_for_incomplete_objects = false, bool ignore_busy_state = false) {
+        auto& object = set[handle];
+        std::unique_lock lock{object.mutex};
+
+        bool wait_result = true;
+        if (wait_for_incomplete_objects)
+            object.cv.wait(lock, [&]{ return (!object.busy && object.good) || (ignore_busy_state && object.good); });
+        else
+            wait_result = object.cv.wait_for(lock, std::chrono::microseconds{100}, [&]{ return (!object.busy && object.good) || (ignore_busy_state && object.good); });
+
+        if (wait_result)
+            object.busy = true;
+
+        lock.unlock();
+        object.cv.notify_all();
+        return wait_result;
+    }
+
+    template<typename T, typename U>
+    void release_object(SimpleSparseSet<T>& set, const U& handle) {
+        auto& object = set[handle];
+        std::unique_lock lock{object.mutex};
+        object.busy = false;
+        lock.unlock();
+        object.cv.notify_all();
+    }
+
+    void MgmGPU::draw(const std::vector<DrawCall>& draw_list, const GPUSettings& backend_settings, bool wait_for_incomplete_objects) {
         if (!is_backend_loaded()) return;
 
-        data->mutex.lock();
+        data->draw_mutex.lock();
         apply_settings(backend_settings);
 
         for (const auto& call : draw_list) {
@@ -336,11 +455,34 @@ namespace mgm {
                 }
                 case DrawCall::Type::DRAW: {
                     std::vector<Texture*> textures{};
-                    for (const auto& tex : call.textures)
-                        if (tex != INVALID_TEXTURE)
-                            textures.emplace_back(data->textures[tex]);
+                    TextureHandle first_bad_texture = INVALID_TEXTURE;
+                    for (const auto& tex : call.textures) {
+                        if (tex != INVALID_TEXTURE) {
+                            bool wait_result = take_object(data->textures, tex, wait_for_incomplete_objects);
 
-                    data->push_draw_call(data->backend, data->shaders[call.shader], data->buffers_objects[call.buffers_object], textures.data(), textures.size(), call.parameters);
+                            if (!wait_result) {
+                                first_bad_texture = tex;
+                                break;
+                            }
+                            data->textures[tex].busy = true;
+                            textures.emplace_back(data->textures[tex].object);
+                        }
+                    }
+                    const auto release_textures = [&] {
+                        for (const auto& tex : call.textures) {
+                            if (tex == first_bad_texture)
+                                break;
+                            if (tex != INVALID_TEXTURE)
+                                release_object(data->textures, tex);
+                        }
+                    };
+                    if (first_bad_texture != INVALID_TEXTURE)
+                        release_textures();
+
+                    data->push_draw_call(data->backend, data->shaders[call.shader], data->buffers_objects[call.buffers_object].object, textures.data(), textures.size(), call.parameters);
+
+                    release_textures();
+
                     break;
                 }
                 case DrawCall::Type::COMPUTE: {
@@ -360,13 +502,13 @@ namespace mgm {
         }
 
         data->execute(data->backend, nullptr);
-        data->mutex.unlock();
+        data->draw_mutex.unlock();
     }
 
     GPUSettings MgmGPU::get_settings() const {
-        data->mutex.lock();
+        data->draw_mutex.lock();
         const auto settings = data->old_settings;
-        data->mutex.unlock();
+        data->draw_mutex.unlock();
         return settings;
     }
 
@@ -374,76 +516,176 @@ namespace mgm {
         data->present(data->backend);
     }
 
-    MgmGPU::BufferHandle MgmGPU::create_buffer(const BufferCreateInfo &info) {
+    template<typename T, typename U, typename H>
+    void create_object(ThreadPool& tp, std::function<void(T& object)> create_function, U& object_set, H handle) {
+        tp.push_task([&, create_function] {
+            auto& object = object_set[handle];
+
+            create_function(object.object);
+
+            std::unique_lock lock{object.mutex};
+            object.busy = false;
+            object.good = true;
+            lock.unlock();
+            object.cv.notify_all();
+        });
+    }
+
+    template<typename T, typename U, typename H>
+    void destroy_object(ThreadPool& tp, std::function<void(T& object)> destroy_function, U& object_set, H handle) {
+        tp.push_task([&, destroy_function] {
+            auto& object = object_set[handle];
+            std::unique_lock lock(object.mutex);
+            object.cv.wait(lock, [&]{return !object_set[handle].busy;});
+            object.busy = true;
+            object.good = false;
+            lock.unlock();
+            object.cv.notify_all();
+
+            destroy_function(object.object);
+            object.object = {};
+            object_set.destroy(handle);
+        });
+    }
+
+    MgmGPU::BufferHandle MgmGPU::create_buffer(BufferCreateInfo info) {
         if (!is_backend_loaded()) return INVALID_BUFFER;
-        
-        const auto buf = data->create_buffer(data->backend, info);
-        data->mutex.lock();
-        const auto handle = static_cast<BufferHandle>(data->buffers.create(buf, info));
-        data->mutex.unlock();
+
+        const size_t size = info.size() * info.data_point_size();
+        void* const new_data = new char[size];
+        memcpy(new_data, info.data(), size);
+        info.raw_data = new_data;
+
+        const auto handle = static_cast<BufferHandle>(data->buffers.create());
+
+        // data->draw_mutex.lock();
+        // auto& buffer = data->buffers[handle];
+        // buffer.object.buffer = data->create_buffer(data->backend, info);
+        // delete[] static_cast<char*>(info.data());
+        // buffer.object.original_info = info;
+        // data->draw_mutex.unlock();
+
+        data->create_destroy_objects.push_task([this, handle, info] {
+            auto& buffer = data->buffers[handle];
+            buffer.object.buffer = data->create_buffer(data->backend, info);
+            delete[] static_cast<char*>(info.data());
+            buffer.object.original_info = info;
+            std::unique_lock lock{buffer.mutex};
+            buffer.busy = false;
+            buffer.good = true;
+            lock.unlock();
+            buffer.cv.notify_all();
+        });
+
         return handle;
     }
 
-    void MgmGPU::update_buffer(BufferHandle buffer, const BufferCreateInfo &info) {
+    void MgmGPU::update_buffer(BufferHandle handle, BufferCreateInfo info) {
         if (!is_backend_loaded()) return;
 
-        data->mutex.lock();
-        const auto buf = data->buffers[buffer];
-        data->mutex.unlock();
+        const size_t size = info.size() * info.data_point_size();
+        void* const new_data = new char[size];
+        memcpy(new_data, info.data(), size);
+        info.raw_data = new_data;
 
-        if (info.type() != buf.original_info.type())
-            data->log.error("Buffer type mismatch when updating buffer data");
-        if (info.type_id_hash() != buf.original_info.type_id_hash())
-            data->log.error("Buffer data type mismatch when updating buffer data");
+        data->create_destroy_objects.push_task([this, handle, info] {
+            take_object(data->buffers, handle, true, true);
+            const auto& buffer = data->buffers[handle];
 
-        data->buffer_data(data->backend, buf.buffer, info.data(), info.size());
+            if (info.type() != buffer.object.original_info.type())
+                data->log.error("Buffer type mismatch when updating buffer data");
+            if (info.type_id_hash() != buffer.object.original_info.type_id_hash())
+                data->log.error("Buffer data type mismatch when updating buffer data");
+
+            data->buffer_data(data->backend, buffer.object.buffer, info.data(), info.size());
+
+            release_object(data->buffers, handle);
+        });
     }
 
-    void MgmGPU::destroy_buffer(BufferHandle buffer) {
+    void MgmGPU::destroy_buffer(BufferHandle handle) {
         if (!is_backend_loaded()) return;
-        if (buffer == INVALID_BUFFER) return;
+        if (handle == INVALID_BUFFER) return;
 
-        data->mutex.lock();
-        const auto buf = data->buffers[buffer];
-        data->buffers.destroy(buffer);
-        data->mutex.unlock();
+        // data->draw_mutex.lock();
+        // auto& buffer = data->buffers[handle];
+        // data->destroy_buffer(data->backend, buffer.object.buffer);
+        // buffer.object = {};
+        // data->buffers.destroy(handle);
+        // data->draw_mutex.unlock();
 
-        data->destroy_buffer(data->backend, buf.buffer);
+        data->create_destroy_objects.push_task([this, handle](){
+            auto& buffer = data->buffers[handle];
+            std::unique_lock<std::mutex> lock{buffer.mutex};
+            buffer.cv.wait(lock, [&]{ return !buffer.busy && buffer.object.ref_count == 0; });
+            buffer.busy = true;
+            buffer.good = false;
+            lock.unlock();
+            buffer.cv.notify_all();
+
+            data->destroy_buffer(data->backend, buffer.object.buffer);
+            buffer.object = {};
+            data->buffers.destroy(handle);
+        });
     }
 
     MgmGPU::BuffersObjectHandle MgmGPU::create_buffers_object(const std::vector<BufferHandle> &buffers) {
         if (!is_backend_loaded()) return INVALID_BUFFERS_OBJECT;
 
-        std::vector<Buffer*> raw_buffers{};
-        for (const auto& buf : buffers)
-            raw_buffers.emplace_back(data->buffers[buf].buffer);
+        const auto handle = static_cast<BuffersObjectHandle>(data->buffers_objects.create());
+        auto& buffers_object = data->buffers_objects[handle];
 
-        const auto obj = data->create_buffers_object(data->backend, raw_buffers.data(), raw_buffers.size());
-        data->mutex.lock();
-        const auto handle = static_cast<BuffersObjectHandle>(data->buffers_objects.create(obj));
-        data->mutex.unlock();
+        std::vector<Buffer*> raw_buffers{};
+
+        for (const auto& raw_buffer_handle : buffers) {
+            auto& buffer = data->buffers[raw_buffer_handle];
+            std::unique_lock lock{buffer.mutex};
+            buffer.cv.wait(lock, [&] { return buffer.good; });
+
+            buffer.busy = true;
+            buffer.object.ref_count++;
+
+            raw_buffers.emplace_back(buffer.object.buffer);
+            buffers_object.buffers.emplace_back(raw_buffer_handle);
+
+            lock.unlock();
+            buffer.cv.notify_all();
+        }
+
+        buffers_object.object = data->create_buffers_object(data->backend, raw_buffers.data(), raw_buffers.size());
         return handle;
     }
 
-    void MgmGPU::destroy_buffers_object(BuffersObjectHandle buffers_object) {
+    void MgmGPU::destroy_buffers_object(BuffersObjectHandle handle) {
         if (!is_backend_loaded()) return;
-        if (buffers_object == INVALID_BUFFERS_OBJECT) return;
+        if (handle == INVALID_BUFFERS_OBJECT) return;
 
-        data->mutex.lock();
-        const auto buf = data->buffers_objects[buffers_object];
-        data->buffers_objects.destroy(buffers_object);
-        data->mutex.unlock();
+        const auto buffers_object = data->buffers_objects[handle];
 
-        data->destroy_buffers_object(data->backend, buf);
+        for (auto& raw_buffer_handle : buffers_object.buffers) {
+            auto& buffer = data->buffers[raw_buffer_handle];
+            std::unique_lock lock{buffer.mutex};
+
+            buffer.object.ref_count--;
+            if (buffer.object.ref_count == 0)
+                buffer.busy = false;
+
+            lock.unlock();
+            buffer.cv.notify_all();
+        }
+
+        data->buffers_objects.destroy(handle);
+
+        data->destroy_buffers_object(data->backend, buffers_object.object);
     }
 
     MgmGPU::ShaderHandle MgmGPU::create_shader(const ShaderCreateInfo &info) {
         if (!is_backend_loaded()) return INVALID_SHADER;
 
         const auto shader = data->create_shader(data->backend, info);
-        data->mutex.lock();
+        data->draw_mutex.lock();
         const auto handle = static_cast<ShaderHandle>(data->shaders.create(shader));
-        data->mutex.unlock();
+        data->draw_mutex.unlock();
         return handle;
     }
 
@@ -451,35 +693,54 @@ namespace mgm {
         if (!is_backend_loaded()) return;
         if (shader == INVALID_SHADER) return;
 
-        data->mutex.lock();
+        data->draw_mutex.lock();
         const auto sh = data->shaders[shader];
         data->shaders.destroy(shader);
-        data->mutex.unlock();
+        data->draw_mutex.unlock();
 
         data->destroy_shader(data->backend, sh);
     }
 
-    MgmGPU::TextureHandle MgmGPU::create_texture(const TextureCreateInfo &info) {
+    MgmGPU::TextureHandle MgmGPU::create_texture(TextureCreateInfo info) {
         if (!is_backend_loaded()) return INVALID_TEXTURE;
 
-        const auto texture = data->create_texture(data->backend, info);
-        data->mutex.lock();
-        const auto handle = static_cast<TextureHandle>(data->textures.create(texture));
-        data->mutex.unlock();
+        size_t size = (size_t)info.size.x() * (size_t)info.size.y() * (size_t)info.channel_size_in_bytes * (size_t)info.num_channels;
+        void* const new_data = new char[size];
+        std::memcpy(new_data, info.data, size);
+        info.data = new_data;
+
+        const auto handle = static_cast<TextureHandle>(data->textures.create());
+
+        data->create_destroy_objects.push_task([this, handle, info](){
+            auto& texture = data->textures[handle];
+            texture.object = data->create_texture(data->backend, info);
+            delete[] reinterpret_cast<char*>(info.data);
+            std::unique_lock lock{texture.mutex};
+            texture.good = true;
+            texture.busy = false;
+            lock.unlock();
+            texture.cv.notify_all();
+        });
 
         return handle;
     }
 
-    void MgmGPU::destroy_texture(TextureHandle texture) {
+    void MgmGPU::destroy_texture(TextureHandle handle) {
         if (!is_backend_loaded()) return;
-        if (texture == INVALID_TEXTURE) return;
+        if (handle == INVALID_TEXTURE) return;
 
-        data->mutex.lock();
-        const auto tex = data->textures[texture];
-        data->textures.destroy(texture);
-        data->mutex.unlock();
+        data->create_destroy_objects.push_task([this, handle](){
+            std::unique_lock<std::mutex> lock{data->textures[handle].mutex};
+            data->textures[handle].cv.wait(lock, [this, &handle]{return !data->textures[handle].busy;});
+            data->textures[handle].busy = true;
+            data->textures[handle].good = false;
+            lock.unlock();
+            data->textures[handle].cv.notify_all();
 
-        data->destroy_texture(data->backend, tex);
+            data->destroy_texture(data->backend, data->textures[handle].object);
+            data->textures[handle].object = nullptr;
+            data->textures.destroy(handle);
+        });
     }
 
     MgmGPU::~MgmGPU() {

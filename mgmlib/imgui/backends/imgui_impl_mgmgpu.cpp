@@ -224,7 +224,7 @@ void ImGui_ImplMgmGFX_RenderDrawData(ExtractedDrawData& draw_data) {
                 }
             });
         }
-        backend.draw(draw_list, base_graphics_settings);
+        backend.draw(draw_list, base_graphics_settings, true);
         for (const auto& buf : leftover_buffers)
             backend.destroy_buffer(buf);
         for (const auto& draw_call : draw_list)

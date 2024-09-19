@@ -1,6 +1,11 @@
+.clang/
+.clangd/
 .cache/
 .vs/
 .vscode/
 build/
 
 imgui.ini
+
+*compile_commands.json
+*compile_flags.txt
