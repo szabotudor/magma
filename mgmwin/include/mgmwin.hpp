@@ -3,6 +3,7 @@
 #include "mgmath.hpp"
 #include <functional>
 #include <vector>
+#include <algorithm>
 
 
 namespace mgm {
@@ -61,7 +62,7 @@ namespace mgm {
         static InputInterface input_interface_from_name(const std::string& name) {
             const auto it = std::find(input_interface_names.begin(), input_interface_names.end(), name);
             if (it != input_interface_names.end()) {
-                const size_t index = it - input_interface_names.begin();
+                const size_t index = (size_t)(it - input_interface_names.begin());
                 if (index < (size_t)InputInterface::_NUM_INPUT_INTERFACES)
                     return (InputInterface)index;
             }
@@ -77,7 +78,7 @@ namespace mgm {
 
         /**
          * @brief Get the value of an input interface
-         * 
+         *
          * @param ii The input interface
          * @return float& A reference to the value
          */
@@ -87,7 +88,7 @@ namespace mgm {
 
         /**
          * @brief Get the value of an input interface
-         * 
+         *
          * @param ii The input interface
          * @return const float& A reference to the value
          */
@@ -97,7 +98,7 @@ namespace mgm {
 
         /**
          * @brief Get the value of an input interface at the previous update (previous frame)
-         * 
+         *
          * @param ii The input interface
          * @return float& A reference to the value
          */
@@ -107,7 +108,7 @@ namespace mgm {
 
         /**
          * @brief Get the value of an input interface at the previous update (previous frame)
-         * 
+         *
          * @param ii The input interface
          * @return const float& A reference to the value
          */
@@ -117,7 +118,7 @@ namespace mgm {
 
         /**
          * @brief Get the delta of an input interface (difference between the current and previous frame)
-         * 
+         *
          * @param ii The input interface
          * @return float The delta
          */
@@ -144,14 +145,14 @@ namespace mgm {
         public:
         /**
          * @brief Get the input events since the last update
-         * 
+         *
          * @return const auto& The input events
          */
         const auto& get_input_events() { return input_events_since_last_update; }
 
         /**
          * @brief Get the text input since the last update
-         * 
+         *
          * @return const auto& The text input
          */
         const auto& get_text_input() { return text_input_since_last_update; }
@@ -171,7 +172,7 @@ namespace mgm {
         vec2i32 window_pos{};
         bool _should_close = false, _is_open = false;
         uint32_t _allow_resize = 0, _allow_close = 1, _allow_maximize = 1, _allow_minimize = 1;
-        
+
         Logging log;
 
         public:
@@ -196,7 +197,7 @@ namespace mgm {
 
         /**
          * @brief Set the window mode
-         * 
+         *
          * @param mode NONE, BORDERLESS, FULLSCREEN
          */
         void set_mode(const Mode mode);
@@ -208,7 +209,7 @@ namespace mgm {
 
         /**
          * @brief Allow or block resizing the window
-         * 
+         *
          * @param allow True to allow, False to block
          */
         void set_allow_resize(bool allow);
@@ -220,7 +221,7 @@ namespace mgm {
 
         /**
          * @brief Allow or block closing the window
-         * 
+         *
          * @param allow True to allow, False to block
          */
         void set_allow_close(bool allow);
@@ -261,14 +262,14 @@ namespace mgm {
 
         /**
          * @brief Set the size of the window
-         * 
+         *
          * @param size The new size
          */
         void set_size(vec2u32 size);
 
         /**
          * @brief Set the position of the window
-         * 
+         *
          * @param pos The new position
          */
         void set_position(vec2i32 pos);

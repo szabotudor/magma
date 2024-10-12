@@ -1,40 +1,12 @@
 #include "editor_windows/settings.hpp"
 
 #include "engine.hpp"
+#include "expose_api.hpp"
 #include "imgui.h"
 
 
 namespace mgm {
-    std::string RegisterSubsectionFunction::beautify_name(std::string name) {
-        for (size_t i = 0; i < name.size(); i++) {
-            auto& c = name[i];
-            if (c == '_') {
-                if (name[i - 1] == ' ') {
-                    name.erase(i - 1, 1);
-                    i--;
-                }
-                else
-                    name[i] = ' ';
-            }
-            else if (i > 0) {
-                if (c >= 'A' && c <= 'Z' && name[i - 1] >= 'a' && name[i - 1] <= 'z') {
-                    name.insert(i, " ");
-                }
-            }
-
-            c = static_cast<char>(std::tolower(c));
-        }
-
-        name[0] = static_cast<char>(std::toupper(name[0]));
-        for (size_t i = 1; i < name.size(); i++) {
-            if (name[i - 1] == ' ')
-                name[i] = static_cast<char>(std::toupper(name[i]));
-        }
-
-        return name;
-    }
-
-    void EditorSettings::draw_contents() {
+    void SettingsWindow::draw_contents() {
         MagmaEngine engine{};
 
         ImGui::BeginChild("Systems", {}, ImGuiChildFlags_AutoResizeX);
@@ -42,18 +14,18 @@ namespace mgm {
             if (selected_system == nullptr)
                 selected_system = system;
 
-            const auto it = RegisterSubsectionFunction::get_subsections_map().find(type_id);
-            if (it == RegisterSubsectionFunction::get_subsections_map().end())
+            const auto exposed_system = dynamic_cast<ExposeApiRuntime*>(system);
+            if (exposed_system == nullptr)
                 continue;
 
             if (ImGui::TreeNodeEx(system->system_name.c_str(), ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_DefaultOpen)) {
-                if (it != RegisterSubsectionFunction::get_subsections_map().end()) {
-                    for (auto& [name, func] : it->second) {
-                        ImGui::TreeNodeEx(name.c_str(), ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen);
-                        if (ImGui::IsItemClicked()) {
-                            draw_settings_func = func;
-                            selected_system = system;
-                        }
+                for (auto& [name, func] : exposed_system->get_all_members()) {
+                    if (func.is_variable())
+                        continue;
+                    ImGui::TreeNodeEx(name.c_str(), ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen);
+                    if (ImGui::IsItemClicked()) {
+                        draw_settings_func = [func]() mutable {func();};
+                        selected_system = system;
                     }
                 }
                 ImGui::TreePop();
@@ -64,7 +36,7 @@ namespace mgm {
         ImGui::SameLine();
         ImGui::BeginChild("Settings", {}, ImGuiChildFlags_Border);
         if (draw_settings_func)
-            draw_settings_func(selected_system);
+            draw_settings_func();
         ImGui::EndChild();
     }
 }

@@ -34,10 +34,12 @@ endif()
 
 add_library(
     mgmcommon
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/helpers.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/logging.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/json.cpp
         ${PLATFORM_SOURCES}
 
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/any.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/include/file.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/include/helpers.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/include/json.hpp

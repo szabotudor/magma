@@ -5,12 +5,14 @@
 #include <unordered_map>
 #include <unordered_set>
 
-#include "editor_windows/settings.hpp"
+#include "expose_api.hpp"
 
 
 namespace mgm {
-    class Input : System {
+    class Input : public System, public ExposeApiRuntime {
         public:
+        EXPOSE_CLASS("Input")
+
         enum class CallbackType {
             PRESS, RELEASE
         };
@@ -33,6 +35,7 @@ namespace mgm {
         std::unordered_set<std::string> auto_register_queue{};
 
         std::vector<MgmWindow::InputInterface> input_stack{};
+
 
         public:
         Input();
@@ -106,7 +109,7 @@ namespace mgm {
         float get_action_value(const std::string& name) const;
 
         /**
-         * @brief Get the list of callbacks asociated with an action
+         * @brief Get the list of callbacks associated with an action
          * 
          * @param name The name of the action
          * @return std::vector<Callback>& A reference to the list of callbacks
@@ -114,7 +117,7 @@ namespace mgm {
         std::vector<Callback>& press_callbacks(const std::string& name);
 
         /**
-         * @brief Get the list of callbacks asociated with an action
+         * @brief Get the list of callbacks associated with an action
          * 
          * @param name The name of the action
          * @return const std::vector<Callback>& A const reference to the list of callbacks
@@ -122,7 +125,7 @@ namespace mgm {
         const std::vector<Callback>& press_callbacks(const std::string& name) const;
 
         /**
-         * @brief Get the list of callbacks asociated with an action
+         * @brief Get the list of callbacks associated with an action
          * 
          * @param name The name of the action
          * @return std::vector<Callback>& A reference to the list of callbacks
@@ -130,7 +133,7 @@ namespace mgm {
         std::vector<Callback>& release_callbacks(const std::string& name);
 
         /**
-         * @brief Get the list of callbacks asociated with an action
+         * @brief Get the list of callbacks associated with an action
          * 
          * @param name The name of the action
          * @return const std::vector<Callback>& A const reference to the list of callbacks
@@ -138,8 +141,7 @@ namespace mgm {
         const std::vector<Callback>& release_callbacks(const std::string& name) const;
 
 #if defined(ENABLE_EDITOR)
-        void input_map();
-        SETTINGS_SUBSECTION_DRAW_FUNC(input_map)
+        void MFUNC(input_map)();
 
         virtual void in_editor_update(float delta) override { update(delta); }
 #endif

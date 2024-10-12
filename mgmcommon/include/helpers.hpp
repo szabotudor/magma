@@ -1,5 +1,6 @@
 #pragma once
 #include <cmath>
+#include <string>
 
 
 namespace std {
@@ -15,6 +16,9 @@ constexpr bool is_type_complete_v = false;
 template<typename T>
 constexpr inline bool is_type_complete_v <T, std::void_t<decltype(sizeof(T))>> = true;
 
+
+
+/// ==============================
 /// Thanks to https://github.com/MitalAshok/self_macro/ (by user MitalAshok on GitHub) for being the first to discover the solution to the self macro.
 /// Original implementation by MitalAshok is licenced under MIT License. Original license can be found on the repository linked above.
 #if !defined(DEFINE_SELF)
@@ -46,3 +50,8 @@ namespace SelfType
     constexpr auto __##name##_type_helper() -> decltype(SelfType::Writer<struct __self_type_tag, decltype(this)>{}) { return {}; } \
     using name = SelfType::Read<__self_type_tag>;
 #endif
+/// ==============================
+
+
+
+std::string beautify_name(std::string name);

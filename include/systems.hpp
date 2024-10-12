@@ -9,7 +9,7 @@
 
 
 namespace mgm {
-    class EditorSettings;
+    class SettingsWindow;
 
     class System {
         public:

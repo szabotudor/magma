@@ -81,9 +81,11 @@ add_library(
         ${CMAKE_CURRENT_SOURCE_DIR}/src/notifications.cpp
 
         ${CMAKE_CURRENT_SOURCE_DIR}/include/engine.hpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/systems.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/expose_api.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/include/input.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/inspector.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/include/notifications.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/systems.hpp
 
         ${EDITOR_SOURCES}
 )

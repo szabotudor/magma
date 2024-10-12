@@ -1,6 +1,5 @@
 #include "logging.hpp"
 #include <cstring>
-#include <iostream>
 
 
 namespace mgm {

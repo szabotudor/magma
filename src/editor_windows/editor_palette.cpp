@@ -36,7 +36,7 @@ namespace mgm {
             }
 
             if (ImGui::SmallButton("Settings")) {
-                add_window<EditorSettings>(true);
+                add_window<SettingsWindow>(true);
                 something_selected = true;
             }
 

@@ -1,5 +1,6 @@
 #include "input.hpp"
 #include "notifications.hpp"
+#include "file.hpp"
 #include "engine.hpp"
 #include "imgui.h"
 #include "imgui_stdlib.h"
@@ -203,7 +204,7 @@ namespace mgm {
             if (action.inputs.empty())
                 continue;
 
-            // Will always be trus if there are no modifiers
+            // Will always be true if there are no modifiers
             bool modifiers = true;
             if (!action.pressed && action.value != 0.0f)
                 modifiers = false;

@@ -7,6 +7,7 @@
 #include "mgmgpu.hpp"
 #include "mgmwin.hpp"
 #include "notifications.hpp"
+#include "file.hpp"
 
 #include <chrono>
 #include <iostream>
@@ -99,7 +100,7 @@ namespace mgm {
             .type = MgmGPU::DrawCall::Type::CLEAR
         });
 
-        
+
         ImGui_ImplMgmGFX_Init(graphics());
 
         systems().create<Input>();
@@ -108,7 +109,10 @@ namespace mgm {
 #if defined(ENABLE_EDITOR)
         if (std::find(args.begin(), args.end(), "--editor") != args.end())
             systems().create<Editor>();
+        else
 #endif
+        {
+        }
 
         initialized = true;
     }
