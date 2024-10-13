@@ -24,7 +24,7 @@ namespace mgm {
                         continue;
                     ImGui::TreeNodeEx(name.c_str(), ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen);
                     if (ImGui::IsItemClicked()) {
-                        draw_settings_func = [func]() mutable {func();};
+                        draw_settings_func = [func]() mutable {func.call<void>();};
                         selected_system = system;
                     }
                 }
