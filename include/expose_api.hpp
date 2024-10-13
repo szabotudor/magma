@@ -185,8 +185,10 @@ namespace mgm {
                 expose_data.class_members[class_id].args_queue.pop();
 
                 std::vector<size_t> type_ids{};
-                type_ids.reserve(sizeof...(Args));
-                (type_ids.push_back(typeid(Args).hash_code()), ...);
+                if constexpr (sizeof...(Args) != 0) {
+                    type_ids.reserve(sizeof...(Args));
+                    (type_ids.push_back(typeid(Args).hash_code()), ...);
+                }
 
                 for (size_t i = 0; i < types_and_names.size(); i++) {
                     const auto& arg = types_and_names[i];
@@ -330,15 +332,18 @@ namespace mgm {
     #define __CAT(a, b) __CAT2(a, b)
 
 
+    #define MAKE_EMPTY_FUNC_PTR(a) [[maybe_unused]] a
+
+
     #define MARGS(...) \
         (__VA_ARGS__); \
-        static inline void __CAT(__expose_api_temp_function, __LINE__) (__VA_ARGS__) {} \
-        static inline const bool __CAT(__expose_api_args_helper_, __LINE__) = ExposeApi::ExposedClassAnalyzer<__ExposeApi_Self>::expose_args(&__ExposeApi_Self::__CAT(__expose_api_temp_function, __LINE__), {FOR_EACH(__STR, __VA_ARGS__)})
+        static inline void __CAT(__expose_api_temp_function, __LINE__) (FOR_EACH(MAKE_EMPTY_FUNC_PTR, __VA_ARGS__)) {} \
+        static inline const bool __CAT(__expose_api_args_helper_, __LINE__) = mgm::ExposeApi::ExposedClassAnalyzer<__ExposeApi_Self>::expose_args(&__ExposeApi_Self::__CAT(__expose_api_temp_function, __LINE__), {FOR_EACH(__STR, __VA_ARGS__)})
     
     #define MFUNC_NO_AUTO_ARGS(member, ...) \
         static inline* const __expose_api_return_type_##member{}; \
         static inline bool __expose_api_initializer_function_##member() { \
-            return ExposeApi::ExposedClassAnalyzer<__ExposeApi_Self>::expose(&__ExposeApi_Self::member, std::string(#__VA_ARGS__).empty() ? #member : #__VA_ARGS__); \
+            return mgm::ExposeApi::ExposedClassAnalyzer<__ExposeApi_Self>::expose(&__ExposeApi_Self::member, std::string(#__VA_ARGS__).empty() ? #member : #__VA_ARGS__); \
         } \
         static inline const bool __expose_api_temp_helper_##member = __expose_api_initializer_function_##member(); \
         std::remove_reference_t<std::remove_pointer_t<decltype(__expose_api_return_type_##member)>> member
@@ -350,7 +355,7 @@ namespace mgm {
     #define MVAR(member, ...) \
         static inline* const __expose_api_var_type_##member{}; \
         static inline bool __expose_api_initializer_var_##member() { \
-            return ExposeApi::ExposedClassAnalyzer<__ExposeApi_Self>::expose(&__ExposeApi_Self::member, std::string(#__VA_ARGS__).empty() ? #member : #__VA_ARGS__); \
+            return mgm::ExposeApi::ExposedClassAnalyzer<__ExposeApi_Self>::expose(&__ExposeApi_Self::member, std::string(#__VA_ARGS__).empty() ? #member : #__VA_ARGS__); \
         } \
         static inline const bool __expose_api_temp_helper_##member = __expose_api_initializer_var_##member(); \
         std::remove_reference_t<std::remove_pointer_t<decltype(__expose_api_var_type_##member)>> member
@@ -358,23 +363,23 @@ namespace mgm {
 
     #define EXPOSE_CLASS(class_name) \
         DEFINE_SELF_WITH_NAME(__ExposeApi_Self) \
-        __impl_no_unique_address ExposeApi::ExposedClassAnalyzer<__ExposeApi_Self> __expose_api_analyzer; \
+        __impl_no_unique_address mgm::ExposeApi::ExposedClassAnalyzer<__ExposeApi_Self> __expose_api_analyzer; \
         \
-        template<typename __ExposeApi_T = __ExposeApi_Self, std::enable_if_t<!std::is_base_of_v<ExposeApiRuntime, __ExposeApi_T>, bool> = true> \
-        ExposeApiRuntime::AutoExposedMemberFinder static_get_member(const std::string& name) { \
+        template<typename __ExposeApi_T = __ExposeApi_Self, std::enable_if_t<!std::is_base_of_v<mgm::ExposeApiRuntime, __ExposeApi_T>, bool> = true> \
+        mgm::ExposeApiRuntime::AutoExposedMemberFinder static_get_member(const std::string& name) { \
             return { \
                 .object = this, \
-                .member = ExposeApi::get_exposed_classes().class_members[typeid(__ExposeApi_Self).hash_code()].members[name] \
+                .member = mgm::ExposeApi::get_exposed_classes().class_members[typeid(__ExposeApi_Self).hash_code()].members[name] \
             }; \
         } \
         \
-        template<typename __ExposeApi_T = __ExposeApi_Self, std::enable_if_t<!std::is_base_of_v<ExposeApiRuntime, __ExposeApi_T>, bool> = true> \
-        std::unordered_multimap<std::string, ExposeApiRuntime::AutoExposedMemberFinder> static_get_all_members() { \
-            std::unordered_multimap<std::string, ExposeApiRuntime::AutoExposedMemberFinder> members{}; \
-            auto& expose_data = ExposeApi::get_exposed_classes(); \
+        template<typename __ExposeApi_T = __ExposeApi_Self, std::enable_if_t<!std::is_base_of_v<mgm::ExposeApiRuntime, __ExposeApi_T>, bool> = true> \
+        std::unordered_multimap<std::string, mgm::ExposeApiRuntime::AutoExposedMemberFinder> static_get_all_members() { \
+            std::unordered_multimap<std::string, mgm::ExposeApiRuntime::AutoExposedMemberFinder> members{}; \
+            auto& expose_data = mgm::ExposeApi::get_exposed_classes(); \
             \
             for (const auto& [name, member] : expose_data.class_members[typeid(__ExposeApi_Self).hash_code()].members) { \
-                members.emplace(name, ExposeApiRuntime::AutoExposedMemberFinder{ \
+                members.emplace(name, mgm::ExposeApiRuntime::AutoExposedMemberFinder{ \
                     .object = this, \
                     .member = member \
                 }); \
@@ -382,7 +387,7 @@ namespace mgm {
             \
             return members; \
         } \
-        static inline ExposeApi __expose_api_class_auto_initializer{ExposeApi::expose_class<__ExposeApi_Self>(class_name)}; \
+        static inline mgm::ExposeApi __expose_api_class_auto_initializer{mgm::ExposeApi::expose_class<__ExposeApi_Self>(class_name)}; \
         \
         void MFUNC_NO_AUTO_ARGS(__expose_api_member_offset_initializer)() {}
 }
