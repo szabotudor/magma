@@ -147,6 +147,6 @@ namespace mgm {
 #endif
         virtual void update(float) override;
 
-        ~Input();
+        ~Input() override;
     };
 }

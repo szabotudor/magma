@@ -122,6 +122,7 @@ namespace mgm {
         return it->second.release_callbacks;
     }
 
+#if defined(ENABLE_EDITOR)
     void Input::input_map() {
         static thread_local std::string name{};
 
@@ -147,6 +148,7 @@ namespace mgm {
             }
         }
     }
+#endif
 
     Input::Action load(const JObject& obj) {
         Input::Action action{};
