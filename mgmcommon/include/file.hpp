@@ -33,7 +33,6 @@ namespace mgm {
         static Path exe_dir;
         static Path assets;
         static Path game_data;
-        static Path temp;
 
         static const std::unordered_map<std::string, const Path*> prefixes;
 
@@ -131,8 +130,7 @@ namespace mgm {
     inline const std::unordered_map<std::string, const Path*> Path::prefixes = {
         {"exe", &Path::exe_dir},
         {"assets", &Path::assets},
-        {"data", &Path::game_data},
-        {"temp", &Path::temp}
+        {"data", &Path::game_data}
     };
 
 #define CHECK_PATH(path, default_return_value) \

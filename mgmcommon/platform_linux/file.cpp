@@ -1,4 +1,5 @@
 #include "file.hpp"
+#include <iostream>
 #include <limits.h>
 #include <unistd.h>
 
@@ -21,7 +22,7 @@ namespace mgm {
         std::string executablePath(buffer, (count > 0) ? count : 0);
         while (executablePath.back() != '/')
             executablePath.pop_back();
-        executablePath.pop_back();
+        std::cout << "Executable path: " << executablePath << std::endl;
         return executablePath;
     }
 }

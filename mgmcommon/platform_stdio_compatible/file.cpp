@@ -7,7 +7,6 @@ namespace mgm {
     Path Path::exe_dir{FileIO::exe_dir()};
     Path Path::assets{exe_dir + Path{"assets/"}};
     Path Path::game_data{exe_dir + Path{"data/"}};
-    Path Path::temp{exe_dir + Path{"temp/"}};
 
 
     Path &Path::operator+=(const Path &other) {

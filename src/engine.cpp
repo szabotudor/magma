@@ -125,7 +125,6 @@ namespace mgm {
 
         if (!file_io().exists(Path::assets)) file_io().create_folder(Path::assets);
         if (!file_io().exists(Path::game_data)) file_io().create_folder(Path::game_data);
-        if (!file_io().exists(Path::temp)) file_io().create_folder(Path::temp);
 
         auto start = std::chrono::high_resolution_clock::now();
 
