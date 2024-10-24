@@ -50,6 +50,7 @@ endif()
 
 option(ENABLE_EDITOR "If true, will compile the editor" ON)
 
+add_subdirectory(${CMAKE_SOURCE_DIR}/luajit)
 add_subdirectory(${CMAKE_SOURCE_DIR}/mgmcommon)
 add_subdirectory(${CMAKE_SOURCE_DIR}/mgmwin)
 add_subdirectory(${CMAKE_SOURCE_DIR}/backends)
@@ -98,6 +99,7 @@ endif()
 enable_warnings(magma)
 
 get_target_property(MGMCOMMON_INCLUDE_DIRS mgmcommon INTERFACE_INCLUDE_DIRECTORIES)
+get_target_property(LUAJIT_INCLUDE_DIRS luajit INTERFACE_INCLUDE_DIRECTORIES)
 
 target_include_directories(
     magma
@@ -105,8 +107,9 @@ target_include_directories(
             ${CMAKE_CURRENT_SOURCE_DIR}/include
         PRIVATE
             ${MGMCOMMON_INCLUDE_DIRS}
+            ${LUAJIT_INCLUDE_DIRS}
 )
-target_link_libraries(magma PUBLIC mgmcommon mgmwin mgmlib)
+target_link_libraries(magma PUBLIC mgmcommon mgmwin mgmlib luajit)
 
 add_custom_command(TARGET magma POST_BUILD
     COMMAND cmake -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/mgmcommon/include ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/include

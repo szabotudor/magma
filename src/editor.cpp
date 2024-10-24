@@ -3,12 +3,10 @@
 #include "helpers.hpp"
 #include "imgui_impl_mgmgpu.h"
 #include "inspector.hpp"
-#include "json.hpp"
 #include "logging.hpp"
 #include "mgmwin.hpp"
 #include "imgui.h"
 #include "notifications.hpp"
-#include "file.hpp"
 #include "systems.hpp"
 #include "input.hpp"
 
@@ -50,13 +48,6 @@ namespace mgm {
 
         engine.input().register_input_action("open_palette", MgmWindow::InputInterface::Key_SPACE, {MgmWindow::InputInterface::Key_CTRL});
         engine.input().register_input_action("escape", MgmWindow::InputInterface::Key_ESC);
-
-        if (engine.file_io().exists("exe://project.json")) {
-            const auto project_properties_file = engine.file_io().read_text("exe://project.json");
-            const JObject project_properties {project_properties_file};
-
-            project_initialized = (bool)project_properties["initialized"];
-        }
     }
 
     void Editor::update(float delta) {
@@ -136,12 +127,5 @@ namespace mgm {
         for (const auto window : windows)
             delete window;
         Logging{"Editor"}.log("Editor closed");
-
-        auto engine = MagmaEngine{};
-
-        JObject project_properties{};
-        project_properties["initialized"] = project_initialized;
-
-        engine.file_io().write_text("exe://project.json", project_properties);
     }
 } // namespace mgm

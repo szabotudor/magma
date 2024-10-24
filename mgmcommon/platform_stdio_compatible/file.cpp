@@ -4,40 +4,6 @@
 
 
 namespace mgm {
-    Path Path::exe_dir{FileIO::exe_dir()};
-    Path Path::assets{exe_dir + Path{"assets/"}};
-    Path Path::game_data{exe_dir + Path{"data/"}};
-
-
-    Path &Path::operator+=(const Path &other) {
-        if (data.back() == '/' && other.data.front() == '/') {
-            data += other.data.substr(1);
-        } else if (data.back() != '/' && other.data.front() != '/') {
-            data += "/" + other.data;
-        } else {
-            data += other.data;
-        }
-        return *this;
-    }
-    Path Path::operator+(const Path &other) const {
-        if (data.back() == '/' && other.data.front() == '/') {
-            return Path{data + other.data.substr(1)};
-        } else if (data.back() != '/' && other.data.front() != '/') {
-            return Path{data + "/" + other.data};
-        }
-            return Path{data + other.data};
-    }
-
-    std::string Path::file_name() const {
-        size_t last_slash = data.find_last_of('/');
-        if (last_slash == std::string::npos) {
-            return data;
-        } else {
-            return data.substr(last_slash + 1);
-        }
-    }
-
-
     struct FileIO::Data {
         std::vector<std::ofstream> write_files{};
         std::vector<std::ifstream> read_files{};

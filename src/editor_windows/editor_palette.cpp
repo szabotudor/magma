@@ -25,15 +25,29 @@ namespace mgm {
         something_selected |= inspector.inspect("Windows", windows);
 
         if (inspector.begin_window_here("File", true)) {
-            if (ImGui::SmallButton("Open")) {
-                add_window<FileBrowser>(true, FileBrowser::Mode::READ);
-                something_selected = true;
+            if (ImGui::SmallButton("New Project")) {
+                add_window<FileBrowser>(
+                    true,
+                    FileBrowser::Mode::WRITE,
+                    FileBrowser::Type::FOLDER,
+                    [](const Path& path) {
+                        Logging{"Editor"}.log("New project at", path.platform_path());
+                    }
+                );
             }
+            // if (ImGui::SmallButton("Open")) {
+            //     add_window<FileBrowser>(true, FileBrowser::Mode::READ, FileBrowser::Type::FILE, [](const Path& path) {
+            //         MagmaEngine{}.systems().get<Editor>().add_window<ScriptEditor>(true, path);
+            //     });
+            //     something_selected = true;
+            // }
 
-            if (ImGui::SmallButton("New")) {
-                add_window<FileBrowser>(true, FileBrowser::Mode::WRITE, "new_script");
-                something_selected = true;
-            }
+            // if (ImGui::SmallButton("New")) {
+            //     add_window<FileBrowser>(true, FileBrowser::Mode::WRITE, FileBrowser::Type::FILE, [](const Path& path) {
+            //         MagmaEngine{}.systems().get<Editor>().add_window<ScriptEditor>(true, path);
+            //     }, "new_script");
+            //     something_selected = true;
+            // }
 
             if (ImGui::SmallButton("Settings")) {
                 add_window<SettingsWindow>(true);

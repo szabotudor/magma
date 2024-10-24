@@ -19,9 +19,10 @@ namespace mgm {
     Path FileIO::exe_dir() {
         char buffer[PATH_MAX];
         ssize_t count = readlink("/proc/self/exe", buffer, sizeof(buffer));
-        std::string executablePath(buffer, (count > 0) ? count : 0);
+        std::string executablePath(buffer, (count > 0) ? (size_t)count : 0);
         while (executablePath.back() != '/')
             executablePath.pop_back();
+        executablePath.pop_back();
         std::cout << "Executable path: " << executablePath << std::endl;
         return executablePath;
     }

@@ -55,8 +55,14 @@ namespace mgm {
     SystemManager& MagmaEngine::systems() { return *data->system_manager; }
 
     MagmaEngine::MagmaEngine(const std::vector<std::string>& args) {
-        if (!data)
+        if (!data) {
             data = new Data{};
+            Path::setup_project_dirs(
+                FileIO::exe_dir().data,
+                FileIO::exe_dir().data + "/assets",
+                FileIO::exe_dir().data + "/data"
+            );
+        }
         else
             return;
 
@@ -67,7 +73,7 @@ namespace mgm {
         bool help_called = false;
 
         if (std::find(args.begin(), args.end(), "--help") != args.end()) {
-            std::cout << "Usage: " << Path::exe_dir.file_name() << " [options]\n"
+            std::cout << "Usage: " << Path::project_dir.file_name() << " [options]\n"
                 << "Options:\n"
                 << "\t--help\t\tShow this help message\n"
 #if defined(ENABLE_EDITOR)
@@ -123,8 +129,8 @@ namespace mgm {
             return;
         }
 
-        if (!file_io().exists(Path::assets)) file_io().create_folder(Path::assets);
-        if (!file_io().exists(Path::game_data)) file_io().create_folder(Path::game_data);
+        if (!file_io().exists(Path::assets_dir)) file_io().create_folder(Path::assets_dir);
+        if (!file_io().exists(Path::game_data_dir)) file_io().create_folder(Path::game_data_dir);
 
         auto start = std::chrono::high_resolution_clock::now();
 

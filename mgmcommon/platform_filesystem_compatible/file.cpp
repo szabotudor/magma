@@ -16,7 +16,7 @@ namespace mgm {
         auto dir = std::filesystem::directory_iterator{path_str};
         for (const auto& entry : dir) {
             if (entry.is_regular_file())
-                files.emplace_back(entry.path().string());
+                files.emplace_back(entry.path().string()).make_platform_independent();
             else if (recursive && entry.is_directory()) {
                 auto sub_files = list_files(entry.path().string(), true);
                 files.insert(files.end(), sub_files.begin(), sub_files.end());
@@ -38,7 +38,7 @@ namespace mgm {
         auto dir = std::filesystem::directory_iterator{path_str};
         for (const auto& entry : dir) {
             if (entry.is_directory()) {
-                folders.emplace_back(entry.path().string());
+                folders.emplace_back(entry.path().string()).make_platform_independent();
                 if (recursive) {
                     auto sub_folders = list_folders(entry.path().string(), true);
                     folders.insert(folders.end(), sub_folders.begin(), sub_folders.end());
@@ -54,7 +54,7 @@ namespace mgm {
 
         const auto path_str = path.platform_path();
         if (!std::filesystem::exists(path.back().platform_path())) {
-            Logging{"FileIO"}.error("Folder doesn't exist: ", path.back().platform_path(), "\n\tCannot create new folder: ", path_str);
+            Logging{"FileIO"}.error("Folder \"", path_str,  "\" doesn't exist: ", path.back().platform_path(), "\n\tCannot create new folder: ", path_str);
             return;
         }
         if (!std::filesystem::create_directory(path_str))

@@ -6,33 +6,26 @@
 
 
 namespace mgm {
+    class FileIO;
+
     struct Path {
+        friend class FileIO;
+
         private:
-        std::string parse_prefix() const {
-            const auto it = data.find("://");
-            if (it == std::string::npos) {
-                return data;
-            }
-            if (it > 0) {
-                const auto prefix = data.substr(0, it);
-                const auto prefix_it = prefixes.find(prefix);
-                if (prefix_it != prefixes.end()) {
-                    const auto real_name = prefix_it->first;
-                    const auto real_path = prefix_it->second->data;
-                    return real_path + data.substr(it + 3);
-                }
-            }
-            if (it == 0)
-                return prefixes.at("assets")->data + data.substr(3);
-            return data;
+        std::string parse_prefix() const;
+        Path as_platform_independent() const;
+        void make_platform_independent() {
+            data = as_platform_independent().data;
         }
 
         public:
         std::string data{};
 
-        static Path exe_dir;
-        static Path assets;
-        static Path game_data;
+        static Path project_dir;
+        static Path assets_dir;
+        static Path game_data_dir;
+
+        static void setup_project_dirs(const std::string& platform_project_dir, const std::string& platform_assets_dir, const std::string& platform_game_data_dir);
 
         static const std::unordered_map<std::string, const Path*> prefixes;
 
@@ -66,33 +59,12 @@ namespace mgm {
             return *this += other;
         }
 
-        Path operator-(const Path &other) const {
-            const auto where = data.find(other.data);
-            if (where == std::string::npos) {
-                return *this;
-            }
-            if (where == 0) {
-                return Path{data.substr(other.data.size())};
-            }
-            return Path{data.substr(0, where - 1)};
-        }
+        Path operator-(const Path &other) const;
         Path& operator-=(const Path &other) {
             return *this = *this - other;
         }
 
-        Path back() const {
-            const auto last_slash = data.find_last_of('/');
-            if (last_slash == std::string::npos) {
-                return Path{};
-            }
-            if (last_slash == 0) {
-                return Path{"/"};
-            }
-            if (last_slash == data.size() - 1) {
-                return Path{data.substr(0, data.find_last_of('/', last_slash - 1))};
-            }
-            return Path{data.substr(0, last_slash)};
-        }
+        Path back() const;
 
         std::string platform_path() const;
         
@@ -128,9 +100,9 @@ namespace mgm {
     };
 
     inline const std::unordered_map<std::string, const Path*> Path::prefixes = {
-        {"exe", &Path::exe_dir},
-        {"assets", &Path::assets},
-        {"data", &Path::game_data}
+        {"project", &Path::project_dir},
+        {"assets", &Path::assets_dir},
+        {"data", &Path::game_data_dir}
     };
 
 #define CHECK_PATH(path, default_return_value) \
@@ -146,11 +118,11 @@ namespace mgm {
         friend struct Path;
 
         struct Data;
-        static Path exe_dir();
 
         Data* platform_data = nullptr;
 
         public:
+        static Path exe_dir();
 
         FileIO();
 
@@ -221,7 +193,7 @@ namespace mgm {
         bool exists(const Path& path);
 
         /**
-         * @brief Try to delete a file (unsuppoerted on some platforms, will log a warning if unsupported)
+         * @brief Try to delete a file (unsupported on some platforms, will log a warning if unsupported)
          * 
          * @param path The path to the file
          */
