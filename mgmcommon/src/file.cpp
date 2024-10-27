@@ -29,7 +29,7 @@ namespace mgm {
 
 
     Path Path::as_platform_independent() const {
-        if (data.empty() || this == &project_dir || this == &assets_dir || this == &game_data_dir)
+        if (data.empty() || this == &project_dir || this == &assets_dir || this == &game_data_dir || this == &engine_resources_dir)
             return {};
 
         Path res{};
@@ -67,31 +67,20 @@ namespace mgm {
         game_data_dir.data = platform_game_data_dir;
     }
 
-    Path &Path::operator+=(const Path &other) {
+    Path Path::direct_append(const Path& other) const {
         if (data.back() == '/' && other.data.front() == '/')
-            data += other.data.substr(1);
+            return Path{data + other.data.substr(1)};
         else if (data.back() != '/' && other.data.front() != '/')
-            data += "/" + other.data;
-        else
-            data += other.data;
-        data = as_platform_independent().data;
-        return *this;
+            return Path{data + "/" + other.data};
+        return Path{data + other.data};
     }
-    Path Path::operator+(const Path &other) const {
-        if (data.back() == '/' && other.data.front() == '/')
-            return Path{data + other.data.substr(1)}.as_platform_independent();
-        else if (data.back() != '/' && other.data.front() != '/')
-            return Path{data + "/" + other.data}.as_platform_independent();
-        return Path{data + other.data}.as_platform_independent();
-    }
-
-    Path Path::operator-(const Path &other) const {
+    Path Path::direct_remove(const Path& other) const {
         const auto where = data.find(other.data);
         if (where == std::string::npos)
             return *this;
         if (where == 0)
-            return Path{data.substr(other.data.size())}.as_platform_independent();
-        return Path{data.substr(0, where - 1)}.as_platform_independent();
+            return Path{data.substr(other.data.size())};
+        return Path{data.substr(0, where - 1)};
     }
 
     Path Path::back() const {

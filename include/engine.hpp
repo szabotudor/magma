@@ -16,6 +16,7 @@ namespace mgm {
     class Input;
     class Notifications;
     class MgmGPU;
+    class Editor;
     class SystemManager;
     class EngineManager;
 
@@ -40,6 +41,9 @@ namespace mgm {
         Input& input();
         Notifications& notifications();
         MgmGPU& graphics();
+#if defined(ENABLE_EDITOR)
+        Editor& editor();
+#endif
         SystemManager& systems();
 
         MagmaEngine(const MagmaEngine&) = delete;

@@ -5,6 +5,8 @@
 
 
 namespace mgm {
+    class Path;
+
     class EditorWindow {
         friend class Editor;
         friend class Inspector;
@@ -18,7 +20,7 @@ namespace mgm {
         EditorWindow() = default;
 
         /**
-         * @brief Called while the window is open. Default implementation opens a resizeavle window with a close button. Override to change the default behavior of drawing the window frame/container
+         * @brief Called while the window is open. Default implementation opens a resizable window with a close button. Override to change the default behavior of drawing the window frame/container
          */
         virtual void draw_window();
 
@@ -38,6 +40,7 @@ namespace mgm {
         void* font_id = nullptr;
         float palette_window_height = 0.0f;
         std::vector<EditorWindow*> windows;
+        float time_since_last_save = 0.0f;
 
         bool project_initialized = false;
 
@@ -46,9 +49,42 @@ namespace mgm {
 
         Editor();
 
+        private:
+        struct HoveredVectorInfo {
+            std::string name{};
+            float window_height = 0.0f;
+        };
+        std::vector<HoveredVectorInfo> hovered_vector_names{};
+        size_t vector_depth = 0, max_vector_depth = 0;
+
+        public:
+
+        /**
+         * @brief Draw a button, and open a window when said button is hovered. Remember to call "end_window_here" after you finish drawing the contents
+         * 
+         * @param name The name of the button, and the window
+         * @param has_elements Whether the window has elements, or if the button should appear disabled
+         * @return true If the window is open
+         */
+        bool begin_window_here(std::string name, bool has_elements);
+
+        /**
+         * @brief End the window opened by begin_window_here
+         */
+        void end_window_here();
+
         void update(float delta) override;
 
         bool draw_palette_options() override;
+
+        static bool location_contains_project(const Path& project_path);
+        static Path currently_loaded_project();
+        static bool is_a_project_loaded();
+
+        static void load_project(const Path& project_path);
+        static void save_current_project();
+        static void initialize_project(const Path& project_path);
+        static void unload_project();
 
         template<typename T, typename... Ts, std::enable_if_t<std::is_base_of_v<EditorWindow, T> && std::is_constructible_v<T, Ts...>, bool> = true>
         void add_window(bool remove_on_close = false, Ts&&... args) {

@@ -59,14 +59,12 @@ add_subdirectory(${CMAKE_SOURCE_DIR}/mgmlib)
 if (ENABLE_EDITOR)
     set(
         EDITOR_SOURCES
-            ${CMAKE_CURRENT_SOURCE_DIR}/src/inspector.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/src/editor.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/src/editor_windows/editor_palette.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/src/editor_windows/file_browser.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/src/editor_windows/script_editor.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/src/editor_windows/settings.cpp
 
-            ${CMAKE_CURRENT_SOURCE_DIR}/include/inspector.hpp
             ${CMAKE_CURRENT_SOURCE_DIR}/include/editor.hpp
             ${CMAKE_CURRENT_SOURCE_DIR}/include/editor_windows/file_browser.hpp
             ${CMAKE_CURRENT_SOURCE_DIR}/include/editor_windows/script_editor.hpp
@@ -84,7 +82,6 @@ add_library(
         ${CMAKE_CURRENT_SOURCE_DIR}/include/engine.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/include/expose_api.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/include/input.hpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/inspector.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/include/notifications.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/include/systems.hpp
 

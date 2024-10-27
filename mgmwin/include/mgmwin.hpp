@@ -268,6 +268,11 @@ namespace mgm {
         void set_size(vec2u32 size);
 
         /**
+         * @brief Get the position of the window
+         */
+        vec2i32 get_position() const { return window_pos; }
+
+        /**
          * @brief Set the position of the window
          *
          * @param pos The new position

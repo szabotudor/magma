@@ -11,6 +11,7 @@
 
 #include <chrono>
 #include <iostream>
+#include <stdexcept>
 #include <thread>
 
 
@@ -52,19 +53,28 @@ namespace mgm {
     Input& MagmaEngine::input() { return systems().get<Input>(); }
     Notifications& MagmaEngine::notifications() { return systems().get<Notifications>(); }
     MgmGPU& MagmaEngine::graphics() { return *data->graphics; }
+#if defined(ENABLE_EDITOR)
+    Editor& MagmaEngine::editor() {
+        const auto e = systems().try_get<Editor>();
+        if (e == nullptr) {
+            Logging{"Engine"}.error("Engine was ran without an editor, give the \"--editor\" argument to enable it");
+            throw std::runtime_error("Editor not initialized");
+        }
+        return *e;
+    }
+#endif
     SystemManager& MagmaEngine::systems() { return *data->system_manager; }
 
     MagmaEngine::MagmaEngine(const std::vector<std::string>& args) {
-        if (!data) {
-            data = new Data{};
-            Path::setup_project_dirs(
-                FileIO::exe_dir().data,
-                FileIO::exe_dir().data + "/assets",
-                FileIO::exe_dir().data + "/data"
-            );
-        }
-        else
+        if (data != nullptr)
             return;
+
+        data = new Data{};
+        Path::setup_project_dirs(
+            FileIO::exe_dir().data,
+            FileIO::exe_dir().data + "/assets",
+            FileIO::exe_dir().data + "/data"
+        );
 
         data->imgui_draw_data = new ExtractedDrawData{};
 
@@ -148,6 +158,8 @@ namespace mgm {
         engine_running = true;
         std::thread render_thread{&MagmaEngine::render_thread_function, this};
 
+        auto window_size = window().get_size();
+
         while (!window().should_close()) {
             const auto now = std::chrono::high_resolution_clock::now();
             const auto chrono_delta = std::chrono::duration_cast<std::chrono::microseconds>(now - start).count();
@@ -155,18 +167,7 @@ namespace mgm {
             const float delta = (float)chrono_delta * 0.000001f;
             data->current_dt = delta;
 
-            const auto window_old_size = window().get_size();
-
             window().update();
-
-            const auto window_size = window().get_size();
-
-            if (window_size != window_old_size) {
-                graphics_settings_mutex.lock();
-                data->graphics_settings.viewport.top_left = {0, 0};
-                data->graphics_settings.viewport.bottom_right = vec2i32{static_cast<int>(window_size.x()), static_cast<int>(window_size.y())};
-                graphics_settings_mutex.unlock();
-            }
 
             ImGui::GetIO().DeltaTime = delta;
             ImGui_ImplMgmGFX_ProcessInput(window());
@@ -201,6 +202,14 @@ namespace mgm {
             extract_draw_data(ImGui::GetDrawData(), *data->imgui_draw_data, viewport);
 
             imgui_mutex.unlock();
+
+            if (window().get_size() != window_size) {
+                window_size = window().get_size();
+                graphics_settings_mutex.lock();
+                data->graphics_settings.viewport.top_left = {0, 0};
+                data->graphics_settings.viewport.bottom_right = vec2i32{static_cast<int>(window_size.x()), static_cast<int>(window_size.y())};
+                graphics_settings_mutex.unlock();
+            }
         }
 
         engine_running = false;

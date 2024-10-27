@@ -12,6 +12,7 @@ namespace mgm {
         std::string file_name = "new_script";
         Path file_path = "project://";
         size_t selected_file = (size_t)-1;
+        bool allow_platform_paths = false;
 
         std::vector<Path> folders_here{};
         std::vector<Path> files_here{};
@@ -30,9 +31,10 @@ namespace mgm {
             FOLDER,
         } type{};
 
-        FileBrowser(Mode browser_mode, Type browser_type, const std::function<void(const Path& path)>& callback_function = {},
+        FileBrowser(Mode browser_mode, Type browser_type, const std::function<void(const Path& path)>& callback_function = {}, bool allow_outside_project_dir = false,
         const std::string& default_name = "New File", const std::vector<uint8_t>& default_file_contents = {})
-        : default_contents{default_file_contents}, file_name{default_name}, callback{callback_function}, mode{browser_mode}, type{browser_type} {
+        : default_contents{default_file_contents}, file_name{default_name}, allow_platform_paths{allow_outside_project_dir},
+        callback{callback_function}, mode{browser_mode}, type{browser_type} {
             window_name = "File Browser";
 
             folders_here = MagmaEngine{}.file_io().list_folders(file_path);

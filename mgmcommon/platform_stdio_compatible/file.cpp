@@ -1,9 +1,13 @@
 #include <fstream>
+#include <ios>
 #include "file.hpp"
 #include "logging.hpp"
 
 
 namespace mgm {
+    Path Path::engine_resources_dir{FileIO::exe_dir().direct_append("resources")};
+
+
     struct FileIO::Data {
         std::vector<std::ofstream> write_files{};
         std::vector<std::ifstream> read_files{};
@@ -71,7 +75,7 @@ namespace mgm {
             return;
         }
 
-        file.write(reinterpret_cast<const char*>(data.data()), data.size());
+        file.write(reinterpret_cast<const char*>(data.data()), (std::streamsize)data.size());
     }
 
     void FileIO::delete_file(const Path &path) {
@@ -103,7 +107,7 @@ namespace mgm {
         auto& read_file = platform_data->read_files.back();
         const auto start = dst.size();
         dst.resize(start + size);
-        read_file.read(reinterpret_cast<char*>(dst.data() + start), size);
+        read_file.read(reinterpret_cast<char*>(dst.data() + start), (std::streamsize)size);
     }
 
     void FileIO::begin_write_stream(const Path &path) {
@@ -124,7 +128,7 @@ namespace mgm {
         }
 
         auto& write_file = this->platform_data->write_files.back();
-        write_file.write(reinterpret_cast<const char*>(data.data()), data.size());
+        write_file.write(reinterpret_cast<const char*>(data.data()), (std::streamsize)data.size());
         write_file.flush();
     }
 

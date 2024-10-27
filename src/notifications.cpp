@@ -8,7 +8,7 @@ namespace mgm {
         return std::hash<std::string>{}(str);
     }
 
-    void Notifications::push(const std::string &message, float timeout) {
+    void Notifications::push(const std::string &message, const vec4f& color, float timeout) {
         if (message.size() > message_length_limit) {
             Logging{"Notifications"}.warning("Message exceeds length limit: ", std::to_string(message.size()), " > ", std::to_string(message_length_limit));
             if (truncate_over_length) {
@@ -23,7 +23,7 @@ namespace mgm {
         const auto notif = notif_ids.find(msg_hash);
 
         if (notif == notif_ids.end()) {
-            notifications.insert(notifications.begin(), Notif{message, msg_hash, timeout});
+            notifications.insert(notifications.begin(), Notif{message, msg_hash, timeout, color});
             for (auto& id : notif_ids)
                 id.second++;
             notif_ids[msg_hash] = 0;
@@ -55,8 +55,7 @@ namespace mgm {
         for (auto& notif : notifications) {
             bool using_opacity = false;
             if (notif.time < start_fade) {
-                const auto style_color = ImGui::GetStyleColorVec4(ImGuiCol_Text);
-                ImGui::PushStyleColor(ImGuiCol_Text, ImVec4{style_color.x, style_color.y, style_color.z, notif.time / start_fade});
+                ImGui::PushStyleColor(ImGuiCol_Text, ImVec4{notif.color.x(), notif.color.y(), notif.color.z(), notif.color.w() * notif.time / start_fade});
                 using_opacity = true;
             }
 
@@ -67,12 +66,12 @@ namespace mgm {
             notif.time -= delta;
 
             if (notif.time <= 0.0f)
-                to_remove.push_back(&notif - &notifications[0]);
+                to_remove.push_back((size_t)(&notif - &notifications[0]));
         }
 
         for (const auto id : to_remove) {
             notif_ids.erase(notifications[id].message_hash);
-            notifications.erase(notifications.begin() + id);
+            notifications.erase(notifications.begin() + (ssize_t)id);
         }
 
         pos = std::lerp_with_delta(pos, 0.0f, 50.0f, delta);

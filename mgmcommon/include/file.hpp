@@ -24,6 +24,7 @@ namespace mgm {
         static Path project_dir;
         static Path assets_dir;
         static Path game_data_dir;
+        static Path engine_resources_dir;
 
         static void setup_project_dirs(const std::string& platform_project_dir, const std::string& platform_assets_dir, const std::string& platform_game_data_dir);
 
@@ -49,8 +50,16 @@ namespace mgm {
             return *this;
         }
 
-        Path operator+(const Path &other) const;
-        Path &operator+=(const Path &other);
+        Path direct_append(const Path& other) const;
+        Path direct_remove(const Path& other) const;
+
+        Path operator+(const Path &other) const {
+            return direct_append(other).as_platform_independent();
+        }
+        Path &operator+=(const Path &other) {
+            *this = this->direct_append(other).as_platform_independent();
+            return *this;
+        }
 
         Path operator/(const Path &other) const {
             return *this + other;
@@ -59,7 +68,9 @@ namespace mgm {
             return *this += other;
         }
 
-        Path operator-(const Path &other) const;
+        Path operator-(const Path &other) const {
+            return direct_remove(other).as_platform_independent();
+        }
         Path& operator-=(const Path &other) {
             return *this = *this - other;
         }
@@ -102,7 +113,8 @@ namespace mgm {
     inline const std::unordered_map<std::string, const Path*> Path::prefixes = {
         {"project", &Path::project_dir},
         {"assets", &Path::assets_dir},
-        {"data", &Path::game_data_dir}
+        {"data", &Path::game_data_dir},
+        {"resources", &Path::engine_resources_dir}
     };
 
 #define CHECK_PATH(path, default_return_value) \
