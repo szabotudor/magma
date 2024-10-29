@@ -2,7 +2,7 @@
 #include "engine.hpp"
 #include "imgui.h"
 #include "mgmwin.hpp"
-#include "notifications.hpp"
+#include "systems/notifications.hpp"
 
 
 namespace mgm {
@@ -57,11 +57,11 @@ namespace mgm {
         const auto scroll = ImGui::GetScrollY();
         const auto line_height = ImGui::GetTextLineHeightWithSpacing();
         const auto line_height_no_spacing = ImGui::GetTextLineHeight();
-        const auto winodw_height = ImGui::GetWindowHeight();
+        const auto window_height = ImGui::GetWindowHeight();
         const auto line_start = static_cast<int64_t>(scroll / line_height);
         ImGui::Dummy({ 0.0f, (float)line_start * line_height });
 
-        const int64_t line_end = std::min(line_count(), line_start + static_cast<int64_t>(winodw_height / line_height) + 2) - 1;
+        const int64_t line_end = std::min(line_count(), line_start + static_cast<int64_t>(window_height / line_height) + 2) - 1;
 
         const auto max_line_num_width = ImGui::CalcTextSize((std::to_string(line_end) + "  ").c_str()).x;
 
@@ -79,12 +79,12 @@ namespace mgm {
                 ImGui::SameLine();
                 ImGui::TextUnformatted(content.c_str() + last, content.c_str() + line);
             }
-            if ((float)(l - line_start) * line_height > winodw_height - line_height * 2.0f) {
+            if ((float)(l - line_start) * line_height > window_height - line_height * 2.0f) {
                 ImGui::Dummy({ 0.0f, (float)(line_count() - l - 1) * line_height - (line_height - line_height_no_spacing) * (l == static_cast<int64_t>(lines.size() - 1) ? 3.0f : 1.0f) });
                 break;
             }
         }
-        ImGui::Dummy({ 0.0f, winodw_height - line_height_no_spacing * 3.0f });
+        ImGui::Dummy({ 0.0f, window_height - line_height_no_spacing * 3.0f });
 
         // Process input code in draw cause it's easier, and it's not really input processing, just setting the cursor position
         const bool window_hovered = ImGui::IsWindowHovered()
@@ -141,7 +141,7 @@ namespace mgm {
         const auto line_num_separator_width = ImGui::CalcTextSize(" ").x;
         ImGui::GetWindowDrawList()->AddRectFilled(
             ImVec2{max_line_num_width - line_num_separator_width * 1.5f, scroll - line_height} + start_pos,
-            ImVec2{max_line_num_width - line_num_separator_width * 0.75f, winodw_height + scroll} + start_pos,
+            ImVec2{max_line_num_width - line_num_separator_width * 0.75f, window_height + scroll} + start_pos,
             line_num_separator_col32
         );
     }

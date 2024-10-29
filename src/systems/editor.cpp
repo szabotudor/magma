@@ -1,4 +1,4 @@
-#include "editor.hpp"
+#include "systems/editor.hpp"
 #include "engine.hpp"
 #include "file.hpp"
 #include "helpers.hpp"
@@ -7,9 +7,9 @@
 #include "logging.hpp"
 #include "mgmwin.hpp"
 #include "imgui.h"
-#include "notifications.hpp"
+#include "systems/notifications.hpp"
 #include "systems.hpp"
-#include "input.hpp"
+#include "systems/input.hpp"
 
 
 namespace mgm {

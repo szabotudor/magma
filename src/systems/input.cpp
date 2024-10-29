@@ -1,5 +1,5 @@
-#include "input.hpp"
-#include "notifications.hpp"
+#include "systems/input.hpp"
+#include "systems/notifications.hpp"
 #include "file.hpp"
 #include "engine.hpp"
 #include "imgui.h"

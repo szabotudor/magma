@@ -1,5 +1,5 @@
 #pragma once
-#include "editor.hpp"
+#include "systems/editor.hpp"
 #include "engine.hpp"
 #include "file.hpp"
 #include <functional>

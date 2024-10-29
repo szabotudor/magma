@@ -1,13 +1,16 @@
 #include "engine.hpp"
-#include "editor.hpp"
 #include "imgui.h"
 #include "imgui_impl_mgmgpu.h"
-#include "input.hpp"
+#include "systems/input.hpp"
 #include "logging.hpp"
 #include "mgmgpu.hpp"
 #include "mgmwin.hpp"
-#include "notifications.hpp"
+#include "systems/notifications.hpp"
 #include "file.hpp"
+
+#if defined(ENABLE_EDITOR)
+#include "systems/editor.hpp"
+#endif
 
 #include <chrono>
 #include <iostream>

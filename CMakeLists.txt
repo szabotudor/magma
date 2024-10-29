@@ -59,13 +59,13 @@ add_subdirectory(${CMAKE_SOURCE_DIR}/mgmlib)
 if (ENABLE_EDITOR)
     set(
         EDITOR_SOURCES
-            ${CMAKE_CURRENT_SOURCE_DIR}/src/editor.cpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/src/systems/editor.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/src/editor_windows/editor_palette.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/src/editor_windows/file_browser.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/src/editor_windows/script_editor.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/src/editor_windows/settings.cpp
 
-            ${CMAKE_CURRENT_SOURCE_DIR}/include/editor.hpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/include/systems/editor.hpp
             ${CMAKE_CURRENT_SOURCE_DIR}/include/editor_windows/file_browser.hpp
             ${CMAKE_CURRENT_SOURCE_DIR}/include/editor_windows/script_editor.hpp
             ${CMAKE_CURRENT_SOURCE_DIR}/include/editor_windows/settings.hpp
@@ -76,13 +76,13 @@ add_library(
     magma STATIC
         ${CMAKE_CURRENT_SOURCE_DIR}/src/engine.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/systems.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/input.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/notifications.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/systems/input.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/systems/notifications.cpp
 
         ${CMAKE_CURRENT_SOURCE_DIR}/include/engine.hpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/expose_api.hpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/input.hpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/notifications.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/tools/expose_api.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/systems/input.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/systems/notifications.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/include/systems.hpp
 
         ${EDITOR_SOURCES}
