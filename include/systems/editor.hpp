@@ -1,5 +1,6 @@
 #pragma once
 #include "systems.hpp"
+#include <vector>
 #include <algorithm>
 #include <type_traits>
 

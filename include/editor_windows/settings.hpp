@@ -2,6 +2,8 @@
 #include "systems/editor.hpp"
 #include "systems.hpp"
 
+#include <functional>
+
 
 namespace mgm {
     class SettingsManager : public System {
