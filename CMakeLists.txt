@@ -78,12 +78,14 @@ add_library(
         ${CMAKE_CURRENT_SOURCE_DIR}/src/systems.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/systems/input.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/systems/notifications.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/tools/lua_vm.cpp
 
         ${CMAKE_CURRENT_SOURCE_DIR}/include/engine.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/include/tools/expose_api.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/include/systems/input.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/include/systems/notifications.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/include/systems.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/tools/lua_vm.hpp
 
         ${EDITOR_SOURCES}
 )
