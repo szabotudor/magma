@@ -1,4 +1,5 @@
 #pragma once
+#include "file.hpp"
 #include "systems.hpp"
 #include <vector>
 #include <algorithm>
@@ -6,8 +7,6 @@
 
 
 namespace mgm {
-    class Path;
-
     class EditorWindow {
         friend class Editor;
         friend class Inspector;
@@ -44,6 +43,9 @@ namespace mgm {
         float time_since_last_save = 0.0f;
 
         bool project_initialized = false;
+
+        std::string project_name = "";
+        std::vector<Path> recent_project_dirs{};
 
         public:
         bool palette_open = false;

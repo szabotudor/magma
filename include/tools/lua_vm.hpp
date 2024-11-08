@@ -132,13 +132,13 @@ namespace mgm {
         }
 
         template<typename T, typename Return, typename... Args, std::enable_if_t<std::is_same_v<Return(*)(Args...), T>, bool> = true>
-        void lua_pushvar(Return(*func)(Args...)) {
+        void lua_pushvar(Return(*function)(Args...)) {
             std::lock_guard lock{mutex};
 
             using V = Return(*)(Args...);
 
             std::array<uint8_t, sizeof(V)> arr{};
-            std::memcpy(arr.data(), &func, sizeof(V));
+            std::memcpy(arr.data(), &function, sizeof(V));
 
             lua_pushvar<std::array<uint8_t, sizeof(V)>>(arr);
 
@@ -191,8 +191,8 @@ namespace mgm {
                 lua_pushstring(state, std::string(args...).c_str());
 
             else {
-                T* ptr = static_cast<T*>(lua_newuserdata(state, sizeof(T)));
-                new (ptr) T(args...);
+                T* obj = static_cast<T*>(lua_newuserdata(state, sizeof(T)));
+                new (obj) T(args...);
                 if (registered_types.contains(typeid(T).hash_code()))
                     luaL_setmetatable(state, get_type_name<T>().c_str());
                 else {
@@ -281,8 +281,6 @@ namespace mgm {
         template<typename T, typename Return, typename... Args>
         void register_member_for_type(const std::string& field_name, Return (T::*field)(Args...)) {
             std::lock_guard lock{mutex};
-            
-            using V = Return (T::*)(Args...);
 
             if (!registering_type)
                 lua_getglobal(state, get_type_name<T>().c_str());

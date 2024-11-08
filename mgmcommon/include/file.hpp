@@ -75,6 +75,13 @@ namespace mgm {
             return *this = *this - other;
         }
 
+        bool operator==(const Path& other) const {
+            return as_platform_independent().data == other.as_platform_independent().data;
+        }
+        bool operator!=(const Path& other) const {
+            return !(*this == other);
+        }
+
         Path back() const;
 
         std::string platform_path() const;

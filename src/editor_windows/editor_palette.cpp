@@ -51,6 +51,20 @@ namespace mgm {
                 );
             }
 
+            if (begin_window_here("Recent Projects", !recent_project_dirs.empty())) {
+                for (const auto& path : recent_project_dirs) {
+                    if (ImGui::SmallButton(path.file_name().c_str())) {
+                        palette_open = false;
+                        if (location_contains_project(path)) {
+                            // Workaround because the reference might be invalidated during the load_project call
+                            const auto path_copy = path;
+                            load_project(path_copy);
+                        }
+                    }
+                }
+                end_window_here();
+            }
+
             bool cant_unload = false;
             if (currently_loaded_project().empty() || currently_loaded_project().data == FileIO::exe_dir().data) {
                 ImGui::BeginDisabled();

@@ -48,6 +48,14 @@ namespace mgm {
 
         engine.input().register_input_action("open_palette", MgmWindow::InputInterface::Key_SPACE, {MgmWindow::InputInterface::Key_CTRL});
         engine.input().register_input_action("escape", MgmWindow::InputInterface::Key_ESC);
+
+        if (engine.file_io().exists("data://recents.json")) {
+            const JObject recents_json = engine.file_io().read_text("data://recents.json");
+            const auto recents = recents_json["recents"];
+            for (const auto& [key, val] : recents) {
+                recent_project_dirs.emplace_back(val);
+            }
+        }
     }
 
     bool Editor::begin_window_here(std::string name, bool has_elements) {
@@ -231,8 +239,8 @@ namespace mgm {
         MagmaEngine engine{};
 
         const auto project = JObject{engine.file_io().read_text(project_path / ".magma")};
-        
-        if (project.type() != JObject::Type::OBJECT || !project.has("placeholder")) {
+
+        if (project.type() != JObject::Type::OBJECT || !project.has("name")) {
             const auto message = "No valid project to load at: \"" + project_path.platform_path() + "\"";
             engine.notifications().push(message, {1.0f, 0.2f, 0.2f, 1.0f});
             Logging{"Editor"}.error(message);
@@ -240,6 +248,38 @@ namespace mgm {
         }
 
         unload_project();
+
+        // Read the list of recent projects
+        {
+            auto& editor = engine.editor();
+            std::vector<JObject> recents_json_list{};
+
+            if (engine.file_io().exists("data://recents.json")) {
+                const JObject recents_json = engine.file_io().read_text("data://recents.json");
+                recents_json_list = recents_json["recents"];
+            }
+            
+            editor.recent_project_dirs.clear();
+            for (const auto& r : recents_json_list)
+                editor.recent_project_dirs.emplace_back(r);
+
+            const auto it = std::find(editor.recent_project_dirs.begin(), editor.recent_project_dirs.end(), project_path);
+            if (it != editor.recent_project_dirs.end())
+                editor.recent_project_dirs.erase(it);
+
+            editor.recent_project_dirs.insert(editor.recent_project_dirs.begin(), project_path);
+
+            if (editor.recent_project_dirs.size() > 10)
+                editor.recent_project_dirs.pop_back();
+
+            recents_json_list.clear();
+            for (const auto& r : editor.recent_project_dirs)
+                recents_json_list.emplace_back(JObject{r.platform_path()});
+            JObject recents_json{};
+            recents_json["recents"] = recents_json_list;
+            engine.file_io().write_text("data://recents.json", recents_json);
+        }
+        
         Path::setup_project_dirs(project_path.platform_path(), (project_path / "assets").platform_path(), (project_path / "data").platform_path());
 
         if (engine.file_io().exists("project://.mgm")) {
@@ -291,7 +331,7 @@ namespace mgm {
         }
 
         JObject project{};
-        project["placeholder"] = true;
+        project["name"] = "New Project";
 
         engine.file_io().write_text(project_path / ".magma", project);
         
