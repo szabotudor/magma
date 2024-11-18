@@ -123,7 +123,7 @@ namespace mgm {
     }
 
 #if defined(ENABLE_EDITOR)
-    void Input::input_map() {
+    void Input::draw_settings_window_contents() {
         static thread_local std::string name{};
 
         bool create_action = ImGui::InputText("Input Action Name", &name, ImGuiInputTextFlags_EnterReturnsTrue);

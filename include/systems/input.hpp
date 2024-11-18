@@ -5,14 +5,10 @@
 #include <unordered_map>
 #include <unordered_set>
 
-#include "tools/expose_api.hpp"
-
 
 namespace mgm {
-    class Input : public System, public ExposeApiRuntime {
+    class Input : public System {
         public:
-        EXPOSE_CLASS("Input")
-
         enum class CallbackType {
             PRESS, RELEASE
         };
@@ -141,7 +137,7 @@ namespace mgm {
         const std::vector<Callback>& release_callbacks(const std::string& name) const;
 
 #if defined(ENABLE_EDITOR)
-        void MFUNC(input_map)();
+        virtual void draw_settings_window_contents() override;
 
         virtual void in_editor_update(float delta) override { update(delta); }
 #endif

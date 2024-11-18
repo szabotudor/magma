@@ -44,8 +44,10 @@ namespace mgm {
 
         bool project_initialized = false;
 
-        std::string project_name = "";
         std::vector<Path> recent_project_dirs{};
+
+        std::string project_name = "";
+        Path main_scene_path = "";
 
         public:
         bool palette_open = false;
@@ -76,6 +78,8 @@ namespace mgm {
          */
         void end_window_here();
 
+        void draw_settings_window_contents() override;
+
         void update(float delta) override;
 
         bool draw_palette_options() override;
@@ -93,6 +97,12 @@ namespace mgm {
         void add_window(bool remove_on_close = false, Ts&&... args) {
             auto window = new T{std::forward<Ts>(args)...};
             window->remove_on_close = remove_on_close;
+            for (const auto& w : windows) {
+                if (w->window_name == window->window_name) {
+                    delete window;
+                    return;
+                }
+            }
             windows.push_back(window);
         }
 

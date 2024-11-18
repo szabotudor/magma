@@ -29,6 +29,11 @@ namespace mgm {
 
 #if defined(ENABLE_EDITOR)
         /**
+         * @brief Called to draw the contents of the ImGui window for system settings
+         */
+        virtual void draw_settings_window_contents() { /* Unused */ }
+
+        /**
          * @brief Called once per frame, only only while the editor is open
          * 
          * @param delta Delta time for framerate (in seconds)

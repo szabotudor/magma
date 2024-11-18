@@ -10,6 +10,7 @@ namespace mgm {
         std::vector<uint8_t> default_contents{};
         public:
         std::string file_name = "new_script";
+        std::string file_extension = "";
         Path file_path = "project://";
         size_t selected_file = (size_t)-1;
         bool allow_platform_paths = false;
@@ -32,8 +33,8 @@ namespace mgm {
         } type{};
 
         FileBrowser(Mode browser_mode, Type browser_type, const std::function<void(const Path& path)>& callback_function = {}, bool allow_outside_project_dir = false,
-        const std::string& default_name = "New File", const std::vector<uint8_t>& default_file_contents = {})
-        : default_contents{default_file_contents}, file_name{default_name}, allow_platform_paths{allow_outside_project_dir},
+        const std::string& default_name = "New File", const std::string& default_extension = "", const std::vector<uint8_t>& default_file_contents = {})
+        : default_contents{default_file_contents}, file_name{default_name}, file_extension{default_extension}, allow_platform_paths{allow_outside_project_dir},
         callback{callback_function}, mode{browser_mode}, type{browser_type} {
             window_name = "File Browser";
 

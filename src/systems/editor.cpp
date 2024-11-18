@@ -1,12 +1,13 @@
 #include "systems/editor.hpp"
+#include "editor_windows/file_browser.hpp"
 #include "engine.hpp"
 #include "file.hpp"
 #include "helpers.hpp"
-#include "imgui_impl_mgmgpu.h"
 #include "json.hpp"
 #include "logging.hpp"
 #include "mgmwin.hpp"
 #include "imgui.h"
+#include "imgui_stdlib.h"
 #include "systems/notifications.hpp"
 #include "systems.hpp"
 #include "systems/input.hpp"
@@ -18,7 +19,7 @@ namespace mgm {
             return;
 
         bool prev_open = open;
-        ImGui::BeginResizeable(window_name.c_str(), &open);
+        ImGui::Begin(window_name.c_str(), &open);
 
         if (!open && prev_open && remove_on_close) {
             ImGui::End();
@@ -131,6 +132,56 @@ namespace mgm {
                 hovered_vector_names.pop_back();
             max_vector_depth = 0;
         }
+    }
+    
+    void Editor::draw_settings_window_contents() {
+        static std::string section_name = "";
+
+        ImGui::BeginChild("Sections", {0, 0}, ImGuiChildFlags_AutoResizeX | ImGuiChildFlags_Border);
+
+        if (ImGui::Selectable("Project", section_name == "Project"))
+            section_name = "Project";
+        if (ImGui::Selectable("Script Editor", section_name == "Script Editor"))
+            section_name = "Script Editor";
+
+        ImGui::EndChild();
+
+        if (section_name == "")
+            return;
+
+        ImGui::SameLine();
+
+        ImGui::BeginChild(section_name.c_str(), {0, 0}, ImGuiChildFlags_AutoResizeX | ImGuiChildFlags_Border);
+
+        if (section_name == "Project") {
+            if (!is_a_project_loaded()) {
+                ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled));
+                ImGui::Text("No Project Loaded");
+                ImGui::PopStyleColor();
+                return;
+            }
+
+            if (ImGui::InputText("Project Name", &project_name))
+                save_current_project();
+
+            ImGui::Text("Main Scene File | ");
+            ImGui::SameLine();
+            ImGui::Text("%s | ", main_scene_path.data.c_str());
+            ImGui::SameLine();
+
+            if (ImGui::Button("Browse")) {
+                add_window<FileBrowser>(true, FileBrowser::Mode::READ, FileBrowser::Type::FILE, [&](const Path& path) {
+                    main_scene_path = path;
+                    save_current_project();
+                }, true, "New Scene", ".lua");
+            }
+        }
+
+        else if (section_name == "Script Editor") {
+            ImGui::Text("Script Editor Settings");
+        }
+
+        ImGui::EndChild();
     }
 
     void Editor::update(float delta) {
@@ -280,6 +331,11 @@ namespace mgm {
             engine.file_io().write_text("data://recents.json", recents_json);
         }
         
+        if (!engine.file_io().exists(project_path / "assets"))
+            engine.file_io().create_folder(project_path / "assets");
+        if (!engine.file_io().exists(project_path / "data"))
+            engine.file_io().create_folder(project_path / "data");
+
         Path::setup_project_dirs(project_path.platform_path(), (project_path / "assets").platform_path(), (project_path / "data").platform_path());
 
         if (engine.file_io().exists("project://.mgm")) {
@@ -299,6 +355,11 @@ namespace mgm {
         const auto message = "Loaded project from: \"" + project_path.platform_path() + "\"";
         engine.notifications().push(message);
         Logging{"Editor"}.log(message);
+
+        JObject loading_project = engine.file_io().read_text("project://.magma");
+        auto& editor = engine.editor();
+        editor.project_name = loading_project["name"];
+        editor.main_scene_path.data = loading_project["main_scene_path"];
     }
 
     void Editor::save_current_project() {
@@ -319,6 +380,12 @@ namespace mgm {
         window["pos_y"] = engine.window().get_position().y();
 
         engine.file_io().write_text("project://.mgm/.layout", layout);
+
+        JObject project{};
+        project["name"] = engine.editor().project_name;
+        project["main_scene_path"] = engine.editor().main_scene_path.data;
+
+        engine.file_io().write_text("project://.magma", project);
     }
 
     void Editor::initialize_project(const Path& project_path) {
@@ -332,18 +399,29 @@ namespace mgm {
 
         JObject project{};
         project["name"] = "New Project";
+        project["main_scene_path"] = "";
 
         engine.file_io().write_text(project_path / ".magma", project);
         
         const auto message = "Created new project at: \"" + project_path.platform_path() + "\"";
         engine.notifications().push(message);
         Logging{"Editor"}.log(message);
+        
+        engine.file_io().create_folder(project_path / "assets");
+        engine.file_io().create_folder(project_path / "data");
 
         load_project(project_path);
     }
 
     void Editor::unload_project() {
+        auto& editor = MagmaEngine{}.editor();
+        for (const auto window : editor.windows)
+            delete window;
+        editor.windows.clear();
+
         Path::setup_project_dirs(FileIO::exe_dir().platform_path(), (FileIO::exe_dir() / "assets").platform_path(), (FileIO::exe_dir() / "data").platform_path());
+        editor.project_name = "";
+        editor.main_scene_path = "";
     }
 
     Editor::~Editor() {

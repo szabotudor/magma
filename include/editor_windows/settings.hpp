@@ -2,8 +2,6 @@
 #include "systems/editor.hpp"
 #include "systems.hpp"
 
-#include <functional>
-
 
 namespace mgm {
     class SettingsManager : public System {
@@ -13,7 +11,6 @@ namespace mgm {
 
     class SettingsWindow : public EditorWindow {
         System* selected_system = nullptr;
-        std::function<void()> draw_settings_func{};
 
     public:
         SettingsWindow() {

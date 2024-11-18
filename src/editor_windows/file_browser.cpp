@@ -1,5 +1,4 @@
 #include "editor_windows/file_browser.hpp"
-#include "editor_windows/script_editor.hpp"
 #include "engine.hpp"
 #include "imgui.h"
 #include "imgui_stdlib.h"
@@ -10,17 +9,17 @@ namespace mgm {
     void FileBrowser::draw_contents() {
         MagmaEngine engine{};
 
-        if (mode == Mode::WRITE) {
-            ImGui::InputText("Name", &file_name);
+        ImGui::InputText("Name", &file_name);
 
-            if (ImGui::Button("Create File")) {
-                engine.file_io().write_binary(file_path / file_name, default_contents);
-                open = false;
-                engine.systems().get<Editor>().add_window<ScriptEditor>(true, file_path / file_name);
-            }
-            if (ImGui::IsItemHovered())
-                ImGui::SetTooltip("Create a new file with the name specified in the Name field");
+        if (ImGui::Button("Create File")) {
+            if (!file_extension.empty() && !file_name.ends_with(file_extension))
+                file_name += file_extension;
+
+            engine.file_io().write_binary(file_path / file_name, default_contents);
+            open = false;
         }
+        if (ImGui::IsItemHovered())
+            ImGui::SetTooltip("Create a new file with the name specified in the Name field");
 
         ImGui::SameLine();
         if (ImGui::Button("Create Folder")) {

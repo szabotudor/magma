@@ -19,7 +19,9 @@ namespace mgm {
         float pos = 0.0f;
 
         public:
-        Notifications() = default;
+        Notifications() {
+            system_name = "Notifications";
+        }
 
         /**
          * @brief If the remaining time in seconds of a notification is less than this value, it will start to fade out
