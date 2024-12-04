@@ -64,11 +64,13 @@ if (ENABLE_EDITOR)
             ${CMAKE_CURRENT_SOURCE_DIR}/src/editor_windows/file_browser.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/src/editor_windows/script_editor.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/src/editor_windows/settings.cpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/src/editor_windows/hierarchy_view.cpp
 
             ${CMAKE_CURRENT_SOURCE_DIR}/include/systems/editor.hpp
             ${CMAKE_CURRENT_SOURCE_DIR}/include/editor_windows/file_browser.hpp
             ${CMAKE_CURRENT_SOURCE_DIR}/include/editor_windows/script_editor.hpp
             ${CMAKE_CURRENT_SOURCE_DIR}/include/editor_windows/settings.hpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/include/editor_windows/hierarchy_view.hpp
     )
 endif()
 
@@ -79,6 +81,7 @@ add_library(
         ${CMAKE_CURRENT_SOURCE_DIR}/src/systems/input.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/systems/notifications.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/tools/lua_vm.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/ecs.cpp
 
         ${CMAKE_CURRENT_SOURCE_DIR}/include/engine.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/include/tools/expose_api.hpp
@@ -86,6 +89,7 @@ add_library(
         ${CMAKE_CURRENT_SOURCE_DIR}/include/systems/notifications.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/include/systems.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/include/tools/lua_vm.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/ecs.hpp
 
         ${EDITOR_SOURCES}
 )

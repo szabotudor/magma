@@ -22,16 +22,18 @@ namespace mgm {
                 palette_open = false;
                 add_window<FileBrowser>(
                     true,
-                    FileBrowser::Mode::WRITE,
-                    FileBrowser::Type::FOLDER,
-                    [](const Path& path) {
-                        if (location_contains_project(path)) {
-                            Logging{"Editor"}.error("A project already exists in this location: \"", path.platform_path(), "\"");
-                            return;
-                        }
-                        initialize_project(path);
-                    },
-                    true
+                    FileBrowser::Args {
+                        .mode = FileBrowser::Mode::WRITE,
+                        .type = FileBrowser::Type::FOLDER,
+                        .callback = [](const Path path) {
+                            if (location_contains_project(path)) {
+                                Logging{"Editor"}.error("A project already exists in this location: \"", path.platform_path(), "\"");
+                                return;
+                            }
+                            initialize_project(path);
+                        },
+                        .allow_paths_outside_project = true
+                    }
                 );
             }
 
@@ -39,14 +41,16 @@ namespace mgm {
                 palette_open = false;
                 add_window<FileBrowser>(
                     true,
-                    FileBrowser::Mode::READ,
-                    FileBrowser::Type::FOLDER,
-                    [](const Path& path) {
-                        if (!location_contains_project(path)) {
-                            Logging{"Editor"}.error("No project to open at location: \"", path.platform_path(), "\"");
-                            return;
+                    FileBrowser::Args {
+                        .mode = FileBrowser::Mode::READ,
+                        .type = FileBrowser::Type::FOLDER,
+                        .callback = [](const Path path) {
+                            if (!location_contains_project(path)) {
+                                Logging{"Editor"}.error("No project to open at location: \"", path.platform_path(), "\"");
+                                return;
+                            }
+                            load_project(path);
                         }
-                        load_project(path);
                     }
                 );
             }

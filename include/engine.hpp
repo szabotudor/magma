@@ -19,6 +19,7 @@ namespace mgm {
     class Editor;
     class SystemManager;
     class EngineManager;
+    class EntityComponentSystem;
 
 
     class MagmaEngine {
@@ -44,6 +45,7 @@ namespace mgm {
 #if defined(ENABLE_EDITOR)
         Editor& editor();
 #endif
+        EntityComponentSystem& ecs();
         SystemManager& systems();
 
         MagmaEngine(const MagmaEngine&) = delete;

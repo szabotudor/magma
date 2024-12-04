@@ -16,7 +16,7 @@ namespace mgm {
         System() = default;
 
         /**
-         * @brief Called immediately after the system is created
+         * @brief Called when the game starts (DOES NOT CREATE THE SYSTEM, CAN BE CALLED MULTIPLE TIMES)
          */
         virtual void on_begin_play() {}
 
@@ -53,7 +53,7 @@ namespace mgm {
         virtual void draw() {}
 
         /**
-         * @brief Called immediately before the system is destroyed
+         * @brief Called when the game ends (DOES NOT DESTROY THE SYSTEM, PLAY MIGHT BEGIN AGAIN)
          */
         virtual void on_end_play() {}
 

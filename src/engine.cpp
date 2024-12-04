@@ -1,4 +1,5 @@
 #include "engine.hpp"
+#include "ecs.hpp"
 #include "imgui.h"
 #include "imgui_impl_mgmgpu.h"
 #include "systems/input.hpp"
@@ -29,6 +30,8 @@ namespace mgm {
         std::vector<MgmGPU::DrawCall> draw_list{};
 
         SystemManager* system_manager = nullptr;
+
+        EntityComponentSystem ecs{};
 
         float current_dt = 0.0f;
     };
@@ -66,6 +69,8 @@ namespace mgm {
         return *e;
     }
 #endif
+    EntityComponentSystem& MagmaEngine::ecs() { return data->ecs; }
+
     SystemManager& MagmaEngine::systems() { return *data->system_manager; }
 
     MagmaEngine::MagmaEngine(const std::vector<std::string>& args) {
@@ -124,12 +129,14 @@ namespace mgm {
 
         systems().create<Input>();
         systems().create<Notifications>();
+        systems().create<EntityComponentSystem>();
 
 #if defined(ENABLE_EDITOR)
         if (std::find(args.begin(), args.end(), "--editor") != args.end())
             systems().create<Editor>();
         else
 #endif
+        // Will execute if the editor is not enabled, or if the editor is enabled and the argument "--editor" is not given
         {
         }
 
@@ -213,6 +220,9 @@ namespace mgm {
                 data->graphics_settings.viewport.bottom_right = vec2i32{static_cast<int>(window_size.x()), static_cast<int>(window_size.y())};
                 graphics_settings_mutex.unlock();
             }
+
+            // Sleep the thread for a bit to save CPU cycles
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
 
         engine_running = false;

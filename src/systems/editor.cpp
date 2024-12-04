@@ -39,7 +39,8 @@ namespace mgm {
         static const ImWchar ranges[] = {
             0x0020, 0x00FF, // Basic Latin + Latin Supplement
             0x25A0, 0x25FF, // Geometric Shapes
-            0,
+            0x2700, 0x27BF, // Dingbats
+            0
         };
         font_id = io.Fonts->AddFontFromFileTTF(Path("resources://fonts/Hack-Regular.ttf").platform_path().c_str(), 20.0f, nullptr, ranges);
         
@@ -170,10 +171,17 @@ namespace mgm {
             ImGui::SameLine();
 
             if (ImGui::Button("Browse")) {
-                add_window<FileBrowser>(true, FileBrowser::Mode::READ, FileBrowser::Type::FILE, [&](const Path& path) {
-                    main_scene_path = path;
-                    save_current_project();
-                }, true, "New Scene", ".lua");
+                add_window<FileBrowser>(true, FileBrowser::Args{
+                    .mode = FileBrowser::Mode::READ,
+                    .type = FileBrowser::Type::FILE,
+                    .callback = [&](const Path& path) {
+                        main_scene_path = path;
+                        save_current_project();
+                    },
+                    .allow_paths_outside_project = false,
+                    .default_file_name = "New Scene",
+                    .default_file_extension = ".lua",
+                });
             }
         }
 
