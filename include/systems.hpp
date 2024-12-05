@@ -8,8 +8,11 @@
 
 namespace mgm {
     class SettingsWindow;
+    class SystemManager;
 
     class System {
+        friend class SystemManager;
+
         public:
         std::string system_name = "System";
 
@@ -32,6 +35,7 @@ namespace mgm {
          * @brief Called to draw the contents of the ImGui window for system settings
          */
         virtual void draw_settings_window_contents() { /* Unused */ }
+        bool should_appear_in_settings_window = false;
 
         /**
          * @brief Called once per frame, only only while the editor is open
@@ -84,6 +88,7 @@ namespace mgm {
             auto& system = systems[id];
             system = reinterpret_cast<System*>(new T{std::forward<Ts>(args)...});
             T& sys = *reinterpret_cast<T*>(system);
+            sys.should_appear_in_settings_window = std::is_same_v<decltype(&T::draw_settings_window_contents), void(T::*)()>;
             if (system->system_name.empty())
                 system->system_name = typeid(T).name();
             return sys;

@@ -159,6 +159,7 @@ namespace mgm {
                 ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled));
                 ImGui::Text("No Project Loaded");
                 ImGui::PopStyleColor();
+                ImGui::EndChild();
                 return;
             }
 

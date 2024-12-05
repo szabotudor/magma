@@ -29,6 +29,10 @@ namespace mgm {
          */
         virtual void draw_contents() {};
 
+        void close_window() { open = false; }
+
+        void close_and_remove_window() { remove_on_close = true; open = false; }
+
         virtual ~EditorWindow() = default;
     };
 

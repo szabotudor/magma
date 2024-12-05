@@ -18,22 +18,30 @@ namespace mgm {
 
     void HierarchyView::draw_contents() {
         auto engine = MagmaEngine{};
+
+        if (!engine.editor().is_a_project_loaded()) {
+            close_window();
+            return;
+        }
+        
         auto& ecs = engine.ecs().ecs;
 
-        if (ImGui::Button("+")) {
-            std::string name = "Node";
-
-            const auto parent = data->selected == MGMecs<>::null ? engine.ecs().root : data->selected;
-
+        const auto name_entity = [&](const MGMecs<>::Entity new_parent, std::string name) {
             size_t tries = 0;
-            while (ecs.get<HierarchyNode>(parent).get_child_by_name(name) != MGMecs<>::null) {
+            while (ecs.get<HierarchyNode>(new_parent).get_child_by_name(name) != MGMecs<>::null) {
                 if (tries == 0)
                     name += " (" + std::to_string(tries++) + ")";
                 else
                     name = name.substr(0, name.find_last_of('(') + 1) + std::to_string(tries++) + ")";
             }
 
-            ecs.emplace<HierarchyNode>(ecs.create(), parent).name = name;
+            return name;
+        };
+
+        if (ImGui::Button("+")) {
+            const auto new_parent = data->selected == MGMecs<>::null ? engine.ecs().root : data->selected;
+            const auto name = name_entity(new_parent, "Node");
+            ecs.emplace<HierarchyNode>(ecs.create(), new_parent).name = name;
         }
 
         if (ImGui::IsItemHovered())
@@ -52,14 +60,20 @@ namespace mgm {
             ImGui::SetTooltip("Delete selected entity");
         
         const auto num_entities = ecs.entities_count() - 1;
-        if (num_entities == 0) {
-            ImGui::Text("No entities (besides root)");
-            return;
+        switch (num_entities) {
+            case 0: {
+                ImGui::Text("No entities (besides root)");
+                return;
+            }
+            case 1: {
+                ImGui::Text("1 entity");
+                break;
+            }
+            default: {
+                ImGui::Text("%u entities", num_entities);
+                break;
+            }
         }
-        if (num_entities == 1)
-            ImGui::Text("1 entity");
-        else
-            ImGui::Text("%u entities", num_entities);
 
         ImGui::Separator();
 
@@ -125,18 +139,25 @@ namespace mgm {
 
                     if (payload = ImGui::AcceptDragDropPayload("HIERARCHY_NODE"); payload) {
                         const auto entity = *static_cast<const MGMecs<>::Entity*>(payload->Data);
+                        auto& entity_node = ecs.get<HierarchyNode>(entity);
+                        entity_node.reparent(MGMecs<>::null);
+
                         if (cursor_pos.y < top) {
                             auto& parent_node = ecs.get<HierarchyNode>(node.parent);
                             const auto index = parent_node.find_child_index(parent);
-                            ecs.get<HierarchyNode>(entity).reparent(node.parent, index);
+                            entity_node.name = name_entity(node.parent, entity_node.name);
+                            entity_node.reparent(node.parent, index);
                         }
                         else if (cursor_pos.y > bottom) {
                             auto& parent_node = ecs.get<HierarchyNode>(node.parent);
                             const auto index = parent_node.find_child_index(parent) + 1;
-                            ecs.get<HierarchyNode>(entity).reparent(node.parent, index);
+                            entity_node.name = name_entity(node.parent, entity_node.name);
+                            entity_node.reparent(node.parent, index);
                         }
-                        else
-                            ecs.get<HierarchyNode>(entity).reparent(parent);
+                        else {
+                            entity_node.name = name_entity(parent, entity_node.name);
+                            entity_node.reparent(parent);
+                        }
                     }
                     ImGui::EndDragDropTarget();
                 }

@@ -13,9 +13,9 @@ namespace mgm {
             if (selected_system == nullptr)
                 selected_system = system;
 
-            if (ImGui::Selectable(system->system_name.c_str(), selected_system == system)) {
-                selected_system = system;
-            }
+            if (system->should_appear_in_settings_window)
+                if (ImGui::Selectable(system->system_name.c_str(), selected_system == system))
+                    selected_system = system;
         }
         ImGui::EndChild();
 

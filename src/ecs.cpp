@@ -267,14 +267,14 @@ namespace mgm {
     bool EntityComponentSystem::draw_palette_options() {
         auto& editor = MagmaEngine{}.editor();
 
-        if (editor.begin_window_here("Scene", true)) {
+        if (editor.begin_window_here("Scene", editor.is_a_project_loaded())) {
             if (ImGui::SmallButton("Open Hierarchy")) {
                 editor.add_window<HierarchyView>();
                 editor.end_window_here();
                 return true;
             }
 
-            if (ImGui::SmallButton("Open Scene")) {
+            if (ImGui::SmallButton("Open Scene In Editor")) {
                 editor.add_window<FileBrowser>(true, FileBrowser::Args{
                     .mode = FileBrowser::Mode::READ,
                     .type = FileBrowser::Type::FILE,
@@ -285,6 +285,10 @@ namespace mgm {
                 });
                 editor.end_window_here();
                 return true;
+            }
+            
+            if (ImGui::SmallButton("New Scene")) {
+                
             }
 
             editor.end_window_here();
