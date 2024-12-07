@@ -1,6 +1,6 @@
 #include "ecs.hpp"
 #include "editor_windows/file_browser.hpp"
-#include "editor_windows/hierarchy_view.hpp"
+#include "editor_windows/scene_view.hpp"
 #include "engine.hpp"
 #include "imgui.h"
 #include "systems/editor.hpp"

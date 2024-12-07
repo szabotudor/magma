@@ -64,13 +64,13 @@ if (ENABLE_EDITOR)
             ${CMAKE_CURRENT_SOURCE_DIR}/src/editor_windows/file_browser.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/src/editor_windows/script_editor.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/src/editor_windows/settings.cpp
-            ${CMAKE_CURRENT_SOURCE_DIR}/src/editor_windows/hierarchy_view.cpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/src/editor_windows/scene_view.cpp
 
             ${CMAKE_CURRENT_SOURCE_DIR}/include/systems/editor.hpp
             ${CMAKE_CURRENT_SOURCE_DIR}/include/editor_windows/file_browser.hpp
             ${CMAKE_CURRENT_SOURCE_DIR}/include/editor_windows/script_editor.hpp
             ${CMAKE_CURRENT_SOURCE_DIR}/include/editor_windows/settings.hpp
-            ${CMAKE_CURRENT_SOURCE_DIR}/include/editor_windows/hierarchy_view.hpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/include/editor_windows/scene_view.hpp
     )
 endif()
 

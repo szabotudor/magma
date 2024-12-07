@@ -1,4 +1,4 @@
-#include "editor_windows/hierarchy_view.hpp"
+#include "editor_windows/scene_view.hpp"
 #include "ecs.hpp"
 #include "engine.hpp"
 #include "imgui.h"
