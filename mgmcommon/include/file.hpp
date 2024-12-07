@@ -13,12 +13,13 @@ namespace mgm {
 
         private:
         std::string parse_prefix() const;
+        public:
+
         Path as_platform_independent() const;
         void make_platform_independent() {
             data = as_platform_independent().data;
         }
 
-        public:
         std::string data{};
 
         static Path project_dir;
@@ -259,5 +260,14 @@ namespace mgm {
         void end_write_stream();
 
         ~FileIO();
+    };
+}
+
+namespace std {
+    template<>
+    struct hash<mgm::Path> {
+        size_t operator ()(const mgm::Path& path) {
+            return hash<string>{}(path.as_platform_independent().data);
+        }
     };
 }

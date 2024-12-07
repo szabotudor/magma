@@ -20,10 +20,29 @@ namespace mgm {
         std::any data{};
         mutable std::any parsed_data{};
 
+        public:
+
+        /**
+         * @brief Interpret the JObject as a json object and return it as a map, clearning the original value if not already an object type
+         */
         std::unordered_map<std::string, JObject> &object();
+
+        /**
+         * @brief Try to interpret the JObject as a json object and return it as a map, and throw an error if not already an object type
+         */
         const std::unordered_map<std::string, JObject> &object() const;
+
+        /**
+         * @brief Interpret the JObject as a json object and return it as a vector, clearning the original value if not already an array type
+         */
         std::vector<JObject> &array();
+
+        /**
+         * @brief Try to interpret the JObject as a json object and return it as a vector, and throw an error if not already an array type
+         */
         const std::vector<JObject> &array() const;
+
+        private:
         std::string &single_value();
         const std::string &single_value() const;
 
