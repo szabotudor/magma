@@ -23,7 +23,8 @@ macro(ignore_warnings_for_files)
     endforeach()
 endmacro()
 
-add_compile_definitions(MGMATH_SIMD=1 MGMATH_SWIZZLE=1)
+# add_compile_definitions(MGMATH_SIMD=1 MGMATH_SWIZZLE=1)
+add_compile_definitions(MGMATH_SWIZZLE=1)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/build/${CMAKE_BUILD_TYPE}/magma)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/build/${CMAKE_BUILD_TYPE}/magma/libs)
@@ -81,6 +82,7 @@ add_library(
         ${CMAKE_CURRENT_SOURCE_DIR}/src/systems/input.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/systems/notifications.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/tools/lua_vm.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/built-in_components/renderable.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/ecs.cpp
 
         ${CMAKE_CURRENT_SOURCE_DIR}/include/engine.hpp
@@ -89,6 +91,7 @@ add_library(
         ${CMAKE_CURRENT_SOURCE_DIR}/include/systems/notifications.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/include/systems.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/include/tools/lua_vm.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/built-in_components/renderable.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/include/ecs.hpp
 
         ${EDITOR_SOURCES}
