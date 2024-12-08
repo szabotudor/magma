@@ -9,6 +9,9 @@
 #include <vector>
 
 
+#define JSON_SINGLE_INDENT "    "
+
+
 namespace mgm {
     class JObject {
         enum class PrivateType {
@@ -45,6 +48,8 @@ namespace mgm {
         private:
         std::string &single_value();
         const std::string &single_value() const;
+
+        static inline thread_local size_t indent = 1;
 
         std::string array_to_string() const;
         std::string object_to_string() const;
@@ -113,6 +118,18 @@ namespace mgm {
         bool operator==(const JObject& other) const;
         bool operator!=(const JObject& other) const;
 
+
+        /**
+         * @brief Check if this JObject is empty
+         */
+        bool empty() const;
+        
+        /**
+         * @brief Check if this JObject is a decimal number
+         * 
+         * @return true If the JObject is a number, and is decimal
+         */
+        bool is_number_decimal();
 
         /**
          * @brief Interpret the JObject as an array, and add a new element to the end

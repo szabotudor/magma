@@ -174,14 +174,27 @@ namespace mgm {
     }
 
 
+    std::string indent_str(const size_t indent) {
+        std::string res{};
+        for (size_t i = 0; i < indent; ++i) res += JSON_SINGLE_INDENT;
+        return res;
+    }
+
     std::string JObject::array_to_string() const {
         if (private_type() == PrivateType::SINGLE && type() == Type::ARRAY)
             return single_value();
 
         const auto& vec = array();
-        std::string res = "[ ";
+        if (vec.empty())
+            return "[]";
+
+        std::string res = "[\n";
         for (size_t i = 0; i < vec.size(); i++) {
+            ++indent;
             std::string str = std::string{vec[i]};
+            --indent;
+            res += indent_str(indent);
+
             if (vec[i].type() == Type::STRING) {
                 string_chars_to_escape_codes(str);
                 res += '"' + str + '"';
@@ -190,9 +203,9 @@ namespace mgm {
                 res += str;
 
             if (i < vec.size() - 1)
-                res += ", ";
+                res += ",\n";
         }
-        res += " ]";
+        res += "\n" + indent_str(indent - 1) + "]";
         return res;
     }
     std::string JObject::object_to_string() const {
@@ -200,10 +213,17 @@ namespace mgm {
             return single_value();
 
         const auto& map = object();
-        std::string res = "{ ";
+        if (map.empty())
+            return "{}";
+
+        std::string res = "{\n";
         size_t i = 0;
         for (const auto& [key, value] : map) {
+            ++indent;
             std::string str = std::string{value};
+            --indent;
+            res += indent_str(indent);
+
             if (value.type() == Type::STRING) {
                 string_chars_to_escape_codes(str);
                 res += '"' + key + "\": \"" + str + '"';
@@ -212,10 +232,10 @@ namespace mgm {
                 res += '"' + key + "\": " + str;
 
             if (i < map.size() - 1)
-                res += ", ";
+                res += ",\n";
             i++;
         }
-        res += " }";
+        res += "\n" + indent_str(indent - 1) + "}";
         return res;
     }
 
@@ -408,6 +428,40 @@ namespace mgm {
     }
     bool JObject::operator!=(const JObject &other) const {
         return !(*this == other);
+    }
+
+
+    bool JObject::empty() const {
+        if (!data.has_value())
+            return true;
+
+        switch (type()) {
+            case Type::NUMBER: {
+                return single_value().empty();
+            }
+            case Type::STRING: {
+                return single_value().size() < 3;
+            }
+            case Type::ARRAY: {
+                return array().empty();
+            }
+            case Type::OBJECT: {
+                return object().empty();
+            }
+            default: {
+                break;
+            }
+        }
+        return false;
+    }
+
+    bool JObject::is_number_decimal() {
+        if (type() != Type::NUMBER)
+            return false;
+
+        const auto& d = single_value();
+        const auto it = d.find('.');
+        return it != d.npos;
     }
 
     JObject& JObject::emplace_back(const JObject &value) { return array().emplace_back(value); }
