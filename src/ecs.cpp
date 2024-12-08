@@ -2,7 +2,9 @@
 #include "editor_windows/file_browser.hpp"
 #include "editor_windows/scene_view.hpp"
 #include "engine.hpp"
+#include "file.hpp"
 #include "imgui.h"
+#include "json.hpp"
 #include "systems/editor.hpp"
 #include "systems/notifications.hpp"
 #include "tools/mgmecs.hpp"
@@ -263,32 +265,129 @@ namespace mgm {
     }
 
 
+    MGMecs<>::Entity EntityComponentSystem::load_scene_into_new_root(const Path& path) {
+        MagmaEngine engine{};
+
+        const auto it = editable_scenes.find(path);
+        if (it != editable_scenes.end()) {
+            engine.notifications().push("Scene at path \"" + path.platform_path() + "\" is already opened");
+            return MGMecs<>::null;
+        }
+
+        const auto new_scene_root = ecs.create();
+        const JObject scene_data = engine.file_io().read_text(path);
+        deserialize_node(new_scene_root, scene_data);
+        
+        editable_scenes[path] = new_scene_root;
+        return new_scene_root;
+    }
+
+    JObject EntityComponentSystem::serialize_entity_components(const MGMecs<>::Entity entity) {
+        JObject res{};
+        for (const auto& [type, serializer] : serialized_types) {
+            if (!serializer.serialize)
+                continue;
+
+            const auto json = serializer.serialize(entity);
+            if (!json.empty())
+                res[type] = json;
+        }
+        return res;
+    }
+
+    void EntityComponentSystem::deserialize_entity_components(const MGMecs<>::Entity entity, const JObject& json) {
+        for (const auto& [key, value] : json) {
+            const auto it = serialized_types.find(key);
+            if (it == serialized_types.end() || !it->second.deserialize)
+                continue;
+
+            it->second.deserialize(entity, value);
+        }
+    }
+
+    JObject EntityComponentSystem::serialize_node(const MGMecs<>::Entity entity) {
+        JObject res{};
+        res.array();
+
+        for (const auto& e : ecs.get<HierarchyNode>(entity)) {
+            JObject entry{};
+
+            const auto& node = ecs.get<HierarchyNode>(e);
+            entry["name"] = node.name;
+            entry["components"] = serialize_entity_components(e);
+
+            auto& node_children_json = entry["children"];
+            node_children_json.array();
+
+            for (const auto& child : node)
+                node_children_json.emplace_back(serialize_node(child));
+
+            res.emplace_back(entry);
+        }
+
+        return res;
+    }
+
+    void EntityComponentSystem::deserialize_node(const MGMecs<>::Entity entity, const JObject& json) {
+        if (!json.has("components") || !json.has("name")) {
+            ecs.emplace<HierarchyNode>(entity, MGMecs<>::null).name = "Root";
+            return;
+        }
+
+        ecs.get_or_emplace<HierarchyNode>(entity, MGMecs<>::null).name = json["name"];
+
+        deserialize_entity_components(entity, json["components"]);
+
+        if (!json.has("children"))
+            return;
+
+        const auto& children = json["children"].array();
+
+        for (auto it = children.rbegin(); it != children.rend(); ++it) {
+            const auto& child_json = *it;
+            const auto c = ecs.create();
+            ecs.emplace<HierarchyNode>(c, entity).name = child_json["name"];
+            deserialize_node(c, child_json);
+        }
+    }
+
 #if defined(ENABLE_EDITOR)
     bool EntityComponentSystem::draw_palette_options() {
         auto& editor = MagmaEngine{}.editor();
 
         if (editor.begin_window_here("Scene", editor.is_a_project_loaded())) {
-            if (ImGui::SmallButton("Open Hierarchy")) {
-                editor.add_window<HierarchyView>();
-                editor.end_window_here();
-                return true;
-            }
-
             if (ImGui::SmallButton("Open Scene In Editor")) {
                 editor.add_window<FileBrowser>(true, FileBrowser::Args{
                     .mode = FileBrowser::Mode::READ,
                     .type = FileBrowser::Type::FILE,
                     .callback = [](const Path& path) {
-                        MagmaEngine{}.notifications().push("Opening scene: " + path.platform_path());
+                        MagmaEngine engine{};
+                        engine.editor().add_window<SceneViewport>(true, path);
+
+                        engine.ecs().load_scene_into_new_root(path);
+                        
+                        engine.notifications().push("Opened scene: " + path.platform_path());
                     },
                     .allow_paths_outside_project = false,
                 });
                 editor.end_window_here();
                 return true;
             }
-            
-            if (ImGui::SmallButton("New Scene")) {
-                
+
+            if (ImGui::SmallButton("Create Scene")) {
+                editor.add_window<FileBrowser>(true, FileBrowser::Args{
+                    .mode = FileBrowser::Mode::WRITE,
+                    .type = FileBrowser::Type::FILE,
+                    .callback = [](const Path& path) {
+                        MagmaEngine engine{};
+                        engine.editor().add_window<SceneViewport>(true, path);
+
+                        engine.ecs().load_scene_into_new_root(path);
+
+                        engine.notifications().push("Created and opened scene: " + path.platform_path());
+                    },
+                    .allow_paths_outside_project = false
+                });
             }
 
             editor.end_window_here();

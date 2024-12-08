@@ -1,7 +1,9 @@
 #include "engine.hpp"
+#include "built-in_components/renderable.hpp"
 #include "ecs.hpp"
 #include "imgui.h"
 #include "imgui_impl_mgmgpu.h"
+#include "mgmath.hpp"
 #include "systems/input.hpp"
 #include "logging.hpp"
 #include "mgmgpu.hpp"
@@ -140,6 +142,14 @@ namespace mgm {
         {
         }
 
+        ecs().enable_type_serialization<Transform>("Transform", true);
+        ecs().enable_type_serialization<vec2f>("vec2f");
+        ecs().enable_type_serialization<vec3f>("vec3f");
+        ecs().enable_type_serialization<vec4f>("vec4f");
+        ecs().enable_type_serialization<vec2d>("vec2d");
+        ecs().enable_type_serialization<vec3d>("vec3d");
+        ecs().enable_type_serialization<vec4d>("vec4d");
+
         initialized = true;
     }
 
@@ -188,8 +198,8 @@ namespace mgm {
 
 
 #if defined(ENABLE_EDITOR)
-            if (systems().try_get<Editor>())
-                systems().get<Editor>().update(delta);
+            if (const auto editor_ptr = systems().try_get<Editor>())
+                editor_ptr->update(delta);
             else {
                 for (const auto& [id, sys] : systems().systems)
                     sys->update(delta);

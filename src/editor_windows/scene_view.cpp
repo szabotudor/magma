@@ -2,24 +2,84 @@
 #include "ecs.hpp"
 #include "engine.hpp"
 #include "imgui.h"
+#include "imgui_stdlib.h"
+#include "json.hpp"
+#include "systems/notifications.hpp"
 #include "tools/mgmecs.hpp"
+#include <memory>
+#include <string>
 
 
 namespace mgm {
+    constexpr auto save_interval = 5.0f;
     struct HierarchyView::Data {
         MGMecs<>::Entity selected{};
+        JObject selected_serialized_data{};
+
         MGMecs<>::Entity last_drawn_entity{};
         bool selection_came_from_navigating_with_down_arrow: 1 = false;
     };
 
-    HierarchyView::HierarchyView() : data{new Data{}} {
+
+    void SceneViewport::do_save() {
+        MagmaEngine engine{};
+
+        JObject scene_data{};
+        scene_data["name"] = "Root";
+        scene_data["components"] = {};
+        scene_data["children"] = engine.ecs().serialize_node(current_scene_root);
+        engine.file_io().write_text(current_scene_path, scene_data);
+        engine.notifications().push("Saved scene: \"" + current_scene_path.as_platform_independent().data + "\"");
+    }
+
+    SceneViewport::SceneViewport(const Path& scene_path) {
+        window_name = "Viewport \"" + scene_path.file_name() + "\"##" + scene_path.platform_path();
+        MagmaEngine engine{};
+        const auto data = engine.editor().add_window<InspectorWindow>()->data = engine.editor().add_window<HierarchyView>()->data;
+
+        this_viewport_scene_root = engine.ecs().load_scene_into_new_root(scene_path);
+        this_viewport_scene_path = scene_path;
+        current_scene_root = this_viewport_scene_root;
+        current_scene_path = this_viewport_scene_path;
+    }
+
+    void SceneViewport::draw_contents() {
+        ImGui::Text("ViewportContents");
+
+        if (current_scene_root != this_viewport_scene_root) {
+            if (ImGui::IsWindowFocused()) {
+                if (time_since_last_edit < save_interval)
+                    do_save();
+
+                current_scene_root = this_viewport_scene_root;
+                current_scene_path = this_viewport_scene_path;
+                time_since_last_edit = save_interval;
+            }
+        }
+
+        MagmaEngine engine{};
+
+        if (time_since_last_edit < save_interval) {
+            time_since_last_edit += engine.delta_time();
+            if (time_since_last_edit >= save_interval)
+                do_save();
+        }
+    }
+
+    SceneViewport::~SceneViewport() {
+        if (time_since_last_edit < save_interval)
+            do_save();
+    }
+
+
+    HierarchyView::HierarchyView() : data{std::make_shared<Data>()} {
         window_name = "Hierarchy";
     }
 
     void HierarchyView::draw_contents() {
         auto engine = MagmaEngine{};
 
-        if (!engine.editor().is_a_project_loaded()) {
+        if (!engine.editor().is_a_project_loaded() || SceneViewport::current_scene_root == MGMecs<>::null) {
             close_window();
             return;
         }
@@ -39,9 +99,10 @@ namespace mgm {
         };
 
         if (ImGui::Button("+")) {
-            const auto new_parent = data->selected == MGMecs<>::null ? engine.ecs().root : data->selected;
+            const auto new_parent = data->selected == MGMecs<>::null ? SceneViewport::current_scene_root : data->selected;
             const auto name = name_entity(new_parent, "Node");
             ecs.emplace<HierarchyNode>(ecs.create(), new_parent).name = name;
+            SceneViewport::time_since_last_edit = 0.0f;
         }
 
         if (ImGui::IsItemHovered())
@@ -53,27 +114,14 @@ namespace mgm {
             if (data->selected != MGMecs<>::null) {
                 ecs.destroy(data->selected);
                 data->selected = MGMecs<>::null;
+                SceneViewport::time_since_last_edit = 0.0f;
             }
         }
 
         if (ImGui::IsItemHovered())
             ImGui::SetTooltip("Delete selected entity");
-        
-        const auto num_entities = ecs.entities_count() - 1;
-        switch (num_entities) {
-            case 0: {
-                ImGui::Text("No entities (besides root)");
-                return;
-            }
-            case 1: {
-                ImGui::Text("1 entity");
-                break;
-            }
-            default: {
-                ImGui::Text("%u entities", num_entities);
-                break;
-            }
-        }
+
+        const auto selected_initially = data->selected;
 
         ImGui::Separator();
 
@@ -158,6 +206,8 @@ namespace mgm {
                             entity_node.name = name_entity(parent, entity_node.name);
                             entity_node.reparent(parent);
                         }
+                        
+                        SceneViewport::time_since_last_edit = 0.0f;
                     }
                     ImGui::EndDragDropTarget();
                 }
@@ -178,7 +228,7 @@ namespace mgm {
                 if (ImGui::IsKeyPressed(ImGuiKey_UpArrow) && data->selected == parent && ImGui::IsWindowFocused()) {
                     if (node.parent != MGMecs<>::null) {
                         if (node.prev == MGMecs<>::null)
-                            data->selected = node.parent == engine.ecs().root ? MGMecs<>::null : node.parent;
+                            data->selected = node.parent == SceneViewport::current_scene_root ? MGMecs<>::null : node.parent;
                         else
                             data->selected = data->last_drawn_entity;
                     }
@@ -231,12 +281,12 @@ namespace mgm {
             }
         };
 
-        draw_parent_and_children(engine.ecs().root);
+        draw_parent_and_children(SceneViewport::current_scene_root);
 
         if (ImGui::IsWindowFocused()) {
             if (data->selected == MGMecs<>::null) {
                 if (ImGui::IsKeyPressed(ImGuiKey_DownArrow))
-                    data->selected = ecs.get<HierarchyNode>(engine.ecs().root).child;
+                    data->selected = ecs.get<HierarchyNode>(SceneViewport::current_scene_root).child;
                 if (ImGui::IsKeyPressed(ImGuiKey_UpArrow))
                     data->selected = data->last_drawn_entity;
             }
@@ -246,5 +296,133 @@ namespace mgm {
 
         if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGui::IsAnyItemHovered() && ImGui::IsWindowHovered())
             data->selected = MGMecs<>::null;
+        
+        if (selected_initially != data->selected && data->selected != MGMecs<>::null)
+            data->selected_serialized_data = engine.ecs().serialize_entity_components(data->selected);
+    }
+
+
+    InspectorWindow::InspectorWindow() {
+        window_name = "Inspector";
+    }
+
+    void InspectorWindow::draw_contents() {
+        auto engine = MagmaEngine{};
+
+        if (!engine.editor().is_a_project_loaded() || SceneViewport::current_scene_root == MGMecs<>::null) {
+            close_window();
+            return;
+        }
+
+        if (data->selected == MGMecs<>::null) {
+            ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled));
+            ImGui::Text("No Node Selected");
+            ImGui::PopStyleColor();
+            return;
+        }
+        
+        std::function<bool(const std::string& type_id, JObject& json)> inspect_func{};
+        inspect_func = [&](const std::string& type_id, JObject& json) {
+            const auto func = engine.ecs().all_serialized_types().find(type_id);
+            if (func != engine.ecs().all_serialized_types().end())
+                if (func->second.inspect_function)
+                    return func->second.inspect_function(data->selected);
+
+            bool any_edited = false;
+
+            const std::string name = type_id;
+            switch (json.type()) {
+                case JObject::Type::NUMBER: {
+                    if (json.is_number_decimal()) {
+                        double num = (double)json;
+                        any_edited |= ImGui::InputDouble(name.c_str(), &num);
+                        json = num;
+                    }
+                    else {
+                        int64_t num = (int64_t)json;
+                        any_edited |= ImGui::InputScalar(name.c_str(), ImGuiDataType_S64, &num);
+                        json = num;
+                    }
+                    break;
+                }
+                case JObject::Type::STRING: {
+                    std::string str = json;
+                    any_edited |= ImGui::InputText(name.c_str(), &str);
+                    json = str;
+                    break;
+                }
+                case JObject::Type::BOOLEAN: {
+                    bool b = (bool)json;
+                    any_edited |= ImGui::Checkbox(name.c_str(), &b);
+                    json = b;
+                    break;
+                }
+                case JObject::Type::OBJECT:
+                case JObject::Type::ARRAY: {
+                    for (auto [key, val] : json) {
+                        if (key == "__type")
+                            continue;
+
+                        if (val.type() == JObject::Type::OBJECT || val.type() == JObject::Type::ARRAY) {
+                            if (ImGui::TreeNodeEx(std::string(key).c_str(), ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_OpenOnArrow)) {
+                                if (val.has("__type"))
+                                    any_edited |= inspect_func(val["__type"], val);
+                                else
+                                    any_edited |= inspect_func(key, val);
+                                ImGui::TreePop();
+                            }
+                        }
+                        else {
+                            if (val.has("__type"))
+                                any_edited |= inspect_func(val["__type"], val);
+                            else
+                                any_edited |= inspect_func(key, val);
+                        }
+                    }
+                }
+                default: {
+                    break;
+                }
+            }
+
+            return any_edited;
+        };
+
+        bool any_edited = false;
+        for (auto [type, value] : data->selected_serialized_data) {
+            if (ImGui::CollapsingHeader(std::string(type).c_str(), ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_OpenOnArrow)) {
+                ImGui::Indent();
+                any_edited |= inspect_func(std::string(type), value);
+                ImGui::Unindent();
+            }
+        }
+
+        if (any_edited) {
+            engine.ecs().deserialize_entity_components(data->selected, data->selected_serialized_data);
+            SceneViewport::time_since_last_edit = 0.0f;
+        }
+
+        ImGui::Separator();
+
+        std::vector<const char*> type_ids{};
+        type_ids.reserve(engine.ecs().all_serialized_types().size() + 1);
+        type_ids.emplace_back("None");
+
+        static thread_local std::string search_for{};
+        ImGui::InputText("Search", &search_for);
+
+        for (const auto& [id, type] : engine.ecs().all_serialized_types())
+            if (type.enable_as_raw_component && (search_for.empty() || id.find(search_for) != std::string::npos))
+                type_ids.push_back(id.c_str());
+
+        ImGui::ListBox("Component Type", &current_type_n, type_ids.data(), static_cast<int>(type_ids.size()));
+
+        if (!current_type_n) ImGui::BeginDisabled();
+        if (ImGui::Button("Add Component +", {ImGui::GetContentRegionAvail().x, 0.0f})) {
+            engine.ecs().add_component_of_type_to_entity(type_ids[static_cast<size_t>(current_type_n)], data->selected);
+            data->selected_serialized_data = engine.ecs().serialize_entity_components(data->selected);
+            SceneViewport::time_since_last_edit = 0.0f;
+        }
+        if (!current_type_n) ImGui::EndDisabled();
     }
 } // namespace mgm
