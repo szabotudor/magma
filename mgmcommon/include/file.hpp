@@ -266,7 +266,7 @@ namespace mgm {
 namespace std {
     template<>
     struct hash<mgm::Path> {
-        size_t operator ()(const mgm::Path& path) {
+        size_t operator ()(const mgm::Path& path) const {
             return hash<string>{}(path.as_platform_independent().data);
         }
     };
