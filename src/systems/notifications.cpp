@@ -69,9 +69,10 @@ namespace mgm {
                 to_remove.push_back((size_t)(&notif - &notifications[0]));
         }
 
+        size_t count = 0;
         for (const auto id : to_remove) {
-            notif_ids.erase(notifications[id].message_hash);
-            notifications.erase(notifications.begin() + (ssize_t)id);
+            notif_ids.erase(notifications[id - count].message_hash);
+            notifications.erase(notifications.begin() + static_cast<int64_t>(id - count++));
         }
 
         pos = std::lerp_with_delta(pos, 0.0f, 50.0f, delta);

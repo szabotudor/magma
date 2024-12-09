@@ -243,6 +243,8 @@ namespace mgm {
 #endif
             for (const auto& [id, sys] : systems().systems)
                 sys->on_end_play();
+        else
+            systems().destroy<Editor>();
     }
 
     float MagmaEngine::delta_time() const {

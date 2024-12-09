@@ -351,13 +351,15 @@ namespace mgm {
             if (engine.file_io().exists("project://.mgm/.layout")) {
                 const JObject layout = engine.file_io().read_text("project://.mgm/.layout");
                 const auto& window = layout["window"];
-                uint32_t size_x = (uint32_t)window["size_x"];
-                uint32_t size_y = (uint32_t)window["size_y"];
-                int32_t pos_x = (int32_t)window["pos_x"];
-                int32_t pos_y = (int32_t)window["pos_y"];
+                if (!window.empty()) {
+                    uint32_t size_x = (uint32_t)window["size_x"];
+                    uint32_t size_y = (uint32_t)window["size_y"];
+                    int32_t pos_x = (int32_t)window["pos_x"];
+                    int32_t pos_y = (int32_t)window["pos_y"];
 
-                engine.window().set_size({size_x, size_y});
-                engine.window().set_position({pos_x, pos_y});
+                    engine.window().set_size({size_x, size_y});
+                    engine.window().set_position({pos_x, pos_y});
+                }
             }
         }
         
