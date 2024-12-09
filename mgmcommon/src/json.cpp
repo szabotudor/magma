@@ -36,7 +36,7 @@ namespace mgm {
                     while (is_alpha(str[i])) i++;
                     return {start_pos, i};
                 }
-                if (is_num(start)) {
+                if (is_num(start) || start == '-' || start == '+') {
                     size_t i = pos;
                     while (is_num(str[i]) || str[i] == '.') i++;
                     return {start_pos, i};
@@ -435,10 +435,11 @@ namespace mgm {
         if (!data.has_value())
             return true;
 
+        parse();
+        if (private_type() == PrivateType::NONE)
+            return true;
+
         switch (type()) {
-            case Type::NUMBER: {
-                return single_value().empty();
-            }
             case Type::STRING: {
                 return single_value().size() < 3;
             }
@@ -449,10 +450,9 @@ namespace mgm {
                 return object().empty();
             }
             default: {
-                break;
+                return single_value().empty();
             }
         }
-        return false;
     }
 
     bool JObject::is_number_decimal() {
