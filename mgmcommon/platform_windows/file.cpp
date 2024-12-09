@@ -16,9 +16,9 @@ namespace mgm {
 
 	std::string Path::platform_path() const {
 		std::string path = parse_prefix();
-		for (auto& c : path)
-            if (c == '/')
-                c = '\\';
+		// for (auto& c : path)
+  //           if (c == '/')
+  //               c = '\\';
 		return path;
 	}
 

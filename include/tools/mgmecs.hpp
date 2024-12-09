@@ -495,10 +495,10 @@ namespace mgm {
                 }
 
                 lock.lock();
+                __destroy_from_to(to_remove);
+
                 for (const auto& it : to_remove)
                     map.erase(it);
-
-                __destroy_from_to(to_remove);
             }
             template<typename It>
             void try_destroy(Ecs* ecs, const It& begin, const It& end) {
@@ -530,10 +530,10 @@ namespace mgm {
                 }
 
                 lock.lock();
+                __destroy_from_to(to_remove);
+
                 for (const auto& it : to_remove)
                     map.erase(it);
-
-                __destroy_from_to(to_remove);
             }
 
             void destroy_all(Ecs* ecs) {
@@ -930,11 +930,15 @@ namespace mgm {
 
         template<typename It>
         void destroy(const It& begin, const It& end) {
+            const auto dist = std::distance(begin, end);
+            if (dist == 0)
+                return;
+
             std::vector<Entity> entities_to_destroy{};
             std::vector<Container*> to_destroy{};
 
             std::unique_lock lock{mutex};
-            entities_to_destroy.reserve(std::distance(begin, end));
+            entities_to_destroy.reserve(dist);
 
             locks.wait_and_lock(begin, end);
 

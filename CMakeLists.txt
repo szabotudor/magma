@@ -91,6 +91,7 @@ add_library(
         ${CMAKE_CURRENT_SOURCE_DIR}/include/systems/notifications.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/include/systems.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/include/tools/lua_vm.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/tools/mgmecs.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/include/built-in_components/renderable.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/include/ecs.hpp
 

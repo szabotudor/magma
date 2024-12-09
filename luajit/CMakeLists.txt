@@ -17,7 +17,7 @@ elseif(WIN32)
     elseif(MINGW)
         set(LUAJIT_MAKE_CMD "mingw32-make")
         set(LUAJIT_LIB_PATH ${CMAKE_CURRENT_SOURCE_DIR}/src/libluajit.a)
-    elseif()
+    else()
         message(FATAL_ERROR "Unsupported compiler on Windows")
     endif()
 else()
@@ -29,7 +29,7 @@ ExternalProject_Add(luajit_project
     PREFIX ${CMAKE_CURRENT_BINARY_DIR}
     SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src
     CONFIGURE_COMMAND ""
-    BUILD_COMMAND ${LUAJIT_MAKE_CMD} -j
+    BUILD_COMMAND ${LUAJIT_MAKE_CMD}
     BUILD_IN_SOURCE TRUE
     BUILD_BYPRODUCTS ${LUAJIT_LIB_PATH}
     INSTALL_COMMAND ""
@@ -37,6 +37,8 @@ ExternalProject_Add(luajit_project
 
 
 add_library(luajit STATIC IMPORTED GLOBAL)
+
+message(STATUS "Lua binaries: ${LUAJIT_LIB_PATH}")
 
 set_target_properties(
     luajit
