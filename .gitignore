@@ -5,3 +5,5 @@ build/
 
 imgui.ini
 compile_commands.json
+
+*.pdb
