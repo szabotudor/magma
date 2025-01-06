@@ -360,7 +360,7 @@ namespace mgm {
                 case JObject::Type::OBJECT:
                 case JObject::Type::ARRAY: {
                     for (auto [key, val] : json) {
-                        if (key == "__type")
+                        if (std::string(key).starts_with("__"))
                             continue;
 
                         if (val.type() == JObject::Type::OBJECT || val.type() == JObject::Type::ARRAY) {

@@ -378,6 +378,9 @@ namespace mgm {
         if (!is_backend_loaded()) return INVALID_BUFFER;
         
         const auto buf = data->create_buffer(data->backend, info);
+        if (buf == nullptr)
+            return INVALID_BUFFER;
+
         data->mutex.lock();
         const auto handle = static_cast<BufferHandle>(data->buffers.create(buf, info));
         data->mutex.unlock();
@@ -419,6 +422,9 @@ namespace mgm {
             raw_buffers.emplace_back(data->buffers[buf].buffer);
 
         const auto obj = data->create_buffers_object(data->backend, raw_buffers.data(), raw_buffers.size());
+        if (obj == nullptr)
+            return INVALID_BUFFERS_OBJECT;
+
         data->mutex.lock();
         const auto handle = static_cast<BuffersObjectHandle>(data->buffers_objects.create(obj));
         data->mutex.unlock();
@@ -441,6 +447,9 @@ namespace mgm {
         if (!is_backend_loaded()) return INVALID_SHADER;
 
         const auto shader = data->create_shader(data->backend, info);
+        if (shader == nullptr)
+            return INVALID_SHADER;
+
         data->mutex.lock();
         const auto handle = static_cast<ShaderHandle>(data->shaders.create(shader));
         data->mutex.unlock();
@@ -463,6 +472,9 @@ namespace mgm {
         if (!is_backend_loaded()) return INVALID_TEXTURE;
 
         const auto texture = data->create_texture(data->backend, info);
+        if (texture == nullptr)
+            return INVALID_TEXTURE;
+
         data->mutex.lock();
         const auto handle = static_cast<TextureHandle>(data->textures.create(texture));
         data->mutex.unlock();

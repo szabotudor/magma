@@ -510,7 +510,7 @@ namespace mgm {
     }
 
     EXPORT Shader* create_shader(BackendData* backend, const ShaderCreateInfo& info) {
-        mutex.lock();
+        std::unique_lock lock{mutex};
         backend->platform->make_current();
         GLuint prog = glCreateProgram();
 
@@ -543,8 +543,9 @@ namespace mgm {
             if (!success) {
                 char info_log[512];
                 glGetShaderInfoLog(shader_id, 512, nullptr, info_log);
-                log.error("Shader compilation failed: {}", info_log);
+                log.error("Shader compilation failed: ", info_log);
                 delete shader;
+                backend->platform->make_null_current();
                 return nullptr;
             }
 
@@ -560,10 +561,10 @@ namespace mgm {
             glGetProgramInfoLog(prog, 512, nullptr, info_log);
             log.error("Shader linking failed: {}", info_log);
             delete shader;
+            backend->platform->make_null_current();
             return nullptr;
         }
         backend->platform->make_null_current();
-        mutex.unlock();
 
         shader->prog = prog;
         return shader;
@@ -595,6 +596,7 @@ namespace mgm {
             default: {
                 log.error("Invalid number of channels for texture (must be 1-4)");
                 glDeleteTextures(1, &tex);
+                backend->platform->make_null_current();
                 return nullptr;
             }
         };
@@ -606,6 +608,7 @@ namespace mgm {
             default: {
                 log.error("Invalid channel size for texture (must be 1, 2, or 4)");
                 glDeleteTextures(1, &tex);
+                backend->platform->make_null_current();
                 return nullptr;
             }
         };

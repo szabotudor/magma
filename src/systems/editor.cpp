@@ -203,8 +203,15 @@ namespace mgm {
 
         ImGui::PushFont((ImFont*)font_id);
 
-        for (const auto window : windows)
+        for (size_t i = 0; i < windows.size(); ++i) {
+            auto& window = windows[i];
+            if (!window->open && window->remove_on_close) {
+                remove_window(window);
+                --i;
+                continue;
+            }
             window->draw_window();
+        }
 
         auto engine = MagmaEngine{};
 
