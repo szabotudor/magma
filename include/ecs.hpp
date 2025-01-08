@@ -111,22 +111,25 @@ namespace mgm {
     template<typename T>
     struct SerializedData {
         private:
-        JObject data{};
+        JObject json{};
 
         public:
         SerializedData() = default;
 
-        SerializedData(JObject& raw_json) : data(std::move(raw_json)) {}
-        SerializedData(const JObject& raw_json) : data(raw_json) {}
+        SerializedData(JObject& raw_json) : json(std::move(raw_json)) {}
+        SerializedData(const JObject& raw_json) : json(raw_json) {}
 
-        SerializedData(JObject&& raw_json) : data{std::forward<JObject>(raw_json)} {}
+        SerializedData(JObject&& raw_json) : json{std::forward<JObject>(raw_json)} {}
 
         operator JObject();
 
         template<typename I>
-        decltype(std::declval<JObject>().operator[](std::declval<I>())) operator[](I i) { return data[i]; }
+        decltype(std::declval<JObject>().operator[](std::declval<I>())) operator[](I i) { return json[i]; }
         template<typename I>
-        decltype(std::declval<const JObject>().operator[](std::declval<I>())) operator[](I i) const { return data[i]; }
+        decltype(std::declval<const JObject>().operator[](std::declval<I>())) operator[](I i) const { return json[i]; }
+
+        bool has(const std::string& key) const { return json.has(key); }
+        bool has(const size_t& index) const { return json.has(index); }
     };
 
 #if defined(ENABLE_EDITOR)
@@ -293,9 +296,11 @@ namespace mgm {
                 }
             }
 
-            type.add_component_to_entity = [](const MGMecs<>::Entity entity) {
-                MagmaEngine{}.ecs().ecs.get_or_emplace<T>(entity);
-            };
+            if constexpr (std::is_default_constructible_v<T>) {
+                type.add_component_to_entity = [](const MGMecs<>::Entity entity) {
+                    MagmaEngine{}.ecs().ecs.get_or_emplace<T>(entity);
+                };
+            }
             type.remove_component_from_entity = [](const MGMecs<>::Entity entity) {
                 MagmaEngine{}.ecs().ecs.try_remove<T>(entity);
             };
@@ -343,6 +348,20 @@ namespace mgm {
          */
         const std::unordered_map<std::string, SerializedType>& all_serialized_types() const {
             return serialized_types;
+        }
+
+        /**
+         * @brief Get the unique identifier of a type using its typeid hash
+         * 
+         * @tparam T The type to get the identifier of
+         * @return std::string The identifier of the type
+         */
+        template<typename T>
+        std::string type_unique_identifier() const {
+            const auto it = types_unique_ids.find(typeid(T).hash_code());
+            if (it == types_unique_ids.end())
+                return "";
+            return it->second;
         }
 
         /**
@@ -418,8 +437,8 @@ namespace mgm {
     SerializedData<T>::operator JObject() {
         MagmaEngine engine{};
         const auto it = engine.ecs().types_unique_ids.find(typeid(T).hash_code());
-        if (it != engine.ecs().types_unique_ids.end() && !data.has("__type"))
-            data["__type"] = it->second;
-        return data;
+        if (it != engine.ecs().types_unique_ids.end() && !json.has("__type"))
+            json["__type"] = it->second;
+        return json;
     }
 }
