@@ -122,6 +122,12 @@ namespace mgm {
             ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled));
 
         for (const auto& file : files_here) {
+            const auto ext_start = file.file_name().find_last_of('.');
+            const auto ext = file.file_name().substr(ext_start + 1);
+
+            if (only_good_extensions && ext != file_extension)
+                continue;
+
             if (ImGui::Selectable((file.file_name() + "##_files").c_str(), i == selected_file)) {
                 if (i == selected_file) {
                     file_name = file.file_name();

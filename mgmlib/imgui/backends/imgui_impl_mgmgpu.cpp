@@ -57,7 +57,7 @@ bool ImGui_ImplMgmGFX_Init(mgm::MgmGPU &backend) {
         "}\n"
     });
     fonts_shader_info.shader_sources.emplace_back(mgm::ShaderCreateInfo::SingleShaderInfo{
-        mgm::ShaderCreateInfo::SingleShaderInfo::Type::FRAGMENT,
+        mgm::ShaderCreateInfo::SingleShaderInfo::Type::PIXEL,
         "#version 460 core\n"
         "in vec2 Frag_TexCoords;\n"
         "in vec4 Frag_VertColor;\n"

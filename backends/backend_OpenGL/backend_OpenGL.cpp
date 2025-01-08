@@ -523,7 +523,7 @@ namespace mgm {
                     shader_type = GL_VERTEX_SHADER;
                     shader->type = Shader::Type::GRAPHICS;
                     break;
-                case ShaderCreateInfo::SingleShaderInfo::Type::FRAGMENT:
+                case ShaderCreateInfo::SingleShaderInfo::Type::PIXEL:
                     shader_type = GL_FRAGMENT_SHADER;
                     shader->type = Shader::Type::GRAPHICS;
                     break;

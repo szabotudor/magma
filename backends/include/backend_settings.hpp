@@ -84,7 +84,7 @@ namespace mgm {
         };
         struct SingleShaderInfo {
             enum class Type {
-                VERTEX, FRAGMENT, COMPUTE
+                VERTEX, PIXEL, COMPUTE
             } type = Type::VERTEX;
             std::string source{};
         };

@@ -11,10 +11,6 @@ namespace mgm {
 
         for (const auto& window : windows) {
             ImGui::Checkbox(window->window_name.c_str(), &window->open);
-            if (!window->open && window->remove_on_close) {
-                remove_window(window);
-                break;
-            }
         }
 
         if (begin_window_here("File", true)) {
