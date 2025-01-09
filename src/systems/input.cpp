@@ -245,7 +245,7 @@ namespace mgm {
                     if (it == input_stack.end())
                         input_stack.emplace_back(event.input);
                 }
-                else if (event.mode == MgmWindow::InputEvent::Mode::RELEASE) {
+                else if (event.mode == MgmWindow::InputEvent::Mode::RELEASE && !input_stack.empty()) {
                     const auto it = std::find(input_stack.begin(), input_stack.end(), event.input);
                     if (it == input_stack.begin()) {
                         const auto action = input_stack.back();
