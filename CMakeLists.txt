@@ -51,7 +51,7 @@ endif()
 
 option(ENABLE_EDITOR "If true, will compile the editor" ON)
 
-add_subdirectory(${CMAKE_SOURCE_DIR}/luajit)
+#add_subdirectory(${CMAKE_SOURCE_DIR}/luajit)
 add_subdirectory(${CMAKE_SOURCE_DIR}/mgmcommon)
 add_subdirectory(${CMAKE_SOURCE_DIR}/mgmwin)
 add_subdirectory(${CMAKE_SOURCE_DIR}/backends)
@@ -82,7 +82,7 @@ add_library(
         ${CMAKE_CURRENT_SOURCE_DIR}/src/systems/input.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/systems/notifications.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/systems/resources.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/tools/lua_vm.cpp
+        #${CMAKE_CURRENT_SOURCE_DIR}/src/tools/lua_vm.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/built-in_components/renderable.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/ecs.cpp
 
@@ -94,7 +94,7 @@ add_library(
         ${CMAKE_CURRENT_SOURCE_DIR}/include/systems.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/include/tools/base64.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/include/tools/tiny_obj_loader.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/tools/lua_vm.hpp
+        #${CMAKE_CURRENT_SOURCE_DIR}/include/tools/lua_vm.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/include/tools/mgmecs.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/include/built-in_components/renderable.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/include/ecs.hpp
@@ -110,7 +110,7 @@ endif()
 enable_warnings(magma)
 
 get_target_property(MGMCOMMON_INCLUDE_DIRS mgmcommon INTERFACE_INCLUDE_DIRECTORIES)
-get_target_property(LUAJIT_INCLUDE_DIRS luajit INTERFACE_INCLUDE_DIRECTORIES)
+#get_target_property(LUAJIT_INCLUDE_DIRS luajit INTERFACE_INCLUDE_DIRECTORIES)
 
 target_include_directories(
     magma
@@ -118,9 +118,9 @@ target_include_directories(
             ${CMAKE_CURRENT_SOURCE_DIR}/include
         PRIVATE
             ${MGMCOMMON_INCLUDE_DIRS}
-            ${LUAJIT_INCLUDE_DIRS}
+            #${LUAJIT_INCLUDE_DIRS}
 )
-target_link_libraries(magma PUBLIC mgmcommon mgmwin mgmlib luajit)
+target_link_libraries(magma PUBLIC mgmcommon mgmwin mgmlib)
 
 add_custom_command(TARGET magma POST_BUILD
     COMMAND cmake -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/mgmcommon/include ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/include

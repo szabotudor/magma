@@ -25,6 +25,7 @@ else()
 endif()
 
 
+# TODO: Fix lua on windows
 ExternalProject_Add(luajit_project
     PREFIX ${CMAKE_CURRENT_BINARY_DIR}
     SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src
