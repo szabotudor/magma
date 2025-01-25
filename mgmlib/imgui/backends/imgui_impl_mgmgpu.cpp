@@ -5,6 +5,7 @@
 #include "mgmath.hpp"
 #include "mgmgpu.hpp"
 #include "mgmwin.hpp"
+#include "shaders.hpp"
 #include <cstdint>
 #include <stdexcept>
 
@@ -22,7 +23,7 @@ ImGui_BackendData* get_backend_data() {
     throw std::runtime_error("ImGui backend not initialized");
 }
 
-bool ImGui_ImplMgmGFX_Init(mgm::MgmGPU &backend) {
+bool ImGui_ImplMgmGFX_Init(mgm::MgmGPU &backend, const std::string& shader_source) {
     const auto ctx = ImGui::CreateContext();
     ImGui::SetCurrentContext(ctx);
 
@@ -36,39 +37,49 @@ bool ImGui_ImplMgmGFX_Init(mgm::MgmGPU &backend) {
     uint8_t* tex_data = nullptr;
     mgm::vec2i32 size{};
     io.Fonts->GetTexDataAsRGBA32(&tex_data, &size.x(), &size.y());
-    const auto texture_info = mgm::TextureCreateInfo{4, 1, 2, size, tex_data};
+    const auto texture_info = mgm::TextureCreateInfo{
+        .name = "Texture",
+        .num_channels = 4,
+        .channel_size_in_bytes = 1,
+        .dimmentions = 2,
+        .size = size,
+        .data = tex_data
+    };
     const auto fonts_texture = backend.create_texture(texture_info);
     io.Fonts->SetTexID(reinterpret_cast<void*>(static_cast<intptr_t>(fonts_texture.id)));
+
+    mgm::MgmGPUShaderBuilder shader_builder{};
+    shader_builder.build(shader_source);
+
+    // mgm::ShaderCreateInfo fonts_shader_info{};
+    // fonts_shader_info.shader_sources.emplace_back(mgm::ShaderCreateInfo::SingleShaderInfo{
+    //     mgm::ShaderCreateInfo::SingleShaderInfo::Type::VERTEX,
+    //     "#version 460 core\n"
+    //     "layout (location = 0) in vec3 Vert;\n"
+    //     "layout (location = 1) in vec4 VertColor;\n"
+    //     "layout (location = 2) in vec2 TexCoords;\n"
+    //     "uniform mat4 Proj;\n"
+    //     "out vec2 Frag_TexCoords;\n"
+    //     "out vec4 Frag_VertColor;\n"
+    //     "void main() {\n"
+    //     "   Frag_TexCoords = TexCoords;\n"
+    //     "   Frag_VertColor = VertColor;\n"
+    //     "   gl_Position = Proj * vec4(Vert, 1.0f);\n"
+    //     "}\n"
+    // });
+    // fonts_shader_info.shader_sources.emplace_back(mgm::ShaderCreateInfo::SingleShaderInfo{
+    //     mgm::ShaderCreateInfo::SingleShaderInfo::Type::PIXEL,
+    //     "#version 460 core\n"
+    //     "in vec2 Frag_TexCoords;\n"
+    //     "in vec4 Frag_VertColor;\n"
+    //     "uniform sampler2D Texture;\n"
+    //     "out vec4 FragColor;"
+    //     "void main() {\n"
+    //     "   FragColor = Frag_VertColor * texture(Texture, Frag_TexCoords);\n"
+    //     "}\n"
+    // });
     
-    mgm::ShaderCreateInfo fonts_shader_info{};
-    fonts_shader_info.shader_sources.emplace_back(mgm::ShaderCreateInfo::SingleShaderInfo{
-        mgm::ShaderCreateInfo::SingleShaderInfo::Type::VERTEX,
-        "#version 460 core\n"
-        "layout (location = 0) in vec3 Vert;\n"
-        "layout (location = 1) in vec4 VertColor;\n"
-        "layout (location = 2) in vec2 TexCoords;\n"
-        "uniform mat4 Proj;\n"
-        "out vec2 Frag_TexCoords;\n"
-        "out vec4 Frag_VertColor;\n"
-        "void main() {\n"
-        "   Frag_TexCoords = TexCoords;\n"
-        "   Frag_VertColor = VertColor;\n"
-        "   gl_Position = Proj * vec4(Vert, 1.0f);\n"
-        "}\n"
-    });
-    fonts_shader_info.shader_sources.emplace_back(mgm::ShaderCreateInfo::SingleShaderInfo{
-        mgm::ShaderCreateInfo::SingleShaderInfo::Type::PIXEL,
-        "#version 460 core\n"
-        "in vec2 Frag_TexCoords;\n"
-        "in vec4 Frag_VertColor;\n"
-        "uniform sampler2D Texture;\n"
-        "out vec4 FragColor;"
-        "void main() {\n"
-        "   FragColor = Frag_VertColor * texture(Texture, Frag_TexCoords);\n"
-        "}\n"
-    });
-    
-    const auto fonts_shader = backend.create_shader(fonts_shader_info);
+    const auto fonts_shader = backend.create_shader(shader_builder);
 
     io.BackendRendererUserData = new ImGui_BackendData{
         &backend,
@@ -102,7 +113,14 @@ void ImGui_ImplMgmGFX_NewFrame() {
         uint8_t* tex_data = nullptr;
         mgm::vec2i32 size{};
         io.Fonts->GetTexDataAsRGBA32(&tex_data, &size.x(), &size.y());
-        const auto texture_info = mgm::TextureCreateInfo{4, 1, 2, size, tex_data};
+        const auto texture_info = mgm::TextureCreateInfo {
+            .name = "Texture",
+            .num_channels = 4,
+            .channel_size_in_bytes = 1,
+            .dimmentions = 2,
+            .size = size,
+            .data = tex_data
+        };
         backend.destroy_texture(data->font_atlas);
         data->font_atlas = backend.create_texture(texture_info);
         io.Fonts->SetTexID(reinterpret_cast<void*>(static_cast<intptr_t>(data->font_atlas.id)));
@@ -212,7 +230,12 @@ void ImGui_ImplMgmGFX_RenderDrawData(ExtractedDrawData& draw_data) {
 
             const auto mesh_indices = backend.create_buffer({mgm::BufferCreateInfo::Type::INDEX, cmd.indices.data() + cmd_data.idx_offset, cmd_data.elem_count});
             leftover_buffers.emplace_back(mesh_indices);
-            const auto mesh = backend.create_buffers_object({mesh_verts, mesh_colors, mesh_coords, mesh_indices});
+            const auto mesh = backend.create_buffers_object({
+                {"Vert", mesh_verts},
+                {"VertColor", mesh_colors},
+                {"TexCoords", mesh_coords},
+                {"", mesh_indices}
+            });
 
             draw_list.emplace_back(mgm::MgmGPU::DrawCall{
                 .type = mgm::MgmGPU::DrawCall::Type::DRAW,

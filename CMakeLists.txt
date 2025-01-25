@@ -40,7 +40,7 @@ if(WIN32)
     set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_RELEASE ${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
 endif()
 
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 set(CMAKE_C_STANDARD 17)
 set(CMAKE_C_STANDARD_REQUIRED TRUE)
@@ -81,6 +81,7 @@ add_library(
         ${CMAKE_CURRENT_SOURCE_DIR}/src/systems.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/systems/input.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/systems/notifications.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/systems/resources.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/tools/lua_vm.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/built-in_components/renderable.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/ecs.cpp
@@ -89,7 +90,10 @@ add_library(
         ${CMAKE_CURRENT_SOURCE_DIR}/include/tools/expose_api.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/include/systems/input.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/include/systems/notifications.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/systems/resources.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/include/systems.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/tools/base64.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/tools/tiny_obj_loader.h
         ${CMAKE_CURRENT_SOURCE_DIR}/include/tools/lua_vm.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/include/tools/mgmecs.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/include/built-in_components/renderable.hpp

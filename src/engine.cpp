@@ -10,6 +10,7 @@
 #include "mgmwin.hpp"
 #include "systems/notifications.hpp"
 #include "file.hpp"
+#include "systems/resources.hpp"
 
 #if defined(ENABLE_EDITOR)
 #include "systems/editor.hpp"
@@ -58,6 +59,7 @@ namespace mgm {
 
     FileIO& MagmaEngine::file_io() { return *data->file_io; }
     MgmWindow& MagmaEngine::window() { return *data->window; }
+    ResourceManager& MagmaEngine::resource_manager() { return systems().get<ResourceManager>(); }
     Input& MagmaEngine::input() { return systems().get<Input>(); }
     Notifications& MagmaEngine::notifications() { return systems().get<Notifications>(); }
     MgmGPU& MagmaEngine::graphics() { return *data->graphics; }
@@ -127,8 +129,11 @@ namespace mgm {
         });
 
 
-        ImGui_ImplMgmGFX_Init(graphics());
+        const auto imgui_shader_source = file_io().read_text("resources://shaders/imgui.shader");
 
+        ImGui_ImplMgmGFX_Init(graphics(), imgui_shader_source);
+
+        systems().create<ResourceManager>();
         systems().create<Input>();
         systems().create<Notifications>();
         systems().create<EntityComponentSystem>();
@@ -142,13 +147,19 @@ namespace mgm {
         {
         }
 
-        ecs().enable_type_serialization<Transform>("Transform", true);
         ecs().enable_type_serialization<vec2f>("vec2f");
         ecs().enable_type_serialization<vec3f>("vec3f");
         ecs().enable_type_serialization<vec4f>("vec4f");
         ecs().enable_type_serialization<vec2d>("vec2d");
         ecs().enable_type_serialization<vec3d>("vec3d");
         ecs().enable_type_serialization<vec4d>("vec4d");
+        ecs().enable_type_serialization<Transform>("Transform", true);
+
+        ecs().enable_type_serialization<ResourceReference<Mesh>>("Mesh", true);
+        resource_manager().asociate_resource_with_file_extension<Mesh>("obj");
+
+        ecs().enable_type_serialization<ResourceReference<Shader>>("Shader", true);
+        resource_manager().asociate_resource_with_file_extension<Shader>("shader");
 
         initialized = true;
     }
@@ -231,7 +242,8 @@ namespace mgm {
                 graphics_settings_mutex.unlock();
             }
 
-            // Sleep the thread for a bit to save CPU cycles
+            // Sleep the thread for a bit to not stress the CPU too much
+            // TODO: Do this better, because this is just a hack
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
 

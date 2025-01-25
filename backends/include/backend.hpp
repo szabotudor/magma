@@ -4,6 +4,7 @@
 
 #include "backend_settings.hpp"
 #include "native_window.hpp"
+#include "shaders.hpp"
 
 #if !defined(WIN32)
 #define EXPORT extern "C"
@@ -111,7 +112,7 @@ namespace mgm {
      * @param count The number of buffers
      * @return A pointer to the created BuffersObject
      */
-    EXPORT BuffersObject* create_buffers_object(BackendData* backend, Buffer** buffers, size_t count);
+    EXPORT BuffersObject* create_buffers_object(BackendData* backend, Buffer** buffers, const std::string* names, size_t count);
 
     /**
      * @brief Destroy a BuffersObject
@@ -128,7 +129,7 @@ namespace mgm {
      * @param info The information needed to create the shader
      * @return A pointer to the created shader
      */
-    EXPORT Shader* create_shader(BackendData* backend, const ShaderCreateInfo& info);
+    EXPORT Shader* create_shader(BackendData* backend, const MgmGPUShaderBuilder& info);
 
     /**
      * @brief Destroy a shader

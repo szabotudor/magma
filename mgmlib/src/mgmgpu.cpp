@@ -9,6 +9,7 @@
 #include "mgmgpu.hpp"
 
 #include "mgmwin.hpp"
+#include "shaders.hpp"
 
 #if defined(EMBED_BACKEND)
 #include "backend.hpp"
@@ -122,9 +123,9 @@ namespace mgm {
         using CreateBuffer = Buffer*(*)(BackendData* backend, const BufferCreateInfo& info);
         using BufferData = void(*)(BackendData* backend, Buffer* buffer, const void* data, size_t size);
         using DestroyBuffer = void(*)(BackendData* backend, Buffer* buffer);
-        using CreateBuffersObject = BuffersObject*(*)(BackendData* backend, Buffer** buffers, size_t count);
+        using CreateBuffersObject = BuffersObject*(*)(BackendData* backend, Buffer** buffers, const std::string* names, size_t count);
         using DestroyBuffersObject = void(*)(BackendData* backend, BuffersObject* buffers_object);
-        using CreateShader = Shader*(*)(BackendData* backend, const ShaderCreateInfo& info);
+        using CreateShader = Shader*(*)(BackendData* backend, const MgmGPUShaderBuilder& info);
         using DestroyShader = void(*)(BackendData* backend, Shader* shader);
         using CreateTexture = Texture*(*)(BackendData* backend, const TextureCreateInfo& info);
         using DestroyTexture = void(*)(BackendData* backend, Texture* texture);
@@ -177,17 +178,6 @@ namespace mgm {
         Logging log{"MgmGPU"};
     };
 
-    MgmGPU::MgmGPU(MgmGPU& gpu) {
-        data = gpu.data;
-        gpu.data = nullptr;
-        gpu.window = nullptr;
-    }
-    MgmGPU& MgmGPU::operator=(MgmGPU& gpu) {
-        data = gpu.data;
-        gpu.data = nullptr;
-        gpu.window = nullptr;
-        return *this;
-    }
 
     MgmGPU::MgmGPU(MgmWindow* window_to_connect) {
         data = new Data{};
@@ -414,14 +404,17 @@ namespace mgm {
         data->destroy_buffer(data->backend, buf.buffer);
     }
 
-    MgmGPU::BuffersObjectHandle MgmGPU::create_buffers_object(const std::vector<BufferHandle> &buffers) {
+    MgmGPU::BuffersObjectHandle MgmGPU::create_buffers_object(const std::unordered_map<std::string, BufferHandle> &buffers) {
         if (!is_backend_loaded()) return INVALID_BUFFERS_OBJECT;
 
         std::vector<Buffer*> raw_buffers{};
-        for (const auto& buf : buffers)
+        std::vector<std::string> buffer_names{};
+        for (const auto& [buf_name, buf] : buffers) {
             raw_buffers.emplace_back(data->buffers[buf].buffer);
+            buffer_names.emplace_back(buf_name);
+        }
 
-        const auto obj = data->create_buffers_object(data->backend, raw_buffers.data(), raw_buffers.size());
+        const auto obj = data->create_buffers_object(data->backend, raw_buffers.data(), buffer_names.data(), raw_buffers.size());
         if (obj == nullptr)
             return INVALID_BUFFERS_OBJECT;
 
@@ -443,10 +436,10 @@ namespace mgm {
         data->destroy_buffers_object(data->backend, buf);
     }
 
-    MgmGPU::ShaderHandle MgmGPU::create_shader(const ShaderCreateInfo &info) {
+    MgmGPU::ShaderHandle MgmGPU::create_shader(const MgmGPUShaderBuilder &builder) {
         if (!is_backend_loaded()) return INVALID_SHADER;
 
-        const auto shader = data->create_shader(data->backend, info);
+        const auto shader = data->create_shader(data->backend, builder);
         if (shader == nullptr)
             return INVALID_SHADER;
 
@@ -468,7 +461,7 @@ namespace mgm {
         data->destroy_shader(data->backend, sh);
     }
 
-    MgmGPU::TextureHandle MgmGPU::create_texture(const TextureCreateInfo &info) {
+    MgmGPU::TextureHandle MgmGPU::create_texture(const TextureCreateInfo& info) {
         if (!is_backend_loaded()) return INVALID_TEXTURE;
 
         const auto texture = data->create_texture(data->backend, info);

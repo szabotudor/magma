@@ -13,6 +13,7 @@ struct ImFont;
 namespace mgm {
     class FileIO;
     class MgmWindow;
+    class ResourceManager;
     class Input;
     class Notifications;
     class MgmGPU;
@@ -39,6 +40,7 @@ namespace mgm {
         public:
         FileIO& file_io();
         MgmWindow& window();
+        ResourceManager& resource_manager();
         Input& input();
         Notifications& notifications();
         MgmGPU& graphics();

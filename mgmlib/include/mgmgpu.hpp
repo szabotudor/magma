@@ -1,5 +1,6 @@
 #pragma once
 #include "mgmwin.hpp"
+#include "shaders.hpp"
 #include "types.hpp"
 #include "backend_settings.hpp"
 
@@ -57,9 +58,6 @@ namespace mgm {
         public:
         MgmGPU(const MgmGPU&) = delete;
         MgmGPU& operator=(const MgmGPU&) = delete;
-
-        MgmGPU(MgmGPU& gpu);
-        MgmGPU& operator=(MgmGPU& gpu);
 
         MgmGPU(MgmWindow* window = nullptr);
 
@@ -138,7 +136,7 @@ namespace mgm {
          * @param buffers The buffers to bind to the buffers object
          * @return BuffersObjectHandle A handle to the created buffers object
          */
-        BuffersObjectHandle create_buffers_object(const std::vector<BufferHandle> &buffers);
+        BuffersObjectHandle create_buffers_object(const std::unordered_map<std::string, BufferHandle> &buffers);
 
         /**
          * @brief Destroy a buffers object (This will not destroy the buffers bound to it)
@@ -153,7 +151,7 @@ namespace mgm {
          * @param info The shader creation info
          * @return ShaderHandle A handle to the created shader
          */
-        ShaderHandle create_shader(const ShaderCreateInfo &info);
+        ShaderHandle create_shader(const MgmGPUShaderBuilder &builder);
 
         /**
          * @brief Destroy a shader
@@ -168,7 +166,7 @@ namespace mgm {
          * @param info The texture creation info
          * @return TextureHandle A handle to the created texture
          */
-        TextureHandle create_texture(const TextureCreateInfo &info);
+        TextureHandle create_texture(const TextureCreateInfo& info);
 
         /**
          * @brief Destroy a texture

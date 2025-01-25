@@ -93,7 +93,7 @@ target_include_directories(
             ${MGMCOMMON_INCLUDE_DIRS}
             ${MGMWIN_INCLUDE_DIRS}
 )
-target_link_libraries(mgmlib mgmcommon)
+target_link_libraries(mgmlib mgmcommon backends)
 
 if (UNIX AND NOT APPLE)
     target_link_options(mgmlib PUBLIC -ldl)

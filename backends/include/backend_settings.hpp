@@ -2,7 +2,7 @@
 #include "mgmath.hpp"
 #include <string>
 #include <typeinfo>
-#include <vector>
+#include <unordered_map>
 
 
 namespace mgm {
@@ -88,10 +88,11 @@ namespace mgm {
             } type = Type::VERTEX;
             std::string source{};
         };
-        std::vector<SingleShaderInfo> shader_sources{};
+        std::unordered_map<std::string, std::string> shader_sources{};
     };
 
     struct TextureCreateInfo {
+        std::string name{};
         int32_t num_channels = 4;
         int32_t channel_size_in_bytes = 1;
         int32_t dimmentions = 2;

@@ -12,10 +12,14 @@ elseif(WIN32)
     )
 endif()
 
-add_library(backends INTERFACE)
+add_library(
+    backends STATIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/shaders.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/shaders.hpp
+)
 target_include_directories(
     backends
-        INTERFACE
+        PUBLIC
             ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 

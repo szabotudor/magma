@@ -1,7 +1,9 @@
 #include "backend.hpp"
 #include "backend_OpenGL.hpp"
 #include "glad/glad.h"
+#include "shaders.hpp"
 #include <atomic>
+#include <iostream>
 #include <mutex>
 
 
@@ -24,18 +26,6 @@ namespace mgm {
         }
     };
 
-    struct BuffersObject {
-        std::vector<Buffer*> buffers{};
-        size_t size = 0;
-        GLuint vao = 0;
-        bool has_index_buffer = false;
-
-        ~BuffersObject() {
-            if (vao)
-                glDeleteVertexArrays(1, &vao);
-        }
-    };
-
     struct Shader {
         enum class Type {
             GRAPHICS, COMPUTE
@@ -49,7 +39,21 @@ namespace mgm {
         }
     };
 
+    struct BuffersObject {
+        std::unordered_map<std::string, Buffer*> buffers{};
+        size_t size = 0;
+        GLuint vao = 0;
+        bool has_index_buffer = false;
+        Shader* last_used_shader = nullptr;
+
+        ~BuffersObject() {
+            if (vao)
+                glDeleteVertexArrays(1, &vao);
+        }
+    };
+
     struct Texture {
+        std::string name{};
         GLuint tex = 0;
         GLuint fbo = (GLuint)-1;
         GLuint rbo = (GLuint)-1;
@@ -295,23 +299,34 @@ namespace mgm {
 
             if (!draw_call.textures.empty()) {
                 for (size_t i = 0; i < draw_call.textures.size(); i++) {
-                    glActiveTexture(GL_TEXTURE0 + static_cast<GLenum>(i));
-                    glBindTexture(GL_TEXTURE_2D, draw_call.textures[i]->tex);
+                    if (!draw_call.textures[i]->name.empty()) {
+                        const auto& name = draw_call.textures[i]->name;
+                        const auto it = draw_call.shader->uniform_locations.find(name);
+                        if (it == draw_call.shader->uniform_locations.end()) {
+                            const auto loc = glGetUniformLocation(draw_call.shader->prog, name.c_str());
+                            if (loc == -1) {
+                                log.error("Could not find texture '", name, "' in shader");
+                                continue;
+                            }
+                            draw_call.shader->uniform_locations[name] = loc;
+                            glActiveTexture(GL_TEXTURE0 + static_cast<GLenum>(loc - 1));
+                            glBindTexture(GL_TEXTURE_2D, draw_call.textures[i]->tex);
+                        }
+                        else {
+                            glActiveTexture((GLenum)it->second);
+                            glBindTexture(GL_TEXTURE_2D, draw_call.textures[i]->tex);
+                        }
+                    }
+                    else {
+                        glActiveTexture(GL_TEXTURE0 + static_cast<GLenum>(i));
+                        glBindTexture(GL_TEXTURE_2D, draw_call.textures[i]->tex);
+                    }
                 }
             }
 
-            for (size_t i = 0; i < draw_call.buffers_object->buffers.size(); i++) {
-                const auto buf = draw_call.buffers_object->buffers[i];
-                if (buf->is_element_array) {
-                    if (draw_call.buffers_object->size != buf->size) {
-                        setup_vao_attrib_pointers(draw_call.buffers_object);
-                        break;
-                    }
-                }
-                else if (buf->bind_location != (GLint)i) {
-                    setup_vao_attrib_pointers(draw_call.buffers_object);
-                    break;
-                }
+            if (draw_call.buffers_object->last_used_shader != draw_call.shader) {
+                draw_call.buffers_object->last_used_shader = draw_call.shader;
+                setup_vao_attrib_pointers(draw_call.buffers_object);
             }
 
             glBindVertexArray(draw_call.buffers_object->vao);
@@ -434,13 +449,10 @@ namespace mgm {
 
     void setup_vao_attrib_pointers(BuffersObject* buffers) {
         Buffer* ebo = nullptr;
-        std::vector<Buffer*> vertex_buffers{};
-        vertex_buffers.reserve(buffers->buffers.size());
 
         size_t data_point_count = (size_t)-1;
 
-        for (size_t i = 0; i < buffers->buffers.size(); i++) {
-            const auto buf = buffers->buffers[i];
+        for (const auto& [name, buf] : buffers->buffers) {
             if (buf->is_element_array) {
                 if (ebo) {
                     log.error("Only one index buffer is allowed per buffers object");
@@ -450,7 +462,6 @@ namespace mgm {
                 data_point_count = buf->size;
                 continue;
             }
-            vertex_buffers.emplace_back(buf);
 
             if (data_point_count == (size_t)-1)
                 data_point_count = buf->size;
@@ -462,12 +473,21 @@ namespace mgm {
 
         glBindVertexArray(buffers->vao);
 
-        for (size_t i = 0; i < vertex_buffers.size(); i++) {
-            const auto buf = vertex_buffers[i];
+        for (const auto& [name, buf] : buffers->buffers) {
+            if (buf == ebo)
+                continue;
+
+            const auto loc = glGetAttribLocation(buffers->last_used_shader->prog, name.c_str());
+
+            if (loc == GL_INVALID) {
+                log.error("No buffer by the name \"", name, "\"");
+                return;
+            }
+
             glBindBuffer(GL_ARRAY_BUFFER, buf->buffer);
-            glVertexAttribPointer(static_cast<GLuint>(i), static_cast<GLint>(buf->gl_data_type_point_count), (GLenum)buf->gl_data_type, GL_FALSE, 0, nullptr);
-            glEnableVertexAttribArray(static_cast<GLuint>(i));
-            buf->bind_location = static_cast<GLint>(i);
+            glVertexAttribPointer(static_cast<GLuint>(loc), static_cast<GLint>(buf->gl_data_type_point_count), (GLenum)buf->gl_data_type, GL_FALSE, 0, nullptr);
+            glEnableVertexAttribArray(static_cast<GLuint>(loc));
+            buf->bind_location = loc;
         }
         if (ebo) {
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo->buffer);
@@ -475,25 +495,22 @@ namespace mgm {
         }
 
         buffers->size = data_point_count;
-        buffers->buffers = std::move(vertex_buffers);
-        if (ebo)
-            buffers->buffers.emplace_back(ebo);
 
         glBindVertexArray(0);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     }
 
-    EXPORT BuffersObject* create_buffers_object(BackendData* backend, Buffer** buffers, size_t count) {
+    EXPORT BuffersObject* create_buffers_object(BackendData* backend, Buffer** buffers, const std::string* names, size_t count) {
         const auto buffers_object = new BuffersObject{};
 
         mutex.lock();
         backend->platform->make_current();
 
         glGenVertexArrays(1, &buffers_object->vao);
-        buffers_object->buffers = std::vector<Buffer*>{buffers, buffers + count};
-
-        setup_vao_attrib_pointers(buffers_object);
+        buffers_object->buffers.clear();
+        for (size_t i = 0; i < count; ++i)
+            buffers_object->buffers.emplace(names[i], buffers[i]);
 
         backend->platform->make_null_current();
         mutex.unlock();
@@ -509,48 +526,209 @@ namespace mgm {
         mutex.unlock();
     }
 
-    EXPORT Shader* create_shader(BackendData* backend, const ShaderCreateInfo& info) {
+    struct _GLSLSources {
+        std::string vertex{}, fragment{};
+    };
+    std::string generate_func_body(MgmGPUShaderBuilder& builder, MgmGPUShaderBuilder::Function& func, const std::string& func_name) {
+        std::string func_body{};
+
+        for (auto& line : func.lines) {
+            auto& ops = line.operations;
+            for (size_t i = 0; i < ops.size(); ++i) {
+                const auto it = std::find(func.all_ops.begin(), func.all_ops.end(), ops[i]);
+                if (it != func.all_ops.end()) {
+                    if (*it == "()") {
+                        const auto arg_c = std::stoull(ops[i - 1]);
+                        if (arg_c == 1 && ops[i - 2].empty()) {
+                            const auto cont = ops[i - 3];
+                            i -= arg_c + 2;
+                            ops.erase(ops.begin() + (long)i, ops.begin() + (long)(i + arg_c + 3));
+                            ops.insert(ops.begin() + (long)i, cont);
+                        }
+                        else {
+                            std::string op_res = ops[i - 2] + '(';
+                            for (size_t j = i - arg_c - 2; j < i - 2; ++j) {
+                                op_res += ops[j];
+                                if (arg_c > 1 && j < i - 3)
+                                    op_res += ',';
+                            }
+                            op_res += ')';
+                            i -= arg_c + 2;
+                            ops.erase(ops.begin() + (long)i, ops.begin() + (long)(i + arg_c + 3));
+                            ops.insert(ops.begin() + (long)i, op_res);
+                        }
+                    }
+                    else if (*it == "[]") {
+                        std::string op_res{};
+                        if (builder.textures.contains(ops[i - 2]))
+                            op_res = "texture(" + ops[i - 2] + ", " + ops[i - 1] + ")";
+                        else
+                            op_res = ops[i - 2] + '[' + ops[i - 1] + ']';
+                        i -= 2;
+                        ops.erase(ops.begin() + (long)i, ops.begin() + (long)(i + 3));
+                        ops.insert(ops.begin() + (long)i, op_res);
+                    }
+                    else {
+                        const auto op_res = ops[i - 2] + ops[i] + ops[i - 1];
+                        i -= 2;
+                        ops.erase(ops.begin() + (long)i, ops.begin() + (long)(i + 3));
+                        ops.insert(ops.begin() + (long)i, op_res);
+                    }
+                }
+                else if (ops[i] == "return") {
+                    if (ops.size() != 2)
+                        return "";
+
+                    if (func_name == "vertex")
+                        func_body += "gl_Position = " + ops[0] + ";\nreturn;\n";
+                    else if (func_name == "pixel")
+                        func_body += "out_FragColor = " + ops[0] + ";\nreturn;\n";
+                    else
+                        func_body += "return " + ops[0] + ";\n";
+                    ops = {};
+                }
+                else if (ops[i] == "var") {
+                    if (ops.size() != 4)
+                        return "";
+                    func_body += ops[2] + ' ' + ops[1];
+                    if (ops[0].empty())
+                        func_body += ";\n";
+                    else
+                        func_body += " = " + ops[0] + ";\n";
+                    ops = {};
+                }
+            }
+
+            if (!line.state.empty()) {
+                if (line.state.ends_with("if"))
+                    func_body += "if (";
+                else if (line.state.ends_with("while"))
+                    func_body += "while (";
+
+                func_body += line.operations[0] + ")\n{\n" + generate_func_body(builder, builder.pseudo_functions.at(line.state), line.state) + "}\n";
+                continue;
+            }
+
+            if (ops.size() > 1)
+                return "";
+            else if (ops.size() == 1)
+                func_body += ops.front() + ";\n";
+        }
+
+        return func_body;
+    }
+    _GLSLSources make_glsl_from_builder(MgmGPUShaderBuilder& builder) {
+        if (!builder.errors.empty()) {
+            for (const auto& error : builder.errors)
+                Logging{"Shader Builder"}.error(error.message, " at ", std::to_string(error.line), ":", std::to_string(error.column));
+            return {};
+        }
+
+        std::string vertex{"#version 460 core\n\n"};
+        std::string fragment{"#version 460 core\n\n"};
+        
+        const auto vit = builder.functions.find("vertex");
+        if (vit != builder.functions.end()) {
+            for (const auto& [param, type] : vit->second.function_parameters) {
+                vertex += "in " + type + " " + param + ";\n";
+            }
+        }
+
+        vertex += '\n';
+
+        for (const auto& [name, parameter] : builder.parameters) {
+            vertex += "uniform " + parameter.type_name + ' ' + name + ";\n";
+            fragment += "uniform " + parameter.type_name + ' ' + name + ";\n";
+        }
+
+        vertex += '\n';
+        fragment += '\n';
+
+        for (const auto& [name, texture] : builder.textures)
+            fragment += "uniform sampler" + std::to_string(texture.dimensions) + "D " + name + ";\n";
+        
+        fragment += '\n';
+
+        const auto pit = builder.functions.find("pixel");
+        if (pit != builder.functions.end()) {
+            for (const auto& [param, type] : pit->second.function_parameters) {
+                vertex += "out " + type + ' ' + param + ";\n";
+                fragment += "in " + type + ' ' + param + ";\n";
+            }
+        }
+
+        vertex += '\n';
+        fragment += "\n\nout vec4 out_FragColor;\n\n";
+
+        for (auto& [name, function] : builder.functions) {
+            const auto func_body = generate_func_body(builder, function, name);
+            if (name == "vertex")
+                vertex += "void main() {\n" + func_body + "}\n";
+            else if (name == "pixel")
+                fragment += "void main() {\n" + func_body + "}\n";
+        }
+
+        return {
+            .vertex = vertex,
+            .fragment = fragment
+        };
+    }
+
+    EXPORT Shader* create_shader(BackendData* backend, const MgmGPUShaderBuilder& original_builder) {
         std::unique_lock lock{mutex};
         backend->platform->make_current();
         GLuint prog = glCreateProgram();
 
         Shader* shader = new Shader{};
 
-        for (const auto& shader_info : info.shader_sources) {
-            GLuint shader_type{};
-            switch (shader_info.type) {
-                case ShaderCreateInfo::SingleShaderInfo::Type::VERTEX:
-                    shader_type = GL_VERTEX_SHADER;
-                    shader->type = Shader::Type::GRAPHICS;
-                    break;
-                case ShaderCreateInfo::SingleShaderInfo::Type::PIXEL:
-                    shader_type = GL_FRAGMENT_SHADER;
-                    shader->type = Shader::Type::GRAPHICS;
-                    break;
-                case ShaderCreateInfo::SingleShaderInfo::Type::COMPUTE:
-                    shader_type = GL_COMPUTE_SHADER;
-                    shader->type = Shader::Type::COMPUTE;
-                    break;
-            }
+        auto builder = original_builder;
 
-            GLuint shader_id = glCreateShader(shader_type);
-            const char* source = shader_info.source.c_str();
-            glShaderSource(shader_id, 1, &source, nullptr);
-            glCompileShader(shader_id);
+        if (builder.functions.contains("compute")) {
+            shader->type = Shader::Type::COMPUTE;
+            // TODO: Implement compute shaders
+        }
+        else if (builder.functions.contains("vertex") && builder.functions.contains("pixel")) {
+            shader->type = Shader::Type::GRAPHICS;
+
+            const auto glsl_source = make_glsl_from_builder(builder);
+
+            std::cout << glsl_source.vertex << "\n\n" << glsl_source.fragment << std::endl;
+
+            GLuint vertex_shader_id = glCreateShader(GL_VERTEX_SHADER);
+            const char* source = glsl_source.vertex.c_str();
+            glShaderSource(vertex_shader_id, 1, &source, nullptr);
+            glCompileShader(vertex_shader_id);
 
             GLint success;
-            glGetShaderiv(shader_id, GL_COMPILE_STATUS, &success);
+            glGetShaderiv(vertex_shader_id, GL_COMPILE_STATUS, &success);
             if (!success) {
                 char info_log[512];
-                glGetShaderInfoLog(shader_id, 512, nullptr, info_log);
+                glGetShaderInfoLog(vertex_shader_id, 512, nullptr, info_log);
                 log.error("Shader compilation failed: ", info_log);
                 delete shader;
                 backend->platform->make_null_current();
                 return nullptr;
             }
 
-            glAttachShader(prog, shader_id);
-            glDeleteShader(shader_id);
+            GLuint fragment_shader_id = glCreateShader(GL_FRAGMENT_SHADER);
+            source = glsl_source.fragment.c_str();
+            glShaderSource(fragment_shader_id, 1, &source, nullptr);
+            glCompileShader(fragment_shader_id);
+
+            glGetShaderiv(fragment_shader_id, GL_COMPILE_STATUS, &success);
+            if (!success) {
+                char info_log[512];
+                glGetShaderInfoLog(fragment_shader_id, 512, nullptr, info_log);
+                log.error("Shader compilation failed: ", info_log);
+                delete shader;
+                backend->platform->make_null_current();
+                return nullptr;
+            }
+
+            glAttachShader(prog, vertex_shader_id);
+            glDeleteShader(vertex_shader_id);
+            glAttachShader(prog, fragment_shader_id);
+            glDeleteShader(fragment_shader_id);
         }
 
         glLinkProgram(prog);
@@ -625,6 +803,7 @@ namespace mgm {
         mutex.unlock();
 
         return new Texture{
+            .name = info.name,
             .tex = tex,
             .size = info.size,
             .internal_format = internal_format,
