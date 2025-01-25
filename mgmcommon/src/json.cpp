@@ -1,12 +1,30 @@
 #include "json.hpp"
 #include "logging.hpp"
-#include "helpers.hpp"
 #include <istream>
 #include <string>
 #include <unordered_map>
 
 
 namespace mgm {
+    namespace json_char_help {
+        inline bool is_whitespace(char c) {
+            return c == ' ' || c == '\t' || c == '\n' || c == '\r' || c == '\f' || c == '\v';
+        }
+        inline bool is_alpha(char c) {
+            return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');
+        }
+        inline bool is_num(char c) {
+            return c >= '0' && c <= '9';
+        }
+        inline bool is_alphanum(char c) {
+            return is_num(c) || is_alpha(c);
+        }
+        inline bool is_sym(char c) {
+            return !is_alphanum(c) && !is_whitespace(c);
+        }
+    }
+    using namespace json_char_help;
+
     bool is_special(char c) { return !is_alpha(c) && !is_num(c) && !is_whitespace(c); }
     vec2u64 get_full_word(const std::string& str, size_t pos) {
         const auto start_pos = pos;

@@ -104,7 +104,7 @@ namespace mgm {
             for (const auto& w : windows) {
                 if (w->window_name == window->window_name) {
                     delete window;
-                    return nullptr;
+                    return dynamic_cast<T*>(w);
                 }
             }
             windows.push_back(window);

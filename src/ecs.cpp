@@ -315,12 +315,7 @@ namespace mgm {
             const auto& node = ecs.get<HierarchyNode>(e);
             entry["name"] = node.name;
             entry["components"] = serialize_entity_components(e);
-
-            auto& node_children_json = entry["children"];
-            node_children_json.array();
-
-            for (const auto& child : node)
-                node_children_json.emplace_back(serialize_node(child));
+            entry["children"] = serialize_node(e);
 
             res.emplace_back(entry);
         }
@@ -345,6 +340,8 @@ namespace mgm {
 
         for (auto it = children.rbegin(); it != children.rend(); ++it) {
             const auto& child_json = *it;
+            if (child_json.type() != JObject::Type::OBJECT)
+                continue;
             const auto c = ecs.create();
             ecs.emplace<HierarchyNode>(c, entity).name = child_json["name"];
             deserialize_node(c, child_json);
