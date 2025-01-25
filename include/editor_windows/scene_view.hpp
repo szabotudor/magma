@@ -40,7 +40,7 @@ namespace mgm {
         friend class InspectorWindow;
 
         static inline thread_local MGMecs<>::Entity current_scene_root{};
-        static inline thread_local Path current_scene_path{};
+        
         static inline float time_since_last_edit = 0.0f;
 
         MGMecs<>::Entity this_viewport_scene_root{};

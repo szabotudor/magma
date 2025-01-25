@@ -11,6 +11,7 @@
 
 
 namespace mgm {
+    static inline thread_local Path current_scene_path{};
     constexpr auto save_interval = 5.0f;
     struct HierarchyView::Data {
         MGMecs<>::Entity selected{};

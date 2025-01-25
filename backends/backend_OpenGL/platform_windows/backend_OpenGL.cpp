@@ -2,6 +2,7 @@
 #include "native_window.hpp"
 #include "glad/glad.h"
 #include "wglext.h"
+#include <minwindef.h>
 
 
 namespace mgm {
@@ -15,7 +16,7 @@ namespace mgm {
 
 		if(reinterpret_cast<size_t>(p) <= 3 || (p == reinterpret_cast<void*>(-1)) ) {
 			static HMODULE module = LoadLibraryA("opengl32.dll");
-			p = GetProcAddress(module, name);
+			p = reinterpret_cast<void*>(GetProcAddress(module, name));
 		}
 
 		return p;

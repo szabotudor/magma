@@ -5,6 +5,7 @@
 #include <atomic>
 #include <iostream>
 #include <mutex>
+#include <algorithm>
 
 
 namespace mgm {
