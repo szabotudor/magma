@@ -156,6 +156,8 @@ namespace mgm {
         NONE, NUMBER, NAME, NUMBERED_NAME, BRACE, STRING, SYMBOL
     };
     WordType get_word_type(const std::string& str) {
+        if (str.empty())
+            return WordType::NONE;
         if ((str.starts_with('(') && str.ends_with(')'))
         || (str.starts_with('[') && str.ends_with(']'))
         || (str.starts_with('{') && str.ends_with('}'))
@@ -526,7 +528,9 @@ namespace mgm {
                     if (last_it != words.begin() && &op != &Function::ops.front().front())
                         res.operations.emplace_back(op);
 
-                    last_it = std::min(it + 1, words.end());
+                    if (it == words.end())
+                        break;
+                    last_it = it + 1;
                     if (last_it != words.end())
                         it = std::find(last_it, words.end(), op);
                 }
@@ -662,6 +666,7 @@ namespace mgm {
                                     word = next_word;
                                     goto after;
                                 }
+                                    break;
                             }
                             case WordType::SYMBOL: {
                                 break;
