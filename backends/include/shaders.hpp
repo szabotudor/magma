@@ -22,11 +22,10 @@ namespace mgm {
 
 
         struct Buffer {
-            std::string name{};
             std::string type_name{};
         };
         // A map of buffer locations pointing to buffer information
-        std::unordered_map<size_t, Buffer> buffers{};
+        std::unordered_map<std::string, Buffer> buffers{};
 
 
         struct Parameter {

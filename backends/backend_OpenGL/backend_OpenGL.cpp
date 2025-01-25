@@ -32,6 +32,7 @@ namespace mgm {
         } type = Type::GRAPHICS;
         GLuint prog = 0;
         std::unordered_map<std::string, GLint> uniform_locations{};
+        std::unordered_map<std::string, bool> buffers_for_vertex_shader{};
 
         ~Shader() {
             if (prog)
@@ -484,9 +485,16 @@ namespace mgm {
                 return;
             }
 
-            glBindBuffer(GL_ARRAY_BUFFER, buf->buffer);
-            glVertexAttribPointer(static_cast<GLuint>(loc), static_cast<GLint>(buf->gl_data_type_point_count), (GLenum)buf->gl_data_type, GL_FALSE, 0, nullptr);
-            glEnableVertexAttribArray(static_cast<GLuint>(loc));
+            if (buffers->last_used_shader->buffers_for_vertex_shader[name]) {
+                glBindBuffer(GL_ARRAY_BUFFER, buf->buffer);
+                glVertexAttribPointer(static_cast<GLuint>(loc), static_cast<GLint>(buf->gl_data_type_point_count), (GLenum)buf->gl_data_type, GL_FALSE, 0, nullptr);
+                glEnableVertexAttribArray(static_cast<GLuint>(loc));
+            }
+            else {
+                glBindBuffer(GL_SHADER_STORAGE_BUFFER, buf->buffer);
+                glBindBufferBase(GL_SHADER_STORAGE_BUFFER, static_cast<GLuint>(loc), buf->buffer);
+                glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+            }
             buf->bind_location = loc;
         }
         if (ebo) {
@@ -617,7 +625,7 @@ namespace mgm {
 
         return func_body;
     }
-    _GLSLSources make_glsl_from_builder(MgmGPUShaderBuilder& builder) {
+    _GLSLSources make_glsl_from_builder(Shader* shader, MgmGPUShaderBuilder& builder) {
         if (!builder.errors.empty()) {
             for (const auto& error : builder.errors)
                 Logging{"Shader Builder"}.error(error.message, " at ", std::to_string(error.line), ":", std::to_string(error.column));
@@ -631,10 +639,17 @@ namespace mgm {
         if (vit != builder.functions.end()) {
             for (const auto& [param, type] : vit->second.function_parameters) {
                 vertex += "in " + type + " " + param + ";\n";
+                shader->buffers_for_vertex_shader[param] = true;
             }
         }
 
         vertex += '\n';
+
+        for (const auto& [name, buffer] : builder.buffers) {
+            // TODO: Raw non-vertex buffers
+
+            shader->buffers_for_vertex_shader[name] = false;
+        }
 
         for (const auto& [name, parameter] : builder.parameters) {
             vertex += "uniform " + parameter.type_name + ' ' + name + ";\n";
@@ -690,7 +705,7 @@ namespace mgm {
         else if (builder.functions.contains("vertex") && builder.functions.contains("pixel")) {
             shader->type = Shader::Type::GRAPHICS;
 
-            const auto glsl_source = make_glsl_from_builder(builder);
+            const auto glsl_source = make_glsl_from_builder(shader, builder);
 
             std::cout << glsl_source.vertex << "\n\n" << glsl_source.fragment << std::endl;
 

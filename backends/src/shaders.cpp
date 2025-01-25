@@ -316,9 +316,8 @@ namespace mgm {
 
             else if (word == "buffer") {
                 const auto words = build_mode(
-                    {WordType::BRACE, WordType::NAME, WordType::NAME},
+                    {WordType::NAME, WordType::NAME},
                     {
-                        "Expected buffer location specifier after 'buffer'",
                         "Expected a type name after `buffer`",
                         "Expected buffer name after type"
                     },
@@ -332,7 +331,7 @@ namespace mgm {
 
                 const auto location = get_brace_contents(words[0]);
 
-                buffers[std::stoull(location)] = Buffer{words[2], words[1]};
+                buffers[words[0]] = Buffer{words[1]};
                 continue;
             }
 
