@@ -115,43 +115,33 @@ namespace mgm {
 
         auto& gpu = MagmaEngine{}.graphics();
         
-        const auto verts_buffer_object = gpu.create_buffer(BufferCreateInfo{
+        vertex_buffer = gpu.create_buffer(BufferCreateInfo{
             BufferCreateInfo::Type::RAW,
             vertices.data(),
             vertices.size()
         });
 
-        const auto normals_buffer_object = gpu.create_buffer(BufferCreateInfo{
+        normal_buffer = gpu.create_buffer(BufferCreateInfo{
             BufferCreateInfo::Type::RAW,
             normals.data(),
             normals.size()
         });
         
-        const auto tex_coords_buffer_object = gpu.create_buffer(BufferCreateInfo{
+        tex_coord_buffer = gpu.create_buffer(BufferCreateInfo{
             BufferCreateInfo::Type::RAW,
             tex_coords.data(),
             tex_coords.size()
         });
 
-        const auto mesh_buffers_object = gpu.create_buffers_object({
-            {"Verts", verts_buffer_object},
-            {"Normals", normals_buffer_object},
-            {"TexCoords", tex_coords_buffer_object}
+        buffers_object = gpu.create_buffers_object({
+            {"Verts", vertex_buffer},
+            {"Normals", normal_buffer},
+            {"TexCoords", tex_coord_buffer}
         });
-
-        draw_call.buffers_object = mesh_buffers_object;
-        draw_call.type = MgmGPU::DrawCall::Type::DRAW;
-
-        leftover_buffers.emplace_back(verts_buffer_object);
-        leftover_buffers.emplace_back(normals_buffer_object);
-        leftover_buffers.emplace_back(tex_coords_buffer_object);
-
 
         shader = MagmaEngine{}.resource_manager().get_or_load<Shader>("resources://shaders/default.shader");
         if (!shader.valid())
             return false;
-
-        draw_call.shader = shader.get().created_shader;
 
         return true;
     }
@@ -159,9 +149,10 @@ namespace mgm {
     Mesh::~Mesh() {
         auto& gpu = MagmaEngine{}.graphics();
 
-        gpu.destroy_buffers_object(draw_call.buffers_object);
+        gpu.destroy_buffers_object(buffers_object);
 
-        for (const auto buffer : leftover_buffers)
-            gpu.destroy_buffer(buffer);
+        gpu.destroy_buffer(vertex_buffer);
+        gpu.destroy_buffer(normal_buffer);
+        gpu.destroy_buffer(tex_coord_buffer);
     }
 }

@@ -68,9 +68,9 @@ namespace mgm {
 
 
     class Mesh : public Resource {
+        MgmGPU::BufferHandle vertex_buffer{}, normal_buffer{}, tex_coord_buffer{};
+        MgmGPU::BuffersObjectHandle buffers_object{};
         ResourceReference<Shader> shader{};
-        MgmGPU::DrawCall draw_call{};
-        std::vector<MgmGPU::BufferHandle> leftover_buffers{};
 
         public:
 
