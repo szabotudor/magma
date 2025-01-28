@@ -7,6 +7,8 @@ namespace mgm {
     Path Path::assets_dir{};
     Path Path::game_data_dir{};
 
+    Path Path::engine_exe_dir = FileIO::exe_dir();
+
 
     std::string Path::parse_prefix() const {
         const auto it = data.find("://");

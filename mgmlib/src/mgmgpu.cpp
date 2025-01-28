@@ -226,7 +226,7 @@ namespace mgm {
         window = nullptr;
     }
 
-    void MgmGPU::load_backend(const std::string &path) {
+    void MgmGPU::load_backend(const Path &path) {
         if (data->loaded) {
             data->log.warning("A backend is already loaded, unloading it first");
             unload_backend();
@@ -260,7 +260,7 @@ namespace mgm {
 
         data->push_draw_call = reinterpret_cast<decltype(data->push_draw_call)>(&mgm::push_draw_call);
 #else
-        data->dloader.load(path.c_str());
+        data->dloader.load(path.platform_path().c_str());
 
         if (!data->dloader.is_loaded()) {
             data->log.error("Failed to load backend");

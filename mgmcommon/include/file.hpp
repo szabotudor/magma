@@ -26,6 +26,7 @@ namespace mgm {
         static Path assets_dir;
         static Path game_data_dir;
         static Path engine_resources_dir;
+        static Path engine_exe_dir;
 
         static void setup_project_dirs(const std::string& platform_project_dir, const std::string& platform_assets_dir, const std::string& platform_game_data_dir);
 
@@ -119,6 +120,7 @@ namespace mgm {
     };
 
     inline const std::unordered_map<std::string, const Path*> Path::prefixes = {
+        {"exe", &Path::engine_exe_dir},
         {"project", &Path::project_dir},
         {"assets", &Path::assets_dir},
         {"data", &Path::game_data_dir},

@@ -1,4 +1,5 @@
 #pragma once
+#include "file.hpp"
 #include "mgmwin.hpp"
 #include "shaders.hpp"
 #include "types.hpp"
@@ -79,7 +80,7 @@ namespace mgm {
          * 
          * @param path The path to the backend library file, or an empty string to use the default backend on the current platform
          */
-        void load_backend(const std::string &path = "");
+        void load_backend(const Path &path = "");
 
         /**
          * @brief Check if a backend is loaded

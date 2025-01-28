@@ -3,7 +3,6 @@
 #include "glad/glad.h"
 #include "shaders.hpp"
 #include <atomic>
-#include <iostream>
 #include <mutex>
 #include <algorithm>
 
@@ -707,8 +706,6 @@ namespace mgm {
             shader->type = Shader::Type::GRAPHICS;
 
             const auto glsl_source = make_glsl_from_builder(shader, builder);
-
-            std::cout << glsl_source.vertex << "\n\n" << glsl_source.fragment << std::endl;
 
             GLuint vertex_shader_id = glCreateShader(GL_VERTEX_SHADER);
             const char* source = glsl_source.vertex.c_str();

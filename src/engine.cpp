@@ -114,9 +114,9 @@ namespace mgm {
 
 #if !defined(EMBED_BACKEND)
 #if defined(__linux__)
-        graphics().load_backend("shared/libbackend_OpenGL.so");
+        graphics().load_backend("exe://shared/libbackend_OpenGL.so");
 #elif defined (WIN32) || defined(_WIN32)
-        graphics().load_backend("shared/backend_OpenGL.dll");
+        graphics().load_backend("exe://shared/backend_OpenGL.dll");
 #endif
 #endif
 
