@@ -11,15 +11,29 @@ namespace mgm {
 
         ImGui::InputText("Name", &file_name);
 
-        if (ImGui::Button("Create File")) {
-            if (!file_extension.empty() && !file_name.ends_with(file_extension))
-                file_name += file_extension;
+        if (mode == Mode::WRITE) {
+            ImGui::SameLine();
 
-            engine.file_io().write_binary(file_path / file_name, default_contents);
-            open = false;
+            if (ImGui::Button("Accept")) {
+                if (!file_extension.empty() && !file_name.ends_with(file_extension))
+                    file_name += file_extension;
+                engine.file_io().write_binary(file_path / file_name, default_contents);
+                callback(file_path / file_name);
+                open = false;
+                return;
+            }
+            if (ImGui::IsItemHovered())
+                ImGui::SetTooltip("Accept the new name for the file to create");
+        }
+
+        if (ImGui::Button("Create File")) {
+            engine.file_io().write_text(file_path / file_name, "");
+
+            folders_here = engine.file_io().list_folders(file_path);
+            files_here = engine.file_io().list_files(file_path);
         }
         if (ImGui::IsItemHovered())
-            ImGui::SetTooltip("Create a new file with the name specified in the Name field");
+            ImGui::SetTooltip("Create a new empty file with the name specified in the Name field");
 
         ImGui::SameLine();
         if (ImGui::Button("Create Folder")) {
@@ -27,6 +41,8 @@ namespace mgm {
             file_path = file_path / file_name;
             selected_file = (size_t)-1;
             file_name.clear();
+            folders_here = engine.file_io().list_folders(file_path);
+            files_here = engine.file_io().list_files(file_path);
         }
         if (ImGui::IsItemHovered())
             ImGui::SetTooltip("Create a new folder with the name specified in the Name field");
@@ -43,7 +59,7 @@ namespace mgm {
                 files_here = engine.file_io().list_files(file_path);
             }
         }
-        
+
         ImGui::Separator();
 
         if (mode == Mode::READ) {
