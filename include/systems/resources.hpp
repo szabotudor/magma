@@ -627,6 +627,11 @@ namespace mgm {
 
         if (container->from_file) {
             ImGui::Text("%s", ("Resource loaded from \"" + container->ident + "\"").c_str());
+            ImGui::SameLine();
+            if (ImGui::Button("Close")) {
+                invalidate();
+                return true;
+            }
         }
         return false;
     }

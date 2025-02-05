@@ -229,11 +229,11 @@ namespace mgm {
             if (!project_initialized)
                 project_initialized = true;
             mouse_pos = {
-                static_cast<int>((engine.window().get_input_interface(MgmWindow::InputInterface::Mouse_POS_X) + 1.0f) * 0.5f * (float)engine.window().get_size().x()),
-                static_cast<int>((engine.window().get_input_interface(MgmWindow::InputInterface::Mouse_POS_Y) + 1.0f) * 0.5f * (float)engine.window().get_size().y())
+                static_cast<int>((engine.window().get_input_interface(MgmWindow::InputInterface::Mouse_POS_X) + 1.0f) * 0.5f * (float)engine.window().get_size().x),
+                static_cast<int>((engine.window().get_input_interface(MgmWindow::InputInterface::Mouse_POS_Y) + 1.0f) * 0.5f * (float)engine.window().get_size().y)
             };
             if (palette_open) {
-                ImGui::SetNextWindowPos(ImVec2{static_cast<float>(mouse_pos.x() + 16), static_cast<float>(mouse_pos.y())});
+                ImGui::SetNextWindowPos(ImVec2{static_cast<float>(mouse_pos.x + 16), static_cast<float>(mouse_pos.y)});
                 ImGui::SetNextWindowSize(ImVec2{-1.0f, 1.0f});
             }
         }
@@ -392,10 +392,10 @@ namespace mgm {
         JObject layout{};
         const auto size = engine.window().get_size();
         auto& window = layout["window"];
-        window["size_x"] = size.x();
-        window["size_y"] = size.y();
-        window["pos_x"] = engine.window().get_position().x();
-        window["pos_y"] = engine.window().get_position().y();
+        window["size_x"] = size.x;
+        window["size_y"] = size.y;
+        window["pos_x"] = engine.window().get_position().x;
+        window["pos_y"] = engine.window().get_position().y;
 
         engine.file_io().write_text("project://.mgm/.layout", layout);
 

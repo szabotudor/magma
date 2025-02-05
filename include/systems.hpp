@@ -1,5 +1,6 @@
 #pragma once
 #include "logging.hpp"
+#include <mutex>
 #include <string>
 #include <type_traits>
 #include <unordered_map>
@@ -29,6 +30,11 @@ namespace mgm {
          * @param delta Delta time for framerate (in seconds)
          */
         virtual void update(float delta) { (void)delta; /* Unused */ }
+
+        /**
+         * @brief Called once per draw frame, also while in the editor
+         */
+        virtual void graphics_update() { /* Unused */ }
 
 #if defined(ENABLE_EDITOR)
         /**
@@ -67,6 +73,7 @@ namespace mgm {
     class SystemManager {
         public:
         std::unordered_map<size_t, System*> systems{};
+        std::mutex mutex{};
 
         SystemManager() = default;
 
@@ -79,6 +86,7 @@ namespace mgm {
             > = true
         >
         T& create(Ts&&... args) {
+            std::unique_lock lock{mutex};
             auto id = typeid(T).hash_code();
             const auto it = systems.find(id);
             if (it != systems.end()) {
@@ -136,6 +144,7 @@ namespace mgm {
         
         template<typename T>
         void destroy() {
+            std::unique_lock lock{mutex};
             auto id = typeid(T).hash_code();
             const auto it = systems.find(id);
             if (it == systems.end()) {

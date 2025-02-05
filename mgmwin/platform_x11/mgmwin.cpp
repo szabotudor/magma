@@ -49,7 +49,7 @@ namespace mgm {
             data->display,
             RootWindow(data->display, data->screenid),
             0, 0,
-            size.x(), size.y(),
+            size.x, size.y,
             0,
             WhitePixel(data->display, data->screenid),
             BlackPixel(data->display, data->screenid)
@@ -111,8 +111,8 @@ namespace mgm {
             }
             case Mode::FULLSCREEN: {
                 vec2u32 new_size{};
-                new_size.x() = DisplayWidth(data->display, data->screenid);
-                new_size.y() = DisplayHeight(data->display, data->screenid);
+                new_size.x = DisplayWidth(data->display, data->screenid);
+                new_size.y = DisplayHeight(data->display, data->screenid);
 
                 set_mode(Mode::BORDERLESS);
                 window_mode = mode;
@@ -159,13 +159,13 @@ namespace mgm {
     }
 
     void MgmWindow::set_size(vec2u32 size) {
-        XResizeWindow(data->display, data->window, size.x(), size.y());
+        XResizeWindow(data->display, data->window, size.x, size.y);
         if (window_mode != Mode::FULLSCREEN)
             window_size = size;
     }
 
     void MgmWindow::set_position(vec2i32 pos) {
-        if (pos.x() < 0 || pos.y() < 0) {
+        if (pos.x < 0 || pos.y < 0) {
             const auto screen_count = ScreenCount(data->display);
             vec2i32 mouse_pos{};
             vec2i32 root_mouse_pos{};
@@ -175,10 +175,10 @@ namespace mgm {
                 root_window = RootWindow(data->display, i);
                 Window current_window_return, root_window_return;
                 uint32_t mask;
-                XQueryPointer(data->display, root_window, &root_window_return, &current_window_return, &root_mouse_pos.x(), &root_mouse_pos.y(), &mouse_pos.x(), &mouse_pos.y(), &mask);
+                XQueryPointer(data->display, root_window, &root_window_return, &current_window_return, &root_mouse_pos.x, &root_mouse_pos.y, &mouse_pos.x, &mouse_pos.y, &mask);
                 screen_size = {DisplayWidth(data->display, i), DisplayHeight(data->display, i)};
-                if (mouse_pos.x() >= 0 && mouse_pos.y() >= 0 && mouse_pos.x() < screen_size.x() && mouse_pos.y() < screen_size.y()) {
-                    const auto half_size = vec2i32{static_cast<int>(window_size.x()), static_cast<int>(window_size.y())} / 2;
+                if (mouse_pos.x >= 0 && mouse_pos.y >= 0 && mouse_pos.x < screen_size.x && mouse_pos.y < screen_size.y) {
+                    const auto half_size = vec2i32{static_cast<int>(window_size.x), static_cast<int>(window_size.y)} / 2;
                     set_position(vec2i32::max(mouse_pos - half_size, vec2i32{0, 0}));
                     return;
                 }
@@ -187,7 +187,7 @@ namespace mgm {
             set_position(vec2i32{0, 0});
             return;
         }
-        XMoveWindow(data->display, data->window, pos.x(), pos.y());
+        XMoveWindow(data->display, data->window, pos.x, pos.y);
         if (window_mode != Mode::FULLSCREEN)
             window_pos = pos;
     }
@@ -341,8 +341,8 @@ namespace mgm {
             int rx, ry, x, y;
             uint32_t mask;
             XQueryPointer(data->display, data->window, &root_window, &current_window, &rx, &ry, &x, &y, &mask);
-            input_interfaces[(size_t)InputInterface::Mouse_POS_X] = (float)x / (float)window_size.x() * 2.0f - 1.0f;
-            input_interfaces[(size_t)InputInterface::Mouse_POS_Y] = (float)y / (float)window_size.y() * 2.0f - 1.0f;
+            input_interfaces[(size_t)InputInterface::Mouse_POS_X] = (float)x / (float)window_size.x * 2.0f - 1.0f;
+            input_interfaces[(size_t)InputInterface::Mouse_POS_Y] = (float)y / (float)window_size.y * 2.0f - 1.0f;
             data->last_mouse_query_time = current_mouse_query_time;
         }
 
@@ -402,8 +402,8 @@ namespace mgm {
                     break;
                 }
                 case MotionNotify: {
-                    input_interfaces[(size_t)InputInterface::Mouse_POS_X] = (float)event.xmotion.x / (float)window_size.x() * 2.0f - 1.0f;
-                    input_interfaces[(size_t)InputInterface::Mouse_POS_Y] = (float)event.xmotion.y / (float)window_size.y() * 2.0f - 1.0f;
+                    input_interfaces[(size_t)InputInterface::Mouse_POS_X] = (float)event.xmotion.x / (float)window_size.x * 2.0f - 1.0f;
+                    input_interfaces[(size_t)InputInterface::Mouse_POS_Y] = (float)event.xmotion.y / (float)window_size.y * 2.0f - 1.0f;
                     input_events_since_last_update.emplace_back(InputEvent{
                         InputInterface::Mouse_POS_X,
                         input_interfaces[(size_t)InputInterface::Mouse_POS_X],
@@ -424,8 +424,8 @@ namespace mgm {
                     break;
                 }
                 case ConfigureNotify: {
-                    if (event.xconfigure.width != (int)window_size.x()
-                        || event.xconfigure.height != (int)window_size.y()) {
+                    if (event.xconfigure.width != (int)window_size.x
+                        || event.xconfigure.height != (int)window_size.y) {
                         window_size = vec2u32{(uint32_t)event.xconfigure.width, (uint32_t)event.xconfigure.height};
                     }
                 }

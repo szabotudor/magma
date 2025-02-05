@@ -32,11 +32,11 @@ bool ImGui_ImplMgmGFX_Init(mgm::MgmGPU &backend, const std::string& shader_sourc
         throw std::runtime_error("ImGui backend already initialized");
 
     const auto viewport = backend.get_settings().viewport;
-    io.DisplaySize = {static_cast<float>(viewport.bottom_right.x()), static_cast<float>(viewport.bottom_right.y())};
+    io.DisplaySize = {static_cast<float>(viewport.bottom_right.x), static_cast<float>(viewport.bottom_right.y)};
 
     uint8_t* tex_data = nullptr;
     mgm::vec2i32 size{};
-    io.Fonts->GetTexDataAsRGBA32(&tex_data, &size.x(), &size.y());
+    io.Fonts->GetTexDataAsRGBA32(&tex_data, &size.x, &size.y);
     const auto texture_info = mgm::TextureCreateInfo{
         .name = "Texture",
         .num_channels = 4,
@@ -112,7 +112,7 @@ void ImGui_ImplMgmGFX_NewFrame() {
     if (!io.Fonts->IsBuilt()) {
         uint8_t* tex_data = nullptr;
         mgm::vec2i32 size{};
-        io.Fonts->GetTexDataAsRGBA32(&tex_data, &size.x(), &size.y());
+        io.Fonts->GetTexDataAsRGBA32(&tex_data, &size.x, &size.y);
         const auto texture_info = mgm::TextureCreateInfo {
             .name = "Texture",
             .num_channels = 4,
@@ -184,8 +184,8 @@ void extract_draw_data(ImDrawData* draw_data, ExtractedDrawData& out, const mgm:
                 if (clip_max.x <= clip_min.x || clip_max.y <= clip_min.y)
                     continue;
 
-                cmd_data.scissor.top_left = {static_cast<int>(clip_min.x), viewport.bottom_right.y() - static_cast<int>(clip_max.y)};
-                cmd_data.scissor.bottom_right = {static_cast<int>(clip_max.x), viewport.bottom_right.y() - static_cast<int>(clip_min.y)};
+                cmd_data.scissor.top_left = {static_cast<int>(clip_min.x), viewport.bottom_right.y - static_cast<int>(clip_max.y)};
+                cmd_data.scissor.bottom_right = {static_cast<int>(clip_max.x), viewport.bottom_right.y - static_cast<int>(clip_min.y)};
 
                 cmd_data.idx_offset = im_cmd->IdxOffset;
                 cmd_data.elem_count = im_cmd->ElemCount;
@@ -381,8 +381,8 @@ void ImGui_ImplMgmGFX_ProcessInput(mgm::MgmWindow &window) {
 
     const auto window_size = window.get_size();
 
-    if (window_size.x() != io.DisplaySize.x || window_size.y() != io.DisplaySize.y) {
-        io.DisplaySize = {static_cast<float>(window_size.x()), static_cast<float>(window_size.y())};
+    if (window_size.x != io.DisplaySize.x || window_size.y != io.DisplaySize.y) {
+        io.DisplaySize = {static_cast<float>(window_size.x), static_cast<float>(window_size.y)};
         io.DisplayFramebufferScale = {1.0f, 1.0f};
     }
 

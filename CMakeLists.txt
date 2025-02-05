@@ -82,6 +82,7 @@ add_library(
         ${CMAKE_CURRENT_SOURCE_DIR}/src/systems/input.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/systems/notifications.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/systems/resources.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/systems/renderer.cpp
         #${CMAKE_CURRENT_SOURCE_DIR}/src/tools/lua_vm.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/built-in_components/renderable.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/ecs.cpp
@@ -91,6 +92,7 @@ add_library(
         ${CMAKE_CURRENT_SOURCE_DIR}/include/systems/input.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/include/systems/notifications.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/include/systems/resources.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/systems/renderer.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/include/systems.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/include/tools/base64.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/include/tools/tiny_obj_loader.h

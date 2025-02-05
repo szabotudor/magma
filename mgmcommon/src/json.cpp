@@ -265,16 +265,16 @@ namespace mgm {
             size_t value_start = i;
             while (is_whitespace(str[value_start])) value_start++;
             const auto value = get_full_word(str, value_start);
-            if (value.x() == value.y()) {
+            if (value.x == value.y) {
                 Logging{"json"}.error("Broken value in JSON array, returning empty array");
                 return {};
             }
 
-            auto value_str = str.substr(value.x(), value.y() - value.x());
+            auto value_str = str.substr(value.x, value.y - value.x);
             if (value_str.front() == '"' && value_str.back() == '"')
                 string_escape_codes_to_chars(value_str);
             vec.emplace_back(value_str);
-            i = value.y() + 1;
+            i = value.y + 1;
             while (is_whitespace(str[i])) i++;
 
             if (str[i] == ',')
@@ -297,12 +297,12 @@ namespace mgm {
                 return {};
             }
             const auto key = get_full_word(str, key_start);
-            if (key.x() == key.y()) {
+            if (key.x == key.y) {
                 Logging{"json"}.error("Broken key in JSON object, returning empty object");
                 return {};
             }
 
-            auto value_start = str.find(':', key.y());
+            auto value_start = str.find(':', key.y);
             if (value_start == std::string::npos) {
                 Logging{"json"}.error("No value after key in JSON object, returning empty object");
                 return {};
@@ -310,17 +310,17 @@ namespace mgm {
             value_start++;
             while(is_whitespace(str[value_start])) value_start++;
             auto value = get_full_word(str, value_start);
-            if (value.x() == value.y()) {
+            if (value.x == value.y) {
                 Logging{"json"}.error("Broken value in JSON object, returning empty object");
                 return {};
             }
 
-            const auto key_str = str.substr(key.x() + 1, key.y() - key.x() - 2);
-            auto value_str = str.substr(value.x(), value.y() - value.x());
+            const auto key_str = str.substr(key.x + 1, key.y - key.x - 2);
+            auto value_str = str.substr(value.x, value.y - value.x);
             if (value_str.front() == '"' && value_str.back() == '"')
                 string_escape_codes_to_chars(value_str);
             map[key_str].data = value_str;
-            i = value.y() + 1;
+            i = value.y + 1;
             while (is_whitespace(str[i])) i++;
         }
         return map;

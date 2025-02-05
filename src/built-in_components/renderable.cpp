@@ -26,6 +26,10 @@ namespace mgm {
         return res;
     }
 
+    mat4f Transform::as_matrix() const {
+        
+    }
+
 
     bool Shader::load_from_text(const std::string& source) {
         auto& gpu = MagmaEngine{}.graphics();
@@ -72,6 +76,8 @@ namespace mgm {
         const auto& shapes = reader.GetShapes();
 
         std::vector<vec3f> vertices{};
+        
+        std::vector<vec3f> vert_colors{};
 
         std::vector<vec3f> normals{};
 
@@ -96,6 +102,13 @@ namespace mgm {
                         attrib.vertices[3 * static_cast<size_t>(idx.vertex_index) + 2]
                     );
 
+                    if (!attrib.colors.empty())
+                        vert_colors.emplace_back(
+                            attrib.colors[3 * static_cast<size_t>(idx.vertex_index) + 0],
+                            attrib.colors[3 * static_cast<size_t>(idx.vertex_index) + 1],
+                            attrib.colors[3 * static_cast<size_t>(idx.vertex_index) + 2]
+                        );
+
                     if (idx.normal_index >= 0)
                         normals.emplace_back(
                             attrib.normals[3 * static_cast<size_t>(idx.normal_index) + 0],
@@ -114,30 +127,44 @@ namespace mgm {
         }
 
         auto& gpu = MagmaEngine{}.graphics();
+
+        std::unordered_map<std::string, MgmGPU::BufferHandle> buffer_names{};
         
         vertex_buffer = gpu.create_buffer(BufferCreateInfo{
             BufferCreateInfo::Type::RAW,
             vertices.data(),
             vertices.size()
         });
+        buffer_names["Verts"] = vertex_buffer;
 
-        normal_buffer = gpu.create_buffer(BufferCreateInfo{
-            BufferCreateInfo::Type::RAW,
-            normals.data(),
-            normals.size()
-        });
+        if (!vert_colors.empty()) {
+            color_buffer = gpu.create_buffer(BufferCreateInfo{
+                BufferCreateInfo::Type::RAW,
+                vert_colors.data(),
+                vert_colors.size()
+            });
+            buffer_names["VertColors"] = color_buffer;
+        }
+
+        if (!normals.empty()) {
+            normal_buffer = gpu.create_buffer(BufferCreateInfo{
+                BufferCreateInfo::Type::RAW,
+                normals.data(),
+                normals.size()
+            });
+            buffer_names["Normals"] = normal_buffer;
+        }
         
-        tex_coord_buffer = gpu.create_buffer(BufferCreateInfo{
-            BufferCreateInfo::Type::RAW,
-            tex_coords.data(),
-            tex_coords.size()
-        });
+        if (!tex_coords.empty()) {
+            tex_coord_buffer = gpu.create_buffer(BufferCreateInfo{
+                BufferCreateInfo::Type::RAW,
+                tex_coords.data(),
+                tex_coords.size()
+            });
+            buffer_names["TexCoords"] = tex_coord_buffer;
+        }
 
-        buffers_object = gpu.create_buffers_object({
-            {"Verts", vertex_buffer},
-            {"Normals", normal_buffer},
-            {"TexCoords", tex_coord_buffer}
-        });
+        buffers_object = gpu.create_buffers_object(buffer_names);
 
         shader = MagmaEngine{}.resource_manager().get_or_load<Shader>("resources://shaders/default.shader");
         if (!shader.valid())

@@ -55,7 +55,7 @@ namespace mgm {
         for (auto& notif : notifications) {
             bool using_opacity = false;
             if (notif.time < start_fade) {
-                ImGui::PushStyleColor(ImGuiCol_Text, ImVec4{notif.color.x(), notif.color.y(), notif.color.z(), notif.color.w() * notif.time / start_fade});
+                ImGui::PushStyleColor(ImGuiCol_Text, ImVec4{notif.color.x, notif.color.y, notif.color.z, notif.color.w * notif.time / start_fade});
                 using_opacity = true;
             }
 

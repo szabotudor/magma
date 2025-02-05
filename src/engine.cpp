@@ -34,8 +34,6 @@ namespace mgm {
 
         SystemManager* system_manager = nullptr;
 
-        EntityComponentSystem ecs{};
-
         float current_dt = 0.0f;
     };
 
@@ -47,6 +45,11 @@ namespace mgm {
             const auto settings = data->graphics_settings;
             graphics_settings_mutex.unlock();
             graphics().draw(data->draw_list, settings);
+
+            std::unique_lock lock{systems().mutex};
+            for (auto& system : systems().systems)
+                system.second->graphics_update();
+            lock.unlock();
 
             imgui_mutex.lock();
             if (data->imgui_draw_data->is_set)
@@ -73,7 +76,7 @@ namespace mgm {
         return *e;
     }
 #endif
-    EntityComponentSystem& MagmaEngine::ecs() { return data->ecs; }
+    EntityComponentSystem& MagmaEngine::ecs() { return systems().get<EntityComponentSystem>(); }
 
     SystemManager& MagmaEngine::systems() { return *data->system_manager; }
 
@@ -116,13 +119,16 @@ namespace mgm {
 #if defined(__linux__)
         graphics().load_backend("exe://shared/libbackend_OpenGL.so");
 #elif defined (WIN32) || defined(_WIN32)
-        graphics().load_backend("exe://shared/backend_OpenGL.dll");
+        if (file_io().exists("exe://shared/backend_OpenGL.dll"))
+            graphics().load_backend("exe://shared/backend_OpenGL.dll");
+        else
+            graphics().load_backend("exe://shared/libbackend_OpenGL.dll");
 #endif
 #endif
 
         data->graphics_settings.clear.color = {0.1f, 0.2f, 0.3f, 1.0f};
         data->graphics_settings.viewport.top_left = {0, 0};
-        data->graphics_settings.viewport.bottom_right = vec2i32{static_cast<int>(window().get_size().x()), static_cast<int>(window().get_size().y())};
+        data->graphics_settings.viewport.bottom_right = vec2i32{static_cast<int>(window().get_size().x), static_cast<int>(window().get_size().y)};
 
         data->draw_list.emplace_back(MgmGPU::DrawCall{
             .type = MgmGPU::DrawCall::Type::CLEAR
@@ -183,7 +189,7 @@ namespace mgm {
             systems().get<Editor>().on_begin_play();
 #else
         for (const auto& [id, sys] : systems.systems)
-            sys->init();
+            sys->on_begin_play();
 #endif
 
         engine_running = true;
@@ -238,7 +244,7 @@ namespace mgm {
                 window_size = window().get_size();
                 graphics_settings_mutex.lock();
                 data->graphics_settings.viewport.top_left = {0, 0};
-                data->graphics_settings.viewport.bottom_right = vec2i32{static_cast<int>(window_size.x()), static_cast<int>(window_size.y())};
+                data->graphics_settings.viewport.bottom_right = vec2i32{static_cast<int>(window_size.x), static_cast<int>(window_size.y)};
                 graphics_settings_mutex.unlock();
             }
 

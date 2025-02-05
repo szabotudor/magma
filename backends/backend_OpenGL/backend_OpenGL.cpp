@@ -148,7 +148,7 @@ namespace mgm {
                 backend->clear_mask = clear.color_buffer * GL_COLOR_BUFFER_BIT
                     | clear.depth_buffer * GL_DEPTH_BUFFER_BIT
                     | clear.stencil_buffer * GL_STENCIL_BUFFER_BIT;
-                glClearColor(clear.color.x(), clear.color.y(), clear.color.z(), clear.color.w());
+                glClearColor(clear.color.x, clear.color.y, clear.color.z, clear.color.w);
                 glClearDepth(1.0);
                 glClearStencil(0);
                 break;
@@ -177,8 +177,8 @@ namespace mgm {
                 backend->viewport.pos = viewport.top_left;
                 backend->viewport.size = viewport.bottom_right - viewport.top_left;
                 glViewport(
-                    backend->viewport.pos.x(), backend->viewport.pos.y(),
-                    backend->viewport.size.x(), backend->viewport.size.y()
+                    backend->viewport.pos.x, backend->viewport.pos.y,
+                    backend->viewport.size.x, backend->viewport.size.y
                 );
                 break;
             }
@@ -191,8 +191,8 @@ namespace mgm {
                     backend->scissor.size = scissor.bottom_right - scissor.top_left;
                     glEnable(GL_SCISSOR_TEST);
                     glScissor(
-                        backend->scissor.pos.x(), backend->scissor.pos.y(),
-                        backend->scissor.size.x(), backend->scissor.size.y()
+                        backend->scissor.pos.x, backend->scissor.pos.y,
+                        backend->scissor.size.x, backend->scissor.size.y
                     );
                 }
                 break;
@@ -223,15 +223,15 @@ namespace mgm {
         }
         else if (value.type().hash_code() == typeid(vec2f).hash_code()) {
             const auto& vec = std::any_cast<vec2f>(value);
-            glUniform2f(uniform, vec.x(), vec.y());
+            glUniform2f(uniform, vec.x, vec.y);
         }
         else if (value.type().hash_code() == typeid(vec3f).hash_code()) {
             const auto& vec = std::any_cast<vec3f>(value);
-            glUniform3f(uniform, vec.x(), vec.y(), vec.z());
+            glUniform3f(uniform, vec.x, vec.y, vec.z);
         }
         else if (value.type().hash_code() == typeid(vec4f).hash_code()) {
             const auto& vec = std::any_cast<vec4f>(value);
-            glUniform4f(uniform, vec.x(), vec.y(), vec.z(), vec.w());
+            glUniform4f(uniform, vec.x, vec.y, vec.z, vec.w);
         }
         else if (value.type().hash_code() == typeid(mat2f).hash_code()) {
             const auto& mat = std::any_cast<mat2f>(value);
@@ -263,7 +263,7 @@ namespace mgm {
         backend->platform->make_current();
         if (canvas) {
             if (canvas != backend->canvas) {
-                if (backend->viewport.size.x() > canvas->size.x() || backend->viewport.size.y() > canvas->size.y()) {
+                if (backend->viewport.size.x > canvas->size.x || backend->viewport.size.y > canvas->size.y) {
                     log.error("Viewport size is larger than canvas size");
                     backend->platform->make_null_current();
                     mutex.unlock();
@@ -805,7 +805,7 @@ namespace mgm {
         };
 
         glTexImage2D(
-            GL_TEXTURE_2D, 0, internal_format, info.size.x(), info.size.y(), 0,
+            GL_TEXTURE_2D, 0, internal_format, info.size.x, info.size.y, 0,
             (GLenum)internal_format, (GLenum)channel_size, info.data
         );
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -834,7 +834,7 @@ namespace mgm {
 
         glGenRenderbuffers(1, &rbo);
         glBindRenderbuffer(GL_RENDERBUFFER, rbo);
-        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, tex->size.x(), tex->size.y());
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, tex->size.x, tex->size.y);
         glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
 
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tex->tex, 0);

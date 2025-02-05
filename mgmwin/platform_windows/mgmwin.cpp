@@ -40,8 +40,8 @@ namespace mgm {
 			"MgmWindowClass",
 			name,
 			style,
-			pos.x(), pos.y(),
-			size.x(), size.y(),
+			pos.x, pos.y,
+			size.x, size.y,
 			nullptr,
 			nullptr,
 			data->hinstance,
@@ -133,27 +133,27 @@ namespace mgm {
 	}
 
 	void MgmWindow::set_size(vec2u32 size) {
-		SetWindowPos(data->window, nullptr, window_pos.x(), window_pos.y(), static_cast<int>(size.x()), static_cast<int>(size.y()), 0);
+		SetWindowPos(data->window, nullptr, window_pos.x, window_pos.y, static_cast<int>(size.x), static_cast<int>(size.y), 0);
 		RECT rect{};
 		GetClientRect(data->window, &rect);
 		const vec2u32 actual_size = {
-			size.x() + (size.x() - (rect.right - rect.left)),
-			size.y() + (size.y() - (rect.bottom - rect.top)),
+			size.x + (size.x - (rect.right - rect.left)),
+			size.y + (size.y - (rect.bottom - rect.top)),
 		};
-		SetWindowPos(data->window, nullptr, window_pos.x(), window_pos.y(), actual_size.x(), actual_size.y(), 0);
+		SetWindowPos(data->window, nullptr, window_pos.x, window_pos.y, actual_size.x, actual_size.y, 0);
 		window_size = size;
 	}
 
 	void MgmWindow::set_position(const vec2i32 pos) {
-		if (pos.x() < 0 || pos.y() < 0) {
+		if (pos.x < 0 || pos.y < 0) {
 		    POINT cursor{};
 			GetCursorPos(&cursor);
-			vec2i32 target_pos = vec2i32{cursor.x, cursor.y} - vec2i32{static_cast<int>(window_size.x()), static_cast<int>(window_size.y())} / 2;
+			vec2i32 target_pos = vec2i32{cursor.x, cursor.y} - vec2i32{static_cast<int>(window_size.x), static_cast<int>(window_size.y)} / 2;
 			target_pos = vec2i32::max(target_pos, vec2i32{0, 0});
-			SetWindowPos(data->window, nullptr, target_pos.x(), target_pos.y(), window_size.x(), window_size.y(), SWP_NOSIZE | SWP_NOZORDER);
+			SetWindowPos(data->window, nullptr, target_pos.x, target_pos.y, window_size.x, window_size.y, SWP_NOSIZE | SWP_NOZORDER);
 			return;
 		}
-		SetWindowPos(data->window, nullptr, pos.x(), pos.y(), window_size.x(), window_size.y(), SWP_NOSIZE | SWP_NOZORDER);
+		SetWindowPos(data->window, nullptr, pos.x, pos.y, window_size.x, window_size.y, SWP_NOSIZE | SWP_NOZORDER);
 		window_pos = pos;
 	}
 
@@ -399,19 +399,19 @@ namespace mgm {
 			}
 			case WM_MOUSEMOVE: {
 			    const vec2i32 pos = {LOWORD(l_param), HIWORD(l_param)};
-				const vec2f posf = vec2f{static_cast<float>(pos.x()), static_cast<float>(pos.y())}
-				    / vec2f{static_cast<float>(updating_window->window_size.x()), static_cast<float>(updating_window->window_size.y())} * 2.0f - 1.0f;
-				updating_window->get_input_interface(MgmWindow::InputInterface::Mouse_POS_X) = posf.x();
-				updating_window->get_input_interface(MgmWindow::InputInterface::Mouse_POS_Y) = posf.y();
+				const vec2f posf = vec2f{static_cast<float>(pos.x), static_cast<float>(pos.y)}
+				    / vec2f{static_cast<float>(updating_window->window_size.x), static_cast<float>(updating_window->window_size.y)} * 2.0f - 1.0f;
+				updating_window->get_input_interface(MgmWindow::InputInterface::Mouse_POS_X) = posf.x;
+				updating_window->get_input_interface(MgmWindow::InputInterface::Mouse_POS_Y) = posf.y;
 				updating_window->input_events_since_last_update.emplace_back(
 					MgmWindow::InputInterface::Mouse_POS_X,
-					posf.x(),
+					posf.x,
 					MgmWindow::InputEvent::Mode::OTHER,
 					MgmWindow::InputEvent::From::MOUSE
 				);
                 updating_window->input_events_since_last_update.emplace_back(
                     MgmWindow::InputInterface::Mouse_POS_Y,
-                    posf.y(),
+                    posf.y,
                     MgmWindow::InputEvent::Mode::OTHER,
                     MgmWindow::InputEvent::From::MOUSE
                 );
@@ -439,8 +439,8 @@ namespace mgm {
 		POINT cursor{};
 		GetCursorPos(&cursor);
 		ScreenToClient(data->window, &cursor);
-		get_input_interface(InputInterface::Mouse_POS_X) = static_cast<float>(cursor.x) / static_cast<float>(window_size.x()) * 2.0f - 1.0f;
-		get_input_interface(InputInterface::Mouse_POS_Y) = static_cast<float>(cursor.y) / static_cast<float>(window_size.y()) * 2.0f - 1.0f;
+		get_input_interface(InputInterface::Mouse_POS_X) = static_cast<float>(cursor.x) / static_cast<float>(window_size.x) * 2.0f - 1.0f;
+		get_input_interface(InputInterface::Mouse_POS_Y) = static_cast<float>(cursor.y) / static_cast<float>(window_size.y) * 2.0f - 1.0f;
 
 		get_input_interface(InputInterface::Mouse_SCROLL_UP) = 0.0f;
 		get_input_interface(InputInterface::Mouse_SCROLL_DOWN) = 0.0f;
