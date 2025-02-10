@@ -222,6 +222,7 @@ namespace mgm {
 
 #if defined(ENABLE_EDITOR)
         std::unordered_map<Path, MGMecs<>::Entity> editable_scenes{};
+        MGMecs<>::Entity current_editing_scene{};
 
         MGMecs<>::Entity load_scene_into_new_root(const Path& path);
 #endif

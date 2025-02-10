@@ -82,6 +82,14 @@ namespace mgm {
          */
         void end_window_here();
 
+        /**
+         * @brief Check if the game is running
+         * 
+         * @return true If the game is running in the editor
+         * @return false If the editor is open and the game isn't being played
+         */
+        bool is_running() const;
+
         void draw_settings_window_contents() override;
 
         void update(float delta) override;

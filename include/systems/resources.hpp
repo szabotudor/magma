@@ -595,7 +595,12 @@ namespace mgm {
         }
         ImGui::Text("%s", ("Resource Type: \"" + MagmaEngine{}.ecs().type_unique_identifier<ResourceReference<T>>() + "\"").c_str());
 
+        static thread_local bool last_time_had_container = false;
+        bool was_modified = false;
+
         if (container == nullptr) {
+            last_time_had_container = false;
+
             ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled));
             ImGui::Text("Empty Resource");
             ImGui::PopStyleColor();
@@ -621,11 +626,14 @@ namespace mgm {
                     });
                 }
             }
-            
+
             return false;
         }
 
         if (container->from_file) {
+            was_modified = !last_time_had_container;
+            last_time_had_container = true;
+
             ImGui::Text("%s", ("Resource loaded from \"" + container->ident + "\"").c_str());
             ImGui::SameLine();
             if (ImGui::Button("Close")) {
@@ -633,7 +641,7 @@ namespace mgm {
                 return true;
             }
         }
-        return false;
+        return was_modified;
     }
 #endif
 

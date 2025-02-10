@@ -45,10 +45,16 @@ namespace mgm {
     }
 
     void SceneViewport::draw_contents() {
+        static std::mutex ecs_modify_mutex{};
+
         ImGui::Text("ViewportContents");
 
         if (current_scene_root != this_viewport_scene_root) {
             if (ImGui::IsWindowFocused()) {
+                ecs_modify_mutex.lock();
+                MagmaEngine{}.ecs().current_editing_scene = this_viewport_scene_root;
+                ecs_modify_mutex.unlock();
+
                 if (time_since_last_edit < save_interval)
                     do_save();
 
@@ -386,6 +392,8 @@ namespace mgm {
                 }
             }
 
+            if (any_edited)
+                engine.ecs().deserialize_entity_components(data->selected, data->selected_serialized_data);
             return any_edited;
         };
 
@@ -398,10 +406,8 @@ namespace mgm {
             }
         }
 
-        if (any_edited) {
-            engine.ecs().deserialize_entity_components(data->selected, data->selected_serialized_data);
+        if (any_edited)
             SceneViewport::time_since_last_edit = 0.0f;
-        }
 
         ImGui::Separator();
 

@@ -134,6 +134,10 @@ namespace mgm {
             max_vector_depth = 0;
         }
     }
+
+    bool Editor::is_running() const {
+        return false; // TODO: Implement running the game in the editor, for now just return false
+    }
     
     void Editor::draw_settings_window_contents() {
         static std::string section_name = "";

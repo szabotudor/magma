@@ -17,17 +17,25 @@ namespace mgm {
         if (parent == mgm::MGMecs<>::null)
             return;
 
+        ecs->wait_and_lock(parent);
+
         auto& parent_node = ecs->get<HierarchyNode>(parent);
         if (parent_node.child != mgm::MGMecs<>::null) {
+            ecs->wait_and_lock(parent_node.child);
+
             auto& child_node = ecs->get<HierarchyNode>(parent_node.child);
             child_node.prev = self;
             next = parent_node.child;
+
+            ecs->unlock(parent_node.child);
             parent_node.child = self;
         }
         else
             parent_node.child = self;
 
         ++parent_node.num_children;
+        
+        ecs->unlock(parent);
     }
 
     void HierarchyNode::on_destroy(mgm::MGMecs<>* ecs, const mgm::MGMecs<>::Entity self) {
@@ -35,25 +43,34 @@ namespace mgm {
             return;
 
         if (parent != mgm::MGMecs<>::null) {
+            ecs->wait_and_lock(parent);
+
             auto& parent_node = ecs->get<HierarchyNode>(parent);
             if (parent_node.child == self) {
                 parent_node.child = next;
                 if (next != mgm::MGMecs<>::null) {
+                    ecs->wait_and_lock(next);
                     auto& next_node = ecs->get<HierarchyNode>(next);
                     next_node.prev = mgm::MGMecs<>::null;
+                    ecs->unlock(next);
                     next = mgm::MGMecs<>::null;
                 }
             }
             else if (prev != mgm::MGMecs<>::null) {
+                ecs->wait_and_lock(prev);
                 auto& prev_node = ecs->get<HierarchyNode>(prev);
                 prev_node.next = next;
                 if (next != mgm::MGMecs<>::null) {
+                    ecs->wait_and_lock(next);
                     auto& next_node = ecs->get<HierarchyNode>(next);
                     next_node.prev = prev;
+                    ecs->unlock(next);
                 }
+                ecs->unlock(prev);
             }
 
             --parent_node.num_children;
+            ecs->unlock(parent);
         }
 
         const auto children_copy = children();
