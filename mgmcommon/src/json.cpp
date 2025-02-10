@@ -385,7 +385,7 @@ namespace mgm {
 
                 const auto front = output[start], back = output[end];
 
-                if (is_num(output.front())) return Type::NUMBER;
+                if (is_num(output.front()) || (output.starts_with('-') && is_num(output[1]))) return Type::NUMBER;
                 if (front == '"' && back == '"') return Type::STRING;
                 if (output == "true" || output == "false") return Type::BOOLEAN;
                 if (front == '[' && back == ']') return Type::ARRAY;
