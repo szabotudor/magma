@@ -166,6 +166,10 @@ void extract_draw_data(ImDrawData* draw_data, ExtractedDrawData& out, const mgm:
             auto& cmd_data = cmd.cmd_data.emplace_back();
             const auto* im_cmd = &cmd_list->CmdBuffer[j];
 
+            if (im_cmd->TextureId) {
+                cmd_data.texture = ImGui::as_mgmgpu_texture(im_cmd->TextureId);
+            }
+
             if (im_cmd->UserCallback) {
                 im_cmd->UserCallback(cmd_list, im_cmd);
             }
@@ -195,10 +199,10 @@ void extract_draw_data(ImDrawData* draw_data, ExtractedDrawData& out, const mgm:
     out.is_set = true;
 }
 
-void ImGui_ImplMgmGFX_RenderDrawData(ExtractedDrawData& draw_data) {
+void ImGui_ImplMgmGFX_RenderDrawData(ExtractedDrawData& draw_data, const mgm::MgmGPU::Settings& draw_settings) {
     auto* data = get_backend_data();
     auto& backend = *data->backend;
-    auto base_graphics_settings = backend.get_settings();
+    auto base_graphics_settings = draw_settings.backend;
 
     base_graphics_settings.blending.enabled = true;
     base_graphics_settings.blending.color_equation = mgm::GPUSettings::Blending::Equation::ADD;
@@ -241,13 +245,16 @@ void ImGui_ImplMgmGFX_RenderDrawData(ExtractedDrawData& draw_data) {
                 .type = mgm::MgmGPU::DrawCall::Type::DRAW,
                 .shader = data->font_atlas_shader,
                 .buffers_object = mesh,
-                .textures = {data->font_atlas},
+                .textures = {cmd_data.texture == mgm::MgmGPU::INVALID_TEXTURE ? data->font_atlas : cmd_data.texture},
                 .parameters = {
                     {"Proj", draw_data.proj}
                 }
             });
         }
-        backend.draw(draw_list, base_graphics_settings);
+        backend.draw(draw_list, mgm::MgmGPU::Settings{
+            .backend = base_graphics_settings,
+            .canvas = mgm::MgmGPU::INVALID_TEXTURE
+        });
         for (const auto& buf : leftover_buffers)
             backend.destroy_buffer(buf);
         for (const auto& draw_call : draw_list)
@@ -443,6 +450,13 @@ void ImGui_ImplMgmGFX_ProcessInput(mgm::MgmWindow &window) {
 }
 
 namespace ImGui {
+    ImTextureID as_imgui_texture(const mgm::MgmGPU::TextureHandle& texture) {
+        return reinterpret_cast<ImTextureID>(reinterpret_cast<uintptr_t>(texture.id));
+    }
+    mgm::MgmGPU::TextureHandle as_mgmgpu_texture(const ImTextureID& texture) {
+        return mgm::MgmGPU::TextureHandle{reinterpret_cast<uintptr_t>(texture)};
+    }
+
     void BeginResizeable(const char *name, bool *p_open, ImGuiWindowFlags flags) {
         ImGui::Begin(name, p_open, flags);
 

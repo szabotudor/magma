@@ -1,5 +1,6 @@
 #pragma once
 #include "file.hpp"
+#include "mgmgpu.hpp"
 #include "systems/editor.hpp"
 #include "tools/mgmecs.hpp"
 #include <memory>
@@ -45,6 +46,12 @@ namespace mgm {
 
         MGMecs<>::Entity this_viewport_scene_root{};
         Path this_viewport_scene_path{};
+        
+        vec2i32 old_size{};
+
+        MgmGPU::TextureHandle viewport_texture{};
+
+        bool first_draw = true;
 
         void do_save();
 

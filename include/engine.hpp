@@ -21,6 +21,7 @@ namespace mgm {
     class SystemManager;
     class EngineManager;
     class EntityComponentSystem;
+    class Renderer;
 
 
     class MagmaEngine {
@@ -44,6 +45,7 @@ namespace mgm {
         Input& input();
         Notifications& notifications();
         MgmGPU& graphics();
+        Renderer& renderer();
 #if defined(ENABLE_EDITOR)
         Editor& editor();
 #endif

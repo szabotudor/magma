@@ -11,6 +11,7 @@
 #include "systems/notifications.hpp"
 #include "file.hpp"
 #include "systems/resources.hpp"
+#include "systems/renderer.hpp"
 
 #if defined(ENABLE_EDITOR)
 #include "systems/editor.hpp"
@@ -29,8 +30,8 @@ namespace mgm {
         FileIO* file_io = nullptr;
         MgmWindow* window = nullptr;
         MgmGPU* graphics = nullptr;
-        GPUSettings graphics_settings{};
-        std::vector<MgmGPU::DrawCall> draw_list{};
+        MgmGPU::Settings graphics_settings{};
+        std::vector<MgmGPU::DrawCall> basic_draw_list{};
 
         SystemManager* system_manager = nullptr;
 
@@ -44,7 +45,7 @@ namespace mgm {
             graphics_settings_mutex.lock();
             const auto settings = data->graphics_settings;
             graphics_settings_mutex.unlock();
-            graphics().draw(data->draw_list, settings);
+            graphics().draw(data->basic_draw_list, settings);
 
             std::unique_lock lock{systems().mutex};
             for (auto& system : systems().systems)
@@ -53,7 +54,7 @@ namespace mgm {
 
             imgui_mutex.lock();
             if (data->imgui_draw_data->is_set)
-                ImGui_ImplMgmGFX_RenderDrawData(*data->imgui_draw_data);
+                ImGui_ImplMgmGFX_RenderDrawData(*data->imgui_draw_data, settings);
             imgui_mutex.unlock();
 
             graphics().present();
@@ -66,6 +67,7 @@ namespace mgm {
     Input& MagmaEngine::input() { return systems().get<Input>(); }
     Notifications& MagmaEngine::notifications() { return systems().get<Notifications>(); }
     MgmGPU& MagmaEngine::graphics() { return *data->graphics; }
+    Renderer& MagmaEngine::renderer() { return systems().get<Renderer>(); }
 #if defined(ENABLE_EDITOR)
     Editor& MagmaEngine::editor() {
         const auto e = systems().try_get<Editor>();
@@ -126,11 +128,11 @@ namespace mgm {
 #endif
 #endif
 
-        data->graphics_settings.clear.color = {0.1f, 0.2f, 0.3f, 1.0f};
-        data->graphics_settings.viewport.top_left = {0, 0};
-        data->graphics_settings.viewport.bottom_right = vec2i32{static_cast<int>(window().get_size().x), static_cast<int>(window().get_size().y)};
+        data->graphics_settings.backend.clear.color = {0.1f, 0.2f, 0.3f, 1.0f};
+        data->graphics_settings.backend.viewport.top_left = {0, 0};
+        data->graphics_settings.backend.viewport.bottom_right = vec2i32{static_cast<int>(window().get_size().x), static_cast<int>(window().get_size().y)};
 
-        data->draw_list.emplace_back(MgmGPU::DrawCall{
+        data->basic_draw_list.emplace_back(MgmGPU::DrawCall{
             .type = MgmGPU::DrawCall::Type::CLEAR
         });
 
@@ -143,6 +145,7 @@ namespace mgm {
         systems().create<Input>();
         systems().create<Notifications>();
         systems().create<EntityComponentSystem>();
+        systems().create<Renderer>();
 
 #if defined(ENABLE_EDITOR)
         if (std::find(args.begin(), args.end(), "--editor") != args.end())
@@ -234,7 +237,7 @@ namespace mgm {
                 data->imgui_draw_data->clear();
 
             graphics_settings_mutex.lock();
-            const auto viewport = data->graphics_settings.viewport;
+            const auto viewport = data->graphics_settings.backend.viewport;
             graphics_settings_mutex.unlock();
             extract_draw_data(ImGui::GetDrawData(), *data->imgui_draw_data, viewport);
 
@@ -243,8 +246,8 @@ namespace mgm {
             if (window().get_size() != window_size) {
                 window_size = window().get_size();
                 graphics_settings_mutex.lock();
-                data->graphics_settings.viewport.top_left = {0, 0};
-                data->graphics_settings.viewport.bottom_right = vec2i32{static_cast<int>(window_size.x), static_cast<int>(window_size.y)};
+                data->graphics_settings.backend.viewport.top_left = {0, 0};
+                data->graphics_settings.backend.viewport.bottom_right = vec2i32{static_cast<int>(window_size.x), static_cast<int>(window_size.y)};
                 graphics_settings_mutex.unlock();
             }
 

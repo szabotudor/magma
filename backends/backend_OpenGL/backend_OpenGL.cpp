@@ -1,6 +1,7 @@
 #include "backend.hpp"
 #include "backend_OpenGL.hpp"
 #include "glad/glad.h"
+#include "logging.hpp"
 #include "shaders.hpp"
 #include <atomic>
 #include <mutex>
@@ -204,10 +205,37 @@ namespace mgm {
         return success;
     }
 
-    EXPORT void clear(BackendData* backend) {
+    void make_texture_canvas(Texture* tex);
+    void setup_vao_attrib_pointers(BuffersObject* buffers);
+
+    void use_canvas(BackendData* backend, Texture* canvas) {
+        if (canvas) {
+            if (canvas != backend->canvas) {
+                if (backend->viewport.size.x > canvas->size.x || backend->viewport.size.y > canvas->size.y) {
+                    log.error(
+                        "Viewport size (", std::to_string(backend->viewport.size.x), ", ", std::to_string(backend->viewport.size.y),
+                        ") is larger than canvas size (", std::to_string(canvas->size.x), ", ", std::to_string(canvas->size.y), ")"
+                    );
+                    backend->platform->make_null_current();
+                    mutex.unlock();
+                    return;
+                }
+                make_texture_canvas(canvas);
+                glBindFramebuffer(GL_FRAMEBUFFER, canvas->fbo);
+                backend->canvas = canvas;
+            }
+        }
+        else if (backend->canvas) {
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+            backend->canvas = nullptr;
+        }
+    }
+
+    EXPORT void clear(BackendData* backend, Texture* canvas) {
         mutex.lock();
         if (backend->clear_mask) {
             backend->platform->make_current();
+            use_canvas(backend, canvas);
             glClear(backend->clear_mask);
             backend->platform->make_null_current();
         }
@@ -249,9 +277,6 @@ namespace mgm {
             log.error("Unsupported shader parameter type '", value.type().name(), "'");
     }
 
-    void make_texture_canvas(Texture* tex);
-    void setup_vao_attrib_pointers(BuffersObject* buffers);
-
     EXPORT void execute(BackendData* backend, Texture* canvas) {
         mutex.lock();
 
@@ -261,23 +286,7 @@ namespace mgm {
         }
 
         backend->platform->make_current();
-        if (canvas) {
-            if (canvas != backend->canvas) {
-                if (backend->viewport.size.x > canvas->size.x || backend->viewport.size.y > canvas->size.y) {
-                    log.error("Viewport size is larger than canvas size");
-                    backend->platform->make_null_current();
-                    mutex.unlock();
-                    return;
-                }
-                make_texture_canvas(canvas);
-                glBindFramebuffer(GL_FRAMEBUFFER, canvas->fbo);
-                backend->canvas = canvas;
-            }
-        }
-        else if (backend->canvas) {
-            glBindFramebuffer(GL_FRAMEBUFFER, 0);
-            backend->canvas = nullptr;
-        }
+        use_canvas(backend, canvas);
 
         for (const auto& draw_call : backend->draw_calls) {
             glUseProgram(draw_call.shader->prog);
@@ -481,8 +490,8 @@ namespace mgm {
             const auto loc = glGetAttribLocation(buffers->last_used_shader->prog, name.c_str());
 
             if (loc == GL_INVALID) {
-                log.error("No buffer by the name \"", name, "\"");
-                return;
+                log.error("No buffer by the name \"", name, "\" (or it was optimized away because it's unused)");
+                continue;
             }
 
             if (buffers->last_used_shader->buffers_for_vertex_shader[name]) {
@@ -637,8 +646,9 @@ namespace mgm {
         
         const auto vit = builder.functions.find("vertex");
         if (vit != builder.functions.end()) {
+            size_t _loc = 0;
             for (const auto& [param, type] : vit->second.function_parameters) {
-                vertex += "in " + type + " " + param + ";\n";
+                vertex += "layout(location = " + std::to_string(_loc++) + ") in " + type + " " + param + ";\n";
                 shader->buffers_for_vertex_shader[param] = true;
             }
         }
@@ -682,6 +692,9 @@ namespace mgm {
             else if (name == "pixel")
                 fragment += "void main() {\n" + func_body + "}\n";
         }
+
+        Logging{"Shader"}.log(vertex);
+        Logging{"Shader"}.log(fragment);
 
         return {
             .vertex = vertex,

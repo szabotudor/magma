@@ -15,16 +15,16 @@ namespace mgm {
     class MgmGPU {
         public:
         // Handle for a buffer, which can be used to store data on the GPU
-        class BufferHandle : public ID_t{ using ID_t::ID_t; };
+        class BufferHandle : public ID_t{ public: using ID_t::ID_t; BufferHandle() : ID_t(ID_t::_uint(-1)) {} };
 
         // Handle for a buffers object, which can be used to store multiple buffers and their bindings
-        class BuffersObjectHandle : public ID_t{ using ID_t::ID_t; };
+        class BuffersObjectHandle : public ID_t{ public: using ID_t::ID_t; BuffersObjectHandle() : ID_t(ID_t::_uint(-1)) {} };
 
         // Handle for a texture, which can be used to store image data on the GPU
-        class TextureHandle : public ID_t{ using ID_t::ID_t; };
+        class TextureHandle : public ID_t{ public: using ID_t::ID_t; TextureHandle() : ID_t(ID_t::_uint(-1)) {} };
 
         // Handle for a shader, which can be used to execute code on the GPU
-        class ShaderHandle : public ID_t{ using ID_t::ID_t; };
+        class ShaderHandle : public ID_t{ public: using ID_t::ID_t; ShaderHandle() : ID_t(ID_t::_uint(-1)) {} };
         
         static constexpr BufferHandle INVALID_BUFFER = BufferHandle{static_cast<BufferHandle::_uint>(-1)};
         static constexpr BuffersObjectHandle INVALID_BUFFERS_OBJECT = BuffersObjectHandle{static_cast<BuffersObjectHandle::_uint>(-1)};
@@ -42,6 +42,14 @@ namespace mgm {
             BuffersObjectHandle buffers_object = INVALID_BUFFERS_OBJECT;
             std::vector<TextureHandle> textures{};
             std::unordered_map<std::string, std::any> parameters{};
+        };
+
+        struct Settings {
+            // Backend settings
+            GPUSettings backend{};
+
+            // The render target (or INVALID_TEXTURE to draw to the window framebuffer)
+            TextureHandle canvas = INVALID_TEXTURE;
         };
 
         private:
@@ -96,7 +104,7 @@ namespace mgm {
          * @brief Run all draw calls in the list, and present the rendered image.
          * Execution is not guaranteed to be immediate, synchronious, or in order, except for clear calls, which are regarded as separators within the same frame.
          */
-        void draw(const std::vector<DrawCall>& draw_calls, const GPUSettings& settings);
+        void draw(const std::vector<DrawCall>& draw_calls, const Settings& settings);
 
         /**
          * @brief Get the settings given when "draw" was last called

@@ -1,11 +1,14 @@
 #include "editor_windows/scene_view.hpp"
+#include "backend_settings.hpp"
 #include "ecs.hpp"
 #include "engine.hpp"
 #include "imgui.h"
+#include "imgui_impl_mgmgpu.h"
 #include "imgui_stdlib.h"
 #include "json.hpp"
 #include "systems/notifications.hpp"
 #include "tools/mgmecs.hpp"
+#include "systems/renderer.hpp"
 #include <memory>
 #include <string>
 
@@ -24,6 +27,9 @@ namespace mgm {
 
     void SceneViewport::do_save() {
         MagmaEngine engine{};
+
+        if (engine.ecs().ecs.try_get<HierarchyNode>(current_scene_root) == nullptr)
+            return;
 
         JObject scene_data{};
         scene_data["name"] = "Root";
@@ -45,15 +51,36 @@ namespace mgm {
     }
 
     void SceneViewport::draw_contents() {
-        static std::mutex ecs_modify_mutex{};
+        MagmaEngine engine{};
+        auto& renderer = engine.renderer();
+        const vec2i32 new_size = {(int32_t)ImGui::GetContentRegionAvail().x, (int32_t)ImGui::GetContentRegionAvail().y};
 
-        ImGui::Text("ViewportContents");
+        if (new_size != old_size) {
+            auto& gpu = MagmaEngine{}.graphics();
 
-        if (current_scene_root != this_viewport_scene_root) {
+            gpu.destroy_texture(viewport_texture);
+            viewport_texture = gpu.create_texture(TextureCreateInfo{
+                .name = "Texture",
+                .size = new_size
+            });
+            old_size = new_size;
+
+            renderer.settings.canvas = viewport_texture;
+            renderer.projection = mat4f::gen_perspective_projection(90.0f, (float)new_size.y / (float)new_size.x, 0.1f, 1000.0f);
+            renderer.settings.backend.viewport.top_left = {0, 0};
+            renderer.settings.backend.viewport.bottom_right = new_size;
+        }
+
+        ImGui::Image(ImGui::as_imgui_texture(viewport_texture), {(float)new_size.x, (float)new_size.y});
+
+        if (current_scene_root != this_viewport_scene_root || first_draw) {
             if (ImGui::IsWindowFocused()) {
-                ecs_modify_mutex.lock();
-                MagmaEngine{}.ecs().current_editing_scene = this_viewport_scene_root;
-                ecs_modify_mutex.unlock();
+                first_draw = false;
+                engine.ecs().current_editing_scene = this_viewport_scene_root;
+                renderer.settings.canvas = viewport_texture;
+                renderer.projection = mat4f::gen_perspective_projection(90.0f, (float)new_size.y / (float)new_size.x, 0.1f, 1000.0f);
+                renderer.settings.backend.viewport.top_left = {0, 0};
+                renderer.settings.backend.viewport.bottom_right = new_size;
 
                 if (time_since_last_edit < save_interval)
                     do_save();
@@ -63,8 +90,6 @@ namespace mgm {
                 time_since_last_edit = save_interval;
             }
         }
-
-        MagmaEngine engine{};
 
         if (time_since_last_edit < save_interval) {
             time_since_last_edit += engine.delta_time();

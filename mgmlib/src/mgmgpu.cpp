@@ -116,7 +116,7 @@ namespace mgm {
         using DestroyBackend = void(*)(BackendData* backend);
         using SetAttribute = bool(*)(BackendData* backend, const GPUSettings::StateAttribute& attr, const void* data);
 
-        using Clear = void(*)(BackendData* backend);
+        using Clear = void(*)(BackendData* backend, Texture* canvas);
         using Execute = void(*)(BackendData* backend, Texture* canvas);
         using Present = void(*)(BackendData* backend);
 
@@ -311,17 +311,21 @@ namespace mgm {
         data->log.log("Unloaded backend");
     }
 
-    void MgmGPU::draw(const std::vector<DrawCall>& draw_list, const GPUSettings& backend_settings) {
+    void MgmGPU::draw(const std::vector<DrawCall>& draw_list, const Settings& settings) {
         if (!is_backend_loaded()) return;
 
         data->mutex.lock();
-        apply_settings(backend_settings);
+        apply_settings(settings.backend);
+
+        Texture* canvas = nullptr;
+        if (settings.canvas != INVALID_TEXTURE)
+            canvas = data->textures[settings.canvas];
 
         for (const auto& call : draw_list) {
             switch (call.type) {
                 case DrawCall::Type::CLEAR: {
-                    data->execute(data->backend, nullptr);
-                    data->clear(data->backend);
+                    data->execute(data->backend, canvas);
+                    data->clear(data->backend, canvas);
                     break;
                 }
                 case DrawCall::Type::DRAW: {
@@ -337,7 +341,7 @@ namespace mgm {
                     break;
                 }
                 case DrawCall::Type::SETTINGS_CHANGE: {
-                    data->execute(data->backend, nullptr);
+                    data->execute(data->backend, canvas);
                     const auto it = call.parameters.find("settings");
                     if (it == call.parameters.end())
                         data->log.error("SETTINGS_CHANGE draw call missing \"settings\" parameter");
@@ -349,7 +353,7 @@ namespace mgm {
             }
         }
 
-        data->execute(data->backend, nullptr);
+        data->execute(data->backend, canvas);
         data->mutex.unlock();
     }
 

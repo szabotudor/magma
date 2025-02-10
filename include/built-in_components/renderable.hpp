@@ -41,8 +41,8 @@ namespace mgm {
 
     struct Transform {
         vec3f pos{};
-        vec3f scale{};
-        vec4f rot{};
+        vec3f scale{1.0f};
+        quatf rot{};
 
         Transform() = default;
 
@@ -50,6 +50,11 @@ namespace mgm {
         operator SerializedData<Transform>();
 
         mat4f as_matrix() const;
+
+        Transform inverse() const;
+
+        Transform operator*(const Transform& other) const;
+        Transform& operator*=(const Transform& other);
     };
 
 

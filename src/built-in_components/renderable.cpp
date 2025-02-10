@@ -15,19 +15,55 @@ namespace mgm {
     Transform::Transform(const SerializedData<Transform>& json) {
         pos = deserialize(SerializedData<vec3f>(json["position"]));
         scale = deserialize(SerializedData<vec3f>(json["scale"]));
-        rot = deserialize(SerializedData<vec4f>(json["rotation"]));
+        rot = static_cast<quatf>(deserialize(SerializedData<vec4f>(json["rotation"])));
     }
 
     Transform::operator SerializedData<Transform>() {
         SerializedData<Transform> res{};
         res["position"] = serialize(pos);
         res["scale"] = serialize(scale);
-        res["rotation"] = serialize(rot);
+        res["rotation"] = serialize(static_cast<vec4f>(rot));
         return res;
     }
 
     mat4f Transform::as_matrix() const {
-        
+        const mat4f translate_mat {
+            1.0f, 0.0f, 0.0f, pos.x,
+            0.0f, 1.0f, 0.0f, pos.y,
+            0.0f, 0.0f, 1.0f, pos.z,
+            0.0f, 0.0f, 0.0f, 1.0f
+        };
+
+        const mat4f rotation_mat = rot.as_rotation_mat4();
+
+        const mat4f scale_mat {
+            scale.x, 0.0f, 0.0f, 0.0f,
+            0.0f, scale.y, 0.0f, 0.0f,
+            0.0f, 0.0f, scale.z, 0.0f,
+            0.0f, 0.0f, 0.0f, 1.0f
+        };
+
+        return scale_mat * translate_mat * rotation_mat;
+    }
+
+    Transform Transform::inverse() const {
+        Transform inv{};
+        inv.rot = rot.inv();
+        inv.scale = 1.0f / scale;
+        inv.pos = inv.rot.rotate(-pos * inv.scale);
+        return inv;
+    }
+
+    Transform Transform::operator*(const Transform& other) const {
+        Transform res{};
+        res.pos = pos + rot.rotate(other.pos * scale);
+        res.scale = scale * other.scale;
+        res.rot = rot * other.rot;
+        return res;
+    }
+
+    Transform& Transform::operator*=(const Transform& other) {
+        return *this = *this * other;
     }
 
 
@@ -135,7 +171,7 @@ namespace mgm {
             vertices.data(),
             vertices.size()
         });
-        buffer_names["Verts"] = vertex_buffer;
+        buffer_names["verts"] = vertex_buffer;
 
         if (!vert_colors.empty()) {
             color_buffer = gpu.create_buffer(BufferCreateInfo{
@@ -143,7 +179,7 @@ namespace mgm {
                 vert_colors.data(),
                 vert_colors.size()
             });
-            buffer_names["VertColors"] = color_buffer;
+            buffer_names["vert_colors"] = color_buffer;
         }
 
         if (!normals.empty()) {
@@ -152,7 +188,7 @@ namespace mgm {
                 normals.data(),
                 normals.size()
             });
-            buffer_names["Normals"] = normal_buffer;
+            buffer_names["norms"] = normal_buffer;
         }
         
         if (!tex_coords.empty()) {
@@ -161,7 +197,7 @@ namespace mgm {
                 tex_coords.data(),
                 tex_coords.size()
             });
-            buffer_names["TexCoords"] = tex_coord_buffer;
+            buffer_names["tex_coords"] = tex_coord_buffer;
         }
 
         buffers_object = gpu.create_buffers_object(buffer_names);

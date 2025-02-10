@@ -60,7 +60,7 @@ namespace mgm {
      * 
      * @param backend The backend to use
      */
-    EXPORT void clear(BackendData* backend);
+    EXPORT void clear(BackendData* backend, Texture* canvas = nullptr);
 
     /**
      * @brief Execute all draw calls pushed this frame

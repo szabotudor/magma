@@ -63,6 +63,9 @@ namespace mgm {
         }
 
         vec_storage(const T& k = T{}) : _data(k) {}
+        
+        template<typename... Ts>
+        vec_storage(Ts&&... args) : _data(std::forward<Ts>(args)...) {}
 
         vec_storage(const vec_storage&) = default;
         vec_storage(vec_storage&&) = default;
@@ -103,8 +106,24 @@ namespace mgm {
                     #endif
             }
         }
+        const T& operator[](const size_t i) const {
+            switch (i) {
+                case 0: return x;
+                case 1: return y;
+                case 2: return z;
+                case 3: return w;
+                default:
+                    #if !defined(NDEBUG)
+                    throw std::runtime_error{"Index out of range"};
+                    #else
+                    return x;
+                    #endif
+            }
+        }
 
         vec_storage(const T& k = T{}) : x(k), y(k), z(k), w(k) {}
+
+        vec_storage(const T& x_v, const T& y_v, const T& z_v = 0, const T& w_v = 0) : x(x_v), y(y_v), z(z_v), w(w_v) {}
 
         vec_storage(const vec_storage&) = default;
         vec_storage(vec_storage&&) = default;
@@ -141,8 +160,23 @@ namespace mgm {
                     #endif
             }
         }
+        const T& operator[](const size_t i) const {
+            switch (i) {
+                case 0: return x;
+                case 1: return y;
+                case 2: return z;
+                default:
+                    #if !defined(NDEBUG)
+                    throw std::runtime_error{"Index out of range"};
+                    #else
+                    return x;
+                    #endif
+            }
+        }
 
         vec_storage(const T& k = T{}) : x(k), y(k), z(k) {}
+
+        vec_storage(const T& x_v, const T& y_v, const T& z_v = 0) : x(x_v), y(y_v), z(z_v) {}
 
         vec_storage(const vec_storage&) = default;
         vec_storage(vec_storage&&) = default;
@@ -176,8 +210,22 @@ namespace mgm {
                     #endif
             }
         }
+        const T& operator[](const size_t i) const {
+            switch (i) {
+                case 0: return x;
+                case 1: return y;
+                default:
+                    #if !defined(NDEBUG)
+                    throw std::runtime_error{"Index out of range"};
+                    #else
+                    return x;
+                    #endif
+            }
+        }
 
         vec_storage(const T& k = T{}) : x(k), y(k) {}
+
+        vec_storage(const T& x_v, const T& y_v) : x(x_v), y(y_v) {}
 
         vec_storage(const vec_storage&) = default;
         vec_storage(vec_storage&&) = default;
@@ -190,6 +238,7 @@ namespace mgm {
 
     template<size_t S, class T>
     class vec : public vec_storage<S, T> {
+        public:
 
         template<ASSURE_SIZE(1)>
         T& _x() { return vec_storage<S, T>::_x(); }
@@ -721,6 +770,9 @@ namespace mgm {
             sub(data(), v.data(), res.data(), IntList<S>{});
             return res;
         }
+        vec<S, T> operator-() const {
+            return vec<S, T>{} - *this;
+        }
         vec<S, T> operator*(const vec<S, T>& v) const {
             vec<S, T> res{};
             mul(data(), v.data(), res.data(), IntList<S>{});
@@ -764,6 +816,19 @@ namespace mgm {
             return *this;
         }
 
+        friend vec<S, T> operator+(const T& l, const vec<S, T>& r) {
+            return vec<S, T>{l} + r;
+        }
+        friend vec<S, T> operator-(const T& l, const vec<S, T>& r) {
+            return vec<S, T>{l} - r;
+        }
+        friend vec<S, T> operator*(const T& l, const vec<S, T>& r) {
+            return vec<S, T>{l} * r;
+        }
+        friend vec<S, T> operator/(const T& l, const vec<S, T>& r) {
+            return vec<S, T>{l} / r;
+        }
+
         T* begin() { return data(); }
         T* end() { return data() + S; }
 
@@ -800,6 +865,13 @@ namespace mgm {
          */
         T length() const {
             return std::sqrt(this->dot(*this));
+        }
+
+        /**
+         * @brief Calculate the squared length of the vector (faster than the actual length, useful for fast comparisons)
+         */
+        T length_squared() const {
+            return this->dot(*this);
         }
 
         /**
@@ -883,6 +955,17 @@ namespace mgm {
         vec<S, T>& clamp(const vec<S, T>& low, const vec<S, T>& high) {
             *this = max(min(*this, high), low);
             return *this;
+        }
+
+        /**
+         * @brief Perform a linear interpolation frmo this vector to another destination vector
+         * 
+         * @param destination The vector to interpolate towards
+         * @param weight The amount to interpolate by
+         * @return The result of the interpolation
+         */
+        vec<S, T> lerp(const vec<S, T>& destination, T weight) const {
+            return *this + weight * (destination - *this);
         }
     };
 
@@ -1273,9 +1356,9 @@ namespace mgm {
         template<size_t l2, size_t c2, typename std::enable_if<c == l2, int>::type = 0>
         mat<l, c2, T> operator*(const mat<l2, c2, T>& m) const {
             mat<l, c2, T> res{};
-            for (int i = 0; i < l; i++)
-                for (int j = 0; j < c2; j++)
-                    for (int k = 0; k < c; k++)
+            for (size_t i = 0; i < l; i++)
+                for (size_t j = 0; j < c2; j++)
+                    for (size_t k = 0; k < c; k++)
                         res[i][j] += data[i][k] * m[k][j];
             return res;
         }
@@ -1599,6 +1682,26 @@ namespace mgm {
                 T(), T(), T(), (T)1
             };
         }
+
+        template<size_t Lines = l, size_t Columns = c, class Type = T,
+            typename std::enable_if<Lines == 4 && Columns == 4
+            && (std::is_same<Type, float>::value || std::is_same<Type, double>::value), int>::type = 0>
+        static mat<l, c, T> gen_perspective_projection(T fov, T aspect, T near, T far) {
+            T tan_half_fov = std::tan(fov / T(2));
+            return mat<4, 4, T>{
+                T(1) / (aspect * tan_half_fov), T(0),                 T(0),                                T(0),
+                T(0),                           T(1) / tan_half_fov,  T(0),                                T(0),
+                T(0),                           T(0),                 -(far + near) / (far - near),        -(T(2) * far * near) / (far - near),
+                T(0),                           T(0),                 T(-1), T(0)
+            };
+            // T scale = T(1) / std::tan(fov * T(0.5));
+            // return mat<l, c, T>{
+            //     scale, T(0), T(0), T(0),
+            //     T(0), scale, T(0), T(0),
+            //     T(0), T(0), -far / (far - near), T(-1),
+            //     T(0), T(0), -far * near / (far - near), T(0)
+            // };
+        }
     };
 
     using mat2f = mat<2, 2, float>;
@@ -1635,4 +1738,174 @@ namespace mgm {
     using mat2i64 = mat<2, 2, int64_t>;
     using mat3i64 = mat<3, 3, int64_t>;
     using mat4i64 = mat<4, 4, int64_t>;
+
+
+
+    //=============
+    // QUATERNIONS
+    //=============
+
+    template<typename T>
+    class quat : public vec<4, T> {
+        public:
+
+        using vec<4, T>::x;
+        using vec<4, T>::y;
+        using vec<4, T>::z;
+        using vec<4, T>::w;
+
+        using vec<4, T>::vec;
+
+        quat() : vec<4, T>(T(0), T(0), T(0), T(1)) {}
+
+        explicit quat(const vec<4, T>& v) : vec<4, T>(v) {}
+        operator vec<4, T>() const { return this->xyzw(); }
+
+        quat<T> operator*(const quat<T>& q) const {
+            return {
+                w * q.x + x * q.w + y * q.z - z * q.y,
+                w * q.y + y * q.w + z * q.x - x * q.z,
+                w * q.z + z * q.w + x * q.y - y * q.x,
+                w * q.w - x * q.x - y * q.y - z * q.z
+            };
+        }
+        quat<T>& operator*=(const quat<T>& q) {
+            return *this = *this * q;
+        }
+
+        /**
+         * @brief Calculate the quaternion's conjugate `q*`
+         */
+        quat<T> conjugate() const {
+            return quat{-x, -y, -z, w};
+        }
+
+        /**
+         * @brief Calculate the quaternion's magnitude (equivalent to length)
+         */
+        T norm() const {
+            return vec<4, T>::length();
+        }
+
+        /**
+         * @brief Calculate the quaternion's inverse `(q*) / (q.norm()^2)`
+         */
+        quat<T> inv() const {
+            const auto len_sq = vec<4, T>::length_squared();
+            if (len_sq == 0)
+                throw std::runtime_error("Cannot invert zero quaternion");
+            return static_cast<quat>(conjugate() / len_sq);
+        }
+
+        /**
+         * @brief Rotate a vector using this quaternion
+         * 
+         * @param v The vector to rotate
+         * @return The rotated version of the vector
+         */
+        vec<3, T> rotate(const vec<3, T>& v) const {
+            const auto res = *this * quat<T>{v, 0.0f} * conjugate();
+            return vec<3, T>{res.x, res.y, res.z};
+        }
+
+        /**
+         * @brief Rotate a vector using this quaternion, making sure it is a normalized quaternion first, suitable for rotations
+         * 
+         * @param v The vector to rotate
+         * @return The rotate version of the vector
+         */
+        vec<3, T> rotate_safe(const vec<3, T>& v) const {
+            const auto res = *this * quat<T>{v, 0.0f} * inv();
+            return vec<3, T>{res.x, res.y, res.z};
+        }
+        
+        /**
+         * @brief Generate a quaternion from an angle rotated around a given axis (normalized direction vector)
+         * 
+         * @param axis The axis to rotate around
+         * @param angle The angle in radians to rotate by
+         * @return The calculated quaternion
+         */
+        static inline quat<T> from_angle(const vec<3, T>& axis, T angle) {
+            if (angle == 0)
+                return quat<T>{0, 0, 0, 1};
+
+            const auto ha = angle / 2;
+            const auto s = std::sin(ha);
+            const auto c = std::cos(ha);
+            return quat<T>{axis * s, c};
+        }
+
+        /**
+         * @brief Generate a quaternion from an angle rotated around a given axis, making sure the axis is a valid normalized vector, suitable for reprezenting axis
+         * 
+         * @param axis The axis to rotate around
+         * @param angle The angle in radians to rotate by
+         * @return The calculated quaternion
+         */
+        static inline quat<T> from_angle_safe(const vec<3, T>& axis, const T angle) {
+            if (angle == T(0))
+                return quat<T>{T(0), T(0), T(0), T(1)};
+
+            if (angle > std::numbers::pi * T(2))
+                angle = angle - std::numbers::pi * T(2) * std::floor(angle / (std::numbers::pi * T(2)));
+            else if (angle < -std::numbers::pi * T(2))
+                angle = angle + std::numbers::pi * T(2) * std::ceil(angle / (std::numbers::pi * T(2)));
+
+            const auto ha = angle / T(2);
+            const auto s = std::sin(ha);
+            const auto c = std::cos(ha);
+            return quat<T>{axis.normalized() * s, c};
+        }
+
+        /**
+         * @brief Generate a rotation matrix from this quaternion, that will rotate a vector the same way this quaternion would
+         */
+        mat<4, 4, T> as_rotation_mat4() const {
+            return mat<4, 4, T>{
+                T(1) - T(2) * (y * y + z * z), T(2) * (x * y - z * w),     T(2) * (x * z + y * w),     T(0),
+                T(2) * (x * y + z * w),     T(1) - T(2) * (x * x + z * z), T(2) * (y * z - x * w),     T(0),
+                T(2) * (x * z - y * w),     T(2) * (y * z + x * w),     T(1) - T(2) * (x * x + y * y), T(0),
+                T(0),                       T(0),                       T(0),                       T(1)
+            };
+        }
+        /**
+         * @brief Generate a rotation matrix from this quaternion, that will rotate a vector the same way this quaternion would
+         */
+        mat<3, 3, T> as_rotation_mat3() const {
+            return mat<3, 3, T>{
+                T(1) - T(2) * (y * y + z * z), T(2) * (x * y - z * w),     T(2) * (x * z + y * w),
+                T(2) * (x * y + z * w),     T(1) - T(2) * (x * x + z * z), T(2) * (y * z - x * w),
+                T(2) * (x * z - y * w),     T(2) * (y * z + x * w),     T(1) - T(2) * (x * x + y * y)
+            };
+        }
+
+        /**
+         * @brief Perform a spherical linear interpolation (slerp) from this quaternion to a destination quaternion
+         * 
+         * @param destination The destination to interpolate towards
+         * @param weight The amount to interpolate by
+         * @return The result of the interpolation
+         */
+        quat<T> slerp(quat<T> destination, T weight) const {
+            auto d = this->dot(destination);
+
+            if (d < T(0)) {
+                d = -d;
+                destination = -destination;
+            }
+
+            // Because of loss of precision
+            static constexpr auto THRESHOLD = T(0.9995);
+            if (d > THRESHOLD)
+                return static_cast<quat<T>>(this->lerp(destination).normalized());
+
+            const auto theta = std::acos(d) * weight;
+
+            return *this * std::cos(theta) + (destination - *this * d).normalized() * std::sin(theta);
+        }
+    };
+
+    using quatf = quat<float>;
+    using quatd = quat<double>;
 }
