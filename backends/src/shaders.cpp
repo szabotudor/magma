@@ -501,7 +501,7 @@ namespace mgm {
             else if (type == WordType::NAME || type == WordType::NUMBERED_NAME || type == WordType::NUMBER || type == WordType::STRING)
                 return {.operations = words};
         }
-        else if ((get_word_type(words[0]) == WordType::NAME || get_word_type(words[0]) == WordType::NUMBERED_NAME) && get_word_type(words[1]) == WordType::BRACE && words[1].starts_with('(')) {
+        else if (words.size() == 2 && (get_word_type(words[0]) == WordType::NAME || get_word_type(words[0]) == WordType::NUMBERED_NAME) && get_word_type(words[1]) == WordType::BRACE && words[1].starts_with('(')) {
             auto group_content = parse_line(name, get_brace_contents(words[1]));
             group_content.operations.emplace_back(words[0]);
             group_content.operations.emplace_back(std::to_string(group_content.operations.size() - 1));
