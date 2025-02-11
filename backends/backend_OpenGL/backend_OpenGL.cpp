@@ -722,9 +722,6 @@ namespace mgm {
                 fragment += "void main() {\n" + func_body + "}\n";
         }
 
-        Logging{"Shader"}.log(vertex);
-        Logging{"Shader"}.log(fragment);
-
         return {
             .vertex = vertex,
             .fragment = fragment

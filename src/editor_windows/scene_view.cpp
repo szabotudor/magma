@@ -62,14 +62,14 @@ namespace mgm {
         if (new_size != old_size) {
             auto& gpu = MagmaEngine{}.graphics();
 
+            std::unique_lock lock{renderer.mutex};
+
             gpu.destroy_texture(viewport_texture);
             viewport_texture = gpu.create_texture(TextureCreateInfo{
                 .name = "Texture",
                 .size = new_size
             });
             old_size = new_size;
-
-            std::unique_lock lock{renderer.mutex};
 
             renderer.settings.canvas = viewport_texture;
             renderer.projection = mat4f::gen_perspective_projection(fov_y, (float)new_size.x / (float)new_size.y, 0.1f, 1000.0f);

@@ -1,7 +1,6 @@
 #include <cstring>
 #include <mutex>
 #include <string>
-#include <type_traits>
 #include <unordered_map>
 #include <vector>
 
@@ -21,82 +20,36 @@
 namespace mgm {
     template<typename T>
     class SimpleSparseSet {
-        struct Container {
-            T data;
-            bool alive;
-        };
-        Container* data = nullptr;
-        size_t capacity = 0;
-        size_t size = 0;
-        std::vector<ID_t> free_ids{};
-
-        void alloc(size_t count) {
-            if (count == 0)
-                return;
-
-            const auto new_data = reinterpret_cast<Container*>(new char[count * sizeof(Container)]);
-            if constexpr (!std::is_trivially_constructible_v<T>) {
-                for (size_t i = 0; i < size; i++) {
-                    if (data[i].alive) {
-                        new (&new_data[i].data) T{std::move(data[i].data)};
-                        new_data[i].alive = true;
-                        data[i].~Container();
-                    }
-                }
-            }
-            else if (data != nullptr && size > 0)
-                memcpy(new_data, data, size * sizeof(Container));
-
-            delete[] reinterpret_cast<char*>(data);
-            data = new_data;
-            capacity = count;
-        }
+        std::unordered_map<ID_t, T> map{};
+        ID_t place = ID_t{0};
 
         public:
-        SimpleSparseSet(size_t set_capacity = 0) : capacity{set_capacity} {
-            alloc(set_capacity);
-        }
 
         template<typename... Ts>
         ID_t create(Ts&&... args) {
-            if (free_ids.empty()) {
-                if (size == capacity)
-                    alloc(capacity ? capacity * 2 : 8);
-                new (&data[size].data) T{std::forward<Ts>(args)...};
-                data[size].alive = true;
-                return static_cast<ID_t>(size++);
-            }
-
-            const auto id = free_ids.back();
-            new (&data[id].data) T{std::forward<Ts>(args)...};
-            data[id].alive = true;
-            free_ids.pop_back();
-            return id;
+            const auto p = place++;
+            map.emplace(p, T{std::forward<Ts>(args)...});
+            return p;
         }
 
         void destroy(ID_t id) {
-            if (!data[id].alive)
+            const auto it = map.find(id);
+            if (it == map.end())
                 return;
 
-            data[id].data.~T();
-            data[id].alive = false;
-            free_ids.emplace_back(id);
+            map.erase(it);
         }
         
         T& operator[](ID_t id) {
-            return data[id].data;
+            return map.at(id);
         }
 
         const T& operator[](ID_t id) const {
-            return data[id].data;
+            return map.at(id);
         }
 
-        ~SimpleSparseSet() {
-            if constexpr (!std::is_trivially_destructible_v<T>)
-                for (size_t i = 0; i < size; i++)
-                    if (data[i].alive)
-                        data[i].data.~T();
-            delete[] (char*)data;
+        bool check(const ID_t id) const {
+            return map.find(id) != map.end();
         }
     };
 
@@ -319,11 +272,18 @@ namespace mgm {
         if (!is_backend_loaded()) return;
 
         data->mutex.lock();
-        apply_settings(settings.backend);
 
         Texture* canvas = nullptr;
-        if (settings.canvas != INVALID_TEXTURE)
+        if (settings.canvas != INVALID_TEXTURE) {
+            if (!data->textures.check(settings.canvas)) {
+                data->log.warning("The canvas texture ", settings.canvas.id, " provided in the settings is invalid, aborting execution of draw calls");
+                data->mutex.unlock();
+                return;
+            }
             canvas = data->textures[settings.canvas];
+        }
+
+        apply_settings(settings.backend);
 
         for (const auto& call : draw_list) {
             switch (call.type) {
@@ -334,9 +294,26 @@ namespace mgm {
                 }
                 case DrawCall::Type::DRAW: {
                     std::vector<Texture*> textures{};
-                    for (const auto& tex : call.textures)
-                        if (tex != INVALID_TEXTURE)
+                    for (const auto& tex : call.textures) {
+                        if (tex != INVALID_TEXTURE) {
+                            if (!data->textures.check(tex)) {
+                                data->log.warning("Tried executing a draw call using an invalid texture ", tex.id, ", ignoring");
+                                break;
+                            }
                             textures.emplace_back(data->textures[tex]);
+                        }
+                    }
+                    if (textures.size() != call.textures.size())
+                        break;
+
+                    if (!data->shaders.check(call.shader)) {
+                        data->log.warning("Tried executing a draw call using an invalid shader ", call.shader.id, ", ignoring");
+                        break;
+                    }
+                    if (!data->buffers_objects.check(call.buffers_object)) {
+                        data->log.warning("Tried executing a draw call using an invalid buffers object ", call.buffers_object.id, ", ignoring");
+                        break;
+                    }
 
                     data->push_draw_call(data->backend, data->shaders[call.shader], data->buffers_objects[call.buffers_object], textures.data(), textures.size(), call.parameters);
                     break;
@@ -389,6 +366,11 @@ namespace mgm {
         if (!is_backend_loaded()) return;
 
         data->mutex.lock();
+        if (!data->buffers.check(buffer)) {
+            data->log.warning("Tried to update an invalid buffer handle ", buffer.id, ", ignoring");
+            data->mutex.unlock();
+            return;
+        }
         const auto buf = data->buffers[buffer];
         data->mutex.unlock();
 
@@ -405,6 +387,11 @@ namespace mgm {
         if (buffer == INVALID_BUFFER) return;
 
         data->mutex.lock();
+        if (!data->buffers.check(buffer)) {
+            data->log.warning("Tried to destroy an invalid buffer handle ", buffer.id, ", ignoring");
+            data->mutex.unlock();
+            return;
+        }
         const auto buf = data->buffers[buffer];
         data->buffers.destroy(buffer);
         data->mutex.unlock();
@@ -417,10 +404,17 @@ namespace mgm {
 
         std::vector<Buffer*> raw_buffers{};
         std::vector<std::string> buffer_names{};
+        data->mutex.lock();
         for (const auto& [buf_name, buf] : buffers) {
+            if (!data->buffers.check(buf)) {
+                data->log.warning("Tried to use an invalid buffer ", buf.id, " to create a buffers object, ignoring");
+                data->mutex.unlock();
+                return INVALID_BUFFERS_OBJECT;
+            }
             raw_buffers.emplace_back(data->buffers[buf].buffer);
             buffer_names.emplace_back(buf_name);
         }
+        data->mutex.unlock();
 
         const auto obj = data->create_buffers_object(data->backend, raw_buffers.data(), buffer_names.data(), raw_buffers.size());
         if (obj == nullptr)
@@ -437,6 +431,11 @@ namespace mgm {
         if (buffers_object == INVALID_BUFFERS_OBJECT) return;
 
         data->mutex.lock();
+        if (!data->buffers_objects.check(buffers_object)) {
+            data->log.warning("Tried to destroy an invalid buffers object handle ", buffers_object.id, ", ignoring");
+            data->mutex.unlock();
+            return;
+        }
         const auto buf = data->buffers_objects[buffers_object];
         data->buffers_objects.destroy(buffers_object);
         data->mutex.unlock();
@@ -462,6 +461,11 @@ namespace mgm {
         if (shader == INVALID_SHADER) return;
 
         data->mutex.lock();
+        if (!data->shaders.check(shader)) {
+            data->log.warning("Tried to destroy an invalid shader handle ", shader.id, ", ignoring");
+            data->mutex.unlock();
+            return;
+        }
         const auto sh = data->shaders[shader];
         data->shaders.destroy(shader);
         data->mutex.unlock();
@@ -488,11 +492,36 @@ namespace mgm {
         if (texture == INVALID_TEXTURE) return;
 
         data->mutex.lock();
+        if (!data->textures.check(texture)) {
+            data->log.warning("Tried to destroy an invalid texture handle ", texture.id, ", ignoring");
+            data->mutex.unlock();
+            return;
+        }
         const auto tex = data->textures[texture];
         data->textures.destroy(texture);
         data->mutex.unlock();
 
         data->destroy_texture(data->backend, tex);
+    }
+
+    bool MgmGPU::is_valid(const BufferHandle handle) const {
+        std::unique_lock lock{data->mutex};
+        return data->buffers.check(handle);
+    }
+
+    bool MgmGPU::is_valid(const BuffersObjectHandle handle) const {
+        std::unique_lock lock{data->mutex};
+        return data->buffers_objects.check(handle);
+    }
+
+    bool MgmGPU::is_valid(const TextureHandle handle) const {
+        std::unique_lock lock{data->mutex};
+        return data->textures.check(handle);
+    }
+
+    bool MgmGPU::is_valid(const ShaderHandle handle) const {
+        std::unique_lock lock{data->mutex};
+        return data->shaders.check(handle);
     }
 
     MgmGPU::~MgmGPU() {

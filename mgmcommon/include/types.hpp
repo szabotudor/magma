@@ -1,5 +1,6 @@
 #pragma once
 #include <cstdint>
+#include <functional>
 
 
 class ID_t {
@@ -54,3 +55,12 @@ public:
     constexpr ID_t operator&&(const ID_t& other) const { return ID_t(id && other.id); }
     constexpr ID_t operator||(const ID_t& other) const { return ID_t(id || other.id); }
 };
+
+namespace std {
+    template<>
+    struct hash<ID_t> {
+        std::size_t operator()(const ID_t& id) const noexcept {
+            return std::hash<ID_t::_uint>{}(id.id);
+        }
+    };
+}

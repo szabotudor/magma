@@ -201,6 +201,10 @@ void ImGui_ImplMgmGFX_RenderDrawData(ExtractedDrawData& draw_data, const mgm::Mg
         std::vector<mgm::MgmGPU::DrawCall> draw_list{};
 
         for (const auto& cmd_data : cmd.cmd_data) {
+            const auto current_texture = cmd_data.texture == mgm::MgmGPU::INVALID_TEXTURE ? data->font_atlas : cmd_data.texture;
+            if (!backend.is_valid(current_texture))
+                continue;
+
             auto settings = base_graphics_settings;
             settings.scissor = cmd_data.scissor;
             settings.scissor.enabled = true;
@@ -224,7 +228,7 @@ void ImGui_ImplMgmGFX_RenderDrawData(ExtractedDrawData& draw_data, const mgm::Mg
                 .type = mgm::MgmGPU::DrawCall::Type::DRAW,
                 .shader = data->shader.get().created_shader,
                 .buffers_object = mesh,
-                .textures = {cmd_data.texture == mgm::MgmGPU::INVALID_TEXTURE ? data->font_atlas : data->font_atlas}, // TODO: This crashes if the texture is deleted on the main thread, because the renderer has time to try to render it after it was destroyed
+                .textures = {current_texture},
                 .parameters = {
                     {"Proj", draw_data.proj}
                 }

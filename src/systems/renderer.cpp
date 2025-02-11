@@ -66,7 +66,7 @@ namespace mgm {
         const auto use_settings = settings;
         mutex.unlock();
 
-        if (use_settings.canvas == MgmGPU::INVALID_TEXTURE)
+        if (use_settings.canvas == MgmGPU::INVALID_TEXTURE || !MagmaEngine{}.graphics().is_valid(use_settings.canvas))
             return;
 
         draw_calls.emplace_back(MgmGPU::DrawCall{

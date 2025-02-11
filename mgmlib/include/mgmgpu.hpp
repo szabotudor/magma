@@ -184,6 +184,42 @@ namespace mgm {
          */
         void destroy_texture(TextureHandle texture);
 
+        /**
+         * @brief Check if the given buffer handle points to a valid buffer
+         * 
+         * @param handle The handle to check
+         * @return true If the handle is valid
+         * @return false If the handle is invalid, or the object it points to has been destroyed
+         */
+        bool is_valid(const BufferHandle handle) const;
+
+        /**
+         * @brief Check if the given buffers object handle points to a valid buffers object
+         * 
+         * @param handle The handle to check
+         * @return true If the handle is valid
+         * @return false If the handle is invalid, or the object it points to has been destroyed
+         */
+        bool is_valid(const BuffersObjectHandle handle) const;
+
+        /**
+         * @brief Check if the given texture handle points to a valid texture
+         * 
+         * @param handle The handle to check
+         * @return true If the handle is valid
+         * @return false If the handle is invalid, or the object it points to has been destroyed
+         */
+        bool is_valid(const TextureHandle handle) const;
+
+        /**
+         * @brief Check if the given shader handle points to a valid shader
+         * 
+         * @param handle The handle to check
+         * @return true If the handle is valid
+         * @return false If the handle is invalid, or the object it points to has been destroyed
+         */
+        bool is_valid(const ShaderHandle handle) const;
+
         ~MgmGPU();
     };
 }
