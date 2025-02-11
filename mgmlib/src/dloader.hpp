@@ -1,6 +1,5 @@
 #pragma once
 #include "logging.hpp"
-#include "mgmath.hpp"
 
 
 namespace mgm {
@@ -33,7 +32,8 @@ namespace mgm {
          * @param sym_name String with the symbol name
          * @param sym Pointer to a symbol adress to fill
          */
-        template<class T, typename std::enable_if<std::is_pointer<T>::value, int>::type = 0>
+        template<class T>
+        requires std::is_pointer_v<T>
         void sym(const char* sym_name, T* sym) {
             if (!is_loaded()) return;
             *sym = (T)void_sym(sym_name);

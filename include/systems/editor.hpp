@@ -105,7 +105,8 @@ namespace mgm {
         static void initialize_project(const Path& project_path);
         static void unload_project();
 
-        template<typename T, typename... Ts, std::enable_if_t<std::is_base_of_v<EditorWindow, T> && std::is_constructible_v<T, Ts...>, bool> = true>
+        template<typename T, typename... Ts>
+        requires std::is_base_of_v<EditorWindow, T> && std::is_constructible_v<T, Ts...>
         T* add_window(bool remove_on_close = false, Ts&&... args) {
             auto window = new T{std::forward<Ts>(args)...};
             window->remove_on_close = remove_on_close;

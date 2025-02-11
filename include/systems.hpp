@@ -87,7 +87,8 @@ namespace mgm {
          * @param args Arguments to pass to the constructor
          * @return T& A reference to the new system
          */
-        template<typename T, typename... Ts, std::enable_if_t<std::is_constructible_v<T, Ts...> && std::is_base_of_v<System, T>, bool> = true>
+        template<typename T, typename... Ts>
+        requires std::is_constructible_v<T, Ts...> && std::is_base_of_v<System, T>
         T& create(Ts&&... args) {
             std::unique_lock lock{mutex};
             auto id = typeid(T).hash_code();
@@ -198,7 +199,8 @@ namespace mgm {
          * @tparam T The type of the new system to replace the old one with
          * @return T& A reference to the new system
          */
-        template<typename ExistingSystem, typename T, std::enable_if_t<std::is_base_of_v<ExistingSystem, T> && std::is_constructible_v<T, ExistingSystem&&>, bool> = true>
+        template<typename ExistingSystem, typename T>
+        requires std::is_base_of_v<ExistingSystem, T> && std::is_constructible_v<T, ExistingSystem&&>
         T& replace() {
             std::unique_lock lock{mutex};
 

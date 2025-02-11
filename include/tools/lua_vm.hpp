@@ -87,7 +87,8 @@ namespace mgm {
             return func(lua_checkvar<Args>(Is + 1)...);
         }
 
-        template<typename T, typename C, typename Return, typename... Args, std::enable_if_t<std::is_same_v<T, Return (C::*)(Args...)>, bool> = true>
+        template<typename T, typename C, typename Return, typename... Args>
+        requires std::is_same_v<T, Return (C::*)(Args...)>
         void lua_pushvar(Return (C::*field)(Args...)) {
             std::lock_guard lock{mutex};
 
@@ -131,7 +132,8 @@ namespace mgm {
             }, 1);
         }
 
-        template<typename T, typename Return, typename... Args, std::enable_if_t<std::is_same_v<Return(*)(Args...), T>, bool> = true>
+        template<typename T, typename Return, typename... Args>
+        requires std::is_same_v<Return(*)(Args...), T>
         void lua_pushvar(Return(*function)(Args...)) {
             std::lock_guard lock{mutex};
 
@@ -167,9 +169,8 @@ namespace mgm {
             }, 1);
         }
 
-        template<typename T, typename... Ts, std::enable_if_t<std::is_constructible_v<T, Ts...>
-        && !std::is_function_v<T> && !std::is_member_function_pointer_v<T> && !std::is_member_object_pointer_v<T> && !std::is_pointer_v<T> && !std::is_reference_v<T>,
-        bool> = true>
+        template<typename T, typename... Ts>
+        requires (std::is_constructible_v<T, Ts...> && !std::is_function_v<T> && !std::is_member_function_pointer_v<T> && !std::is_member_object_pointer_v<T> && !std::is_pointer_v<T> && !std::is_reference_v<T>)
         void lua_pushvar(Ts&&... args) {
             std::lock_guard lock{mutex};
 
@@ -427,7 +428,8 @@ namespace mgm {
             return res;
         }
 
-        template<typename T, typename... Ts, std::enable_if_t<std::is_constructible_v<T, Ts...>, bool> = true>
+        template<typename T, typename... Ts>
+        requires std::is_constructible_v<T, Ts...>
         void set_var(const std::string& variable_path, Ts&&... args) {
             std::lock_guard lock{mutex};
 
@@ -528,7 +530,8 @@ namespace mgm {
                 return var_path;
             }
 
-            template<typename T, typename VM = VM_t, std::enable_if_t<!std::is_const_v<VM>, bool> = true>
+            template<typename T, typename VM = VM_t>
+            requires (!std::is_const_v<VM>)
             LuaRef<VM_t>& operator=(T&& value) {
                 vm.template set_var<T>(var_path, std::forward<T>(value));
                 return *this;
