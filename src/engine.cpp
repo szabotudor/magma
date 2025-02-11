@@ -136,12 +136,10 @@ namespace mgm {
             .type = MgmGPU::DrawCall::Type::CLEAR
         });
 
-
-        const auto imgui_shader_source = file_io().read_text("resources://shaders/imgui.shader");
-
-        ImGui_ImplMgmGFX_Init(graphics(), imgui_shader_source);
-
         systems().create<ResourceManager>();
+
+        ImGui_ImplMgmGFX_Init(graphics(), "resources://shaders/imgui.shader");
+
         systems().create<Input>();
         systems().create<Notifications>();
         systems().create<EntityComponentSystem>();

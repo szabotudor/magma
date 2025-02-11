@@ -104,7 +104,7 @@ namespace mgm {
         Resource* resource = nullptr;
         std::string ident{};
         size_t type = 0;
-        size_t refs = 0;
+        size_t refs = 1;
         bool from_file : 1 = false;
         bool probably_modified : 1 = false;
         bool loaded : 1 = false;
@@ -141,10 +141,10 @@ namespace mgm {
 
         ResourceReference(const std::string& identifier);
 
-        ResourceReference(ResourceReference&&) = default;
+        ResourceReference(ResourceReference&&);
         ResourceReference(const ResourceReference& other);
 
-        ResourceReference& operator=(ResourceReference&&) = default;
+        ResourceReference& operator=(ResourceReference&&);
         ResourceReference& operator=(const ResourceReference& other);
 
         /**
@@ -424,6 +424,10 @@ namespace mgm {
     }
 
     template<typename T>
+    ResourceReference<T>::ResourceReference(ResourceReference<T>&& other) : container(other.container), is_original(other.is_original) {
+        other.container = nullptr;
+    }
+    template<typename T>
     ResourceReference<T>::ResourceReference(const ResourceReference<T>& other) : container(other.container) {
         const auto lock = container->resource->lock_resource();
         ++container->refs;
@@ -431,7 +435,7 @@ namespace mgm {
 
     template<typename T>
     ResourceReference<T>& ResourceReference<T>::operator=(const ResourceReference<T>& other) {
-        if (this == &other)
+        if (this == &other || !other.valid())
             return *this;
 
         invalidate();
@@ -440,6 +444,18 @@ namespace mgm {
 
         const auto lock = container->resource->lock_resource();
         ++container->refs;
+
+        return *this;
+    }
+    template<typename T>
+    ResourceReference<T>& ResourceReference<T>::operator=(ResourceReference<T>&& other) {
+        if (this == &other || !other.valid())
+            return *this;
+
+        container = other.container;
+        is_original = other.is_original;
+
+        other.container = nullptr;
 
         return *this;
     }

@@ -1,20 +1,25 @@
 #include "backend_settings.hpp"
 #include "imgui_impl_mgmgpu.h"
+#include "engine.hpp"
+#include "file.hpp"
 #include "imgui.h"
 #include "logging.hpp"
 #include "mgmath.hpp"
 #include "mgmgpu.hpp"
 #include "mgmwin.hpp"
-#include "shaders.hpp"
+#include "systems/resources.hpp"
+#include "built-in_components/renderable.hpp"
+#include "engine.hpp"
 #include <cstdint>
 #include <stdexcept>
+#include <vector>
 
 
 
 struct ImGui_BackendData {
     mgm::MgmGPU* backend = nullptr;
     mgm::MgmGPU::TextureHandle font_atlas{};
-    mgm::MgmGPU::ShaderHandle font_atlas_shader{};
+    mgm::ResourceReference<mgm::Shader> shader{};
     mgm::Logging log{"ImGui MgmGFX Backend"};
 };
 ImGui_BackendData* get_backend_data() {
@@ -23,7 +28,7 @@ ImGui_BackendData* get_backend_data() {
     throw std::runtime_error("ImGui backend not initialized");
 }
 
-bool ImGui_ImplMgmGFX_Init(mgm::MgmGPU &backend, const std::string& shader_source) {
+bool ImGui_ImplMgmGFX_Init(mgm::MgmGPU &backend, const mgm::Path& shader_source_path) {
     const auto ctx = ImGui::CreateContext();
     ImGui::SetCurrentContext(ctx);
 
@@ -48,15 +53,14 @@ bool ImGui_ImplMgmGFX_Init(mgm::MgmGPU &backend, const std::string& shader_sourc
     const auto fonts_texture = backend.create_texture(texture_info);
     io.Fonts->SetTexID(reinterpret_cast<void*>(static_cast<intptr_t>(fonts_texture.id)));
 
-    mgm::MgmGPUShaderBuilder shader_builder{};
-    shader_builder.build(shader_source);
-    
-    const auto fonts_shader = backend.create_shader(shader_builder);
+    const auto fonts_shader_resource = mgm::MagmaEngine{}.resource_manager().get_or_load<mgm::Shader>(shader_source_path);
+    if (!fonts_shader_resource.valid())
+        throw std::runtime_error("Invalid shader for imgui");
 
     io.BackendRendererUserData = new ImGui_BackendData{
         &backend,
         fonts_texture,
-        fonts_shader
+        fonts_shader_resource
     };
     get_backend_data()->log.log("Initialized ImGui backend");
 
@@ -71,7 +75,7 @@ bool ImGui_ImplMgmGFX_Init(mgm::MgmGPU &backend, const std::string& shader_sourc
 void ImGui_ImplMgmGFX_Shutdown() {
     auto* data = get_backend_data();
     data->backend->destroy_texture(data->font_atlas);
-    data->backend->destroy_shader(data->font_atlas_shader);
+    data->backend->destroy_shader(data->shader.get().created_shader);
     data->log.log("Shutdown ImGui MgmGFX backend");
     delete get_backend_data();
 }
@@ -215,7 +219,7 @@ void ImGui_ImplMgmGFX_RenderDrawData(ExtractedDrawData& draw_data, const mgm::Mg
 
             draw_list.emplace_back(mgm::MgmGPU::DrawCall{
                 .type = mgm::MgmGPU::DrawCall::Type::DRAW,
-                .shader = data->font_atlas_shader,
+                .shader = data->shader.get().created_shader,
                 .buffers_object = mesh,
                 .textures = {cmd_data.texture == mgm::MgmGPU::INVALID_TEXTURE ? data->font_atlas : cmd_data.texture},
                 .parameters = {

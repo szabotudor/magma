@@ -16,27 +16,6 @@ elseif(WIN32)
     )
 endif()
 
-set(
-    IMGUI_SOURCES
-        ${CMAKE_CURRENT_SOURCE_DIR}/imgui/imgui_draw.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/imgui/imgui_tables.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/imgui/imgui_widgets.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/imgui/imgui.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/imgui/imgui_stdlib.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/imgui/backends/imgui_impl_mgmgpu.cpp
-)
-set(
-    IMGUI_HEADERS
-        ${CMAKE_CURRENT_SOURCE_DIR}/imgui/imconfig.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/imgui/imgui.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/imgui/imgui_stdlib.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/imgui/imgui_internal.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/imgui/imstb_rectpack.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/imgui/imstb_textedit.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/imgui/imstb_truetype.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/imgui/backends/imgui_impl_mgmgpu.h
-)
-
 if (EMBED_BACKEND)
     if (BACKEND_TO_EMBED STREQUAL "OpenGL")
         get_target_property(BACKEND_SOURCES backend_OpenGL SOURCES)
@@ -48,19 +27,12 @@ endif()
 
 add_library(
     mgmlib
-        ${IMGUI_SOURCES}
-        ${IMGUI_HEADERS}
         ${PLATFORM_SOURCES}
         ${BACKEND_SOURCES}
         ${CMAKE_CURRENT_SOURCE_DIR}/src/mgmgpu.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/include/mgmgpu.hpp
 )
 enable_warnings(mgmlib)
-
-ignore_warnings_for_files(
-    ${IMGUI_SOURCES}
-    ${IMGUI_HEADERS}
-)
 
 target_compile_definitions(mgmlib PUBLIC IMGUI_DEFINE_MATH_OPERATORS)
 

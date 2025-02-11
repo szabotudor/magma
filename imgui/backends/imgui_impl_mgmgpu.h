@@ -35,7 +35,7 @@ struct ExtractedDrawData {
 void extract_draw_data(ImDrawData* draw_data, ExtractedDrawData& out, const mgm::GPUSettings::Viewport& viewport);
 
 // Backend API
-IMGUI_IMPL_API bool     ImGui_ImplMgmGFX_Init(mgm::MgmGPU& backend, const std::string& shader_source);
+IMGUI_IMPL_API bool     ImGui_ImplMgmGFX_Init(mgm::MgmGPU& backend, const mgm::Path& shader_source);
 IMGUI_IMPL_API void     ImGui_ImplMgmGFX_Shutdown();
 IMGUI_IMPL_API void     ImGui_ImplMgmGFX_NewFrame();
 IMGUI_IMPL_API void     ImGui_ImplMgmGFX_RenderDrawData(ExtractedDrawData& draw_data, const mgm::MgmGPU::Settings& draw_settings);

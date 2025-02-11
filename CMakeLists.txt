@@ -57,6 +57,31 @@ add_subdirectory(${CMAKE_SOURCE_DIR}/mgmwin)
 add_subdirectory(${CMAKE_SOURCE_DIR}/backends)
 add_subdirectory(${CMAKE_SOURCE_DIR}/mgmlib)
 
+set(
+    IMGUI_SOURCES
+        ${CMAKE_CURRENT_SOURCE_DIR}/imgui/imgui_draw.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/imgui/imgui_tables.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/imgui/imgui_widgets.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/imgui/imgui.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/imgui/imgui_stdlib.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/imgui/backends/imgui_impl_mgmgpu.cpp
+)
+set(
+    IMGUI_HEADERS
+        ${CMAKE_CURRENT_SOURCE_DIR}/imgui/imconfig.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/imgui/imgui.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/imgui/imgui_stdlib.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/imgui/imgui_internal.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/imgui/imstb_rectpack.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/imgui/imstb_textedit.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/imgui/imstb_truetype.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/imgui/backends/imgui_impl_mgmgpu.h
+)
+ignore_warnings_for_files(
+    ${IMGUI_SOURCES}
+    ${IMGUI_HEADERS}
+)
+
 if (ENABLE_EDITOR)
     set(
         EDITOR_SOURCES
@@ -102,6 +127,8 @@ add_library(
         ${CMAKE_CURRENT_SOURCE_DIR}/include/ecs.hpp
 
         ${EDITOR_SOURCES}
+        ${IMGUI_SOURCES}
+        ${IMGUI_HEADERS}
 )
 
 if (ENABLE_EDITOR)
@@ -118,6 +145,8 @@ target_include_directories(
     magma
         PUBLIC
             ${CMAKE_CURRENT_SOURCE_DIR}/include
+            ${CMAKE_CURRENT_SOURCE_DIR}/imgui
+            ${CMAKE_CURRENT_SOURCE_DIR}/imgui/backends
         PRIVATE
             ${MGMCOMMON_INCLUDE_DIRS}
             #${LUAJIT_INCLUDE_DIRS}
