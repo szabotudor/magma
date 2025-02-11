@@ -68,6 +68,7 @@ namespace mgm {
     Notifications& MagmaEngine::notifications() { return systems().get<Notifications>(); }
     MgmGPU& MagmaEngine::graphics() { return *data->graphics; }
     Renderer& MagmaEngine::renderer() { return systems().get<Renderer>(); }
+
 #if defined(ENABLE_EDITOR)
     Editor& MagmaEngine::editor() {
         const auto e = systems().try_get<Editor>();
@@ -182,6 +183,7 @@ namespace mgm {
 
         auto start = std::chrono::high_resolution_clock::now();
 
+        std::unique_lock lock{systems().mutex};
 #if defined(ENABLE_EDITOR)
         if (!systems().try_get<Editor>())
             for (const auto& [id, sys] : systems().systems)
@@ -192,6 +194,7 @@ namespace mgm {
         for (const auto& [id, sys] : systems.systems)
             sys->on_begin_play();
 #endif
+        lock.unlock();
 
         engine_running = true;
         std::thread render_thread{&MagmaEngine::render_thread_function, this};
@@ -215,6 +218,7 @@ namespace mgm {
             ImGui::DockSpaceOverViewport(nullptr, ImGuiDockNodeFlags_PassthruCentralNode);
 
 
+            lock.lock();
 #if defined(ENABLE_EDITOR)
             if (const auto editor_ptr = systems().try_get<Editor>())
                 editor_ptr->update(delta);
@@ -226,6 +230,7 @@ namespace mgm {
             for (const auto& [id, sys] : systems().systems)
                 sys->update(delta);
 #endif
+            lock.unlock();
 
             ImGui::EndFrame();
             ImGui::Render();
@@ -257,13 +262,17 @@ namespace mgm {
         engine_running = false;
         render_thread.join();
 
+        lock.lock();
 #if defined(ENABLE_EDITOR)
         if (!systems().try_get<Editor>())
 #endif
             for (const auto& [id, sys] : systems().systems)
                 sys->on_end_play();
+#if defined(ENABLE_EDITOR)
         else
             systems().destroy<Editor>();
+#endif
+        lock.unlock();
     }
 
     float MagmaEngine::delta_time() const {

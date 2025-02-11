@@ -1,6 +1,7 @@
 #pragma once
 #include "logging.hpp"
 #include <mutex>
+#include <stdexcept>
 #include <string>
 #include <type_traits>
 #include <unordered_map>
@@ -73,18 +74,20 @@ namespace mgm {
     class SystemManager {
         public:
         std::unordered_map<size_t, System*> systems{};
-        std::mutex mutex{};
+        std::unordered_map<size_t, size_t> replacements{};
+        std::recursive_mutex mutex{};
 
         SystemManager() = default;
 
-        template<
-            typename T,
-            typename... Ts,
-            std::enable_if_t<
-                std::is_constructible_v<T, Ts...> && std::is_base_of_v<System, T>,
-                bool
-            > = true
-        >
+        /**
+         * @brief Create a new system
+         * 
+         * @tparam T The type of the system
+         * @tparam Ts Argument types to pass to the constructor
+         * @param args Arguments to pass to the constructor
+         * @return T& A reference to the new system
+         */
+        template<typename T, typename... Ts, std::enable_if_t<std::is_constructible_v<T, Ts...> && std::is_base_of_v<System, T>, bool> = true>
         T& create(Ts&&... args) {
             std::unique_lock lock{mutex};
             auto id = typeid(T).hash_code();
@@ -102,36 +105,62 @@ namespace mgm {
             return sys;
         }
 
+        /**
+         * @brief Get a reference to a system
+         * 
+         * @tparam T The type of the system to get
+         * @return T& A reference to the system
+         */
         template<typename T>
         T& get() {
-            auto id = typeid(T).hash_code();
-            const auto it = systems.find(id);
-            if (it == systems.end()) {
-                Logging{"SystemManager"}.error("System does not exist! Creating it now");
+            const auto sys = try_get<T>();
+            if (sys == nullptr)
                 return create<T>();
-            }
-            return *reinterpret_cast<T*>(it->second);
-        }
-        template<typename T>
-        const T& get() const {
-            auto id = typeid(T).hash_code();
-            const auto it = systems.find(id);
-            if (it == systems.end()) {
-                Logging{"SystemManager"}.error("System does not exist!");
-                throw std::runtime_error{"System does not exist"};
-            }
-            return *reinterpret_cast<T*>(it->second);
+            return *sys;
         }
 
+        /**
+         * @brief Get a const reference to a system
+         * 
+         * @tparam T The type of the system to get
+         * @return const T& A const reference to the system
+         */
+        template<typename T>
+        const T& get() const {
+            const auto sys = try_get<T>();
+            if (sys == nullptr)
+                throw std::runtime_error{"System does not exist"};
+            return *sys;
+        }
+
+        /**
+         * @brief Get a pointer to the given system if it exists
+         * 
+         * @tparam T The type of the system to get
+         * @return T* A pointer to the system, or nullptr if the system doesn't exist
+         */
         template<typename T>
         T* try_get() {
             auto id = typeid(T).hash_code();
-            const auto it = systems.find(id);
+            auto it = systems.find(id);
             if (it == systems.end()) {
-                return nullptr;
+                const auto rit = replacements.find(id);
+                if (rit == replacements.end())
+                    return nullptr;
+
+                it = systems.find(rit->second);
+                if (it == systems.end())
+                    return nullptr;
             }
             return reinterpret_cast<T*>(it->second);
         }
+
+        /**
+         * @brief Get a const pointer to the given system if it exists
+         * 
+         * @tparam T The type of the system to get
+         * @return T* A const pointer to the system, or nullptr if the system doesn't exist
+         */
         template<typename T>
         const T* try_get() const {
             auto id = typeid(T).hash_code();
@@ -141,7 +170,12 @@ namespace mgm {
             }
             return reinterpret_cast<T*>(it->second);
         }
-        
+
+        /**
+         * @brief Destroy a system
+         * 
+         * @tparam T The type of the system to destroy
+         */
         template<typename T>
         void destroy() {
             std::unique_lock lock{mutex};
@@ -157,11 +191,45 @@ namespace mgm {
             systems.erase(it);
         }
 
-        ~SystemManager() {
-            for (auto& [_, system] : systems) {
-                system->on_end_play();
-                delete system;
+        /**
+         * @brief Replace an existing system with a different one that inherits from the original
+         * 
+         * @tparam ExistingSystem The type of a system that already exists
+         * @tparam T The type of the new system to replace the old one with
+         * @return T& A reference to the new system
+         */
+        template<typename ExistingSystem, typename T, std::enable_if_t<std::is_base_of_v<ExistingSystem, T> && std::is_constructible_v<T, ExistingSystem&&>, bool> = true>
+        T& replace() {
+            std::unique_lock lock{mutex};
+
+            auto nid = typeid(T).hash_code();
+            auto oid = typeid(ExistingSystem).hash_code();
+            auto it = systems.find(oid);
+            if (it == systems.end()) {
+                const auto rit = replacements.find(oid);
+                if (rit == replacements.end())
+                    throw std::runtime_error("Cannot replace a system that doesn't exist");
+                else
+                    throw std::runtime_error("In order to avoid long inheritance chains, replacing a system that already replaced a different one is disallowed");
             }
+
+            auto& system = it->second;
+            const auto new_system = new T{std::move(*reinterpret_cast<ExistingSystem*>(system))};
+            delete system;
+            system = new_system;
+
+            T& sys = *reinterpret_cast<T*>(new_system);
+            sys.should_appear_in_settings_window = std::is_same_v<decltype(&T::draw_settings_window_contents), void(T::*)()>;
+            if (new_system->system_name.empty())
+                new_system->system_name = typeid(T).name();
+
+            replacements[nid] = oid;
+            return sys;
+        }
+
+        ~SystemManager() {
+            for (auto& [_, system] : systems)
+                delete system;
         }
     };
 }
