@@ -5,6 +5,7 @@
 #include "systems.hpp"
 #include "tools/mgmecs.hpp"
 #include <cstddef>
+#include <mutex>
 #include <stdexcept>
 #include <string>
 #include <type_traits>
@@ -231,7 +232,12 @@ namespace mgm {
             system_name = "EntityComponentSystem";
             ecs.emplace<HierarchyNode>(root, MGMecs<>::null).name = "Root";
         }
-        
+
+        mutable std::mutex mutex{};
+        std::unique_lock<std::mutex> ecs_lock() {
+            return std::unique_lock{mutex};
+        }
+
         /**
          * @brief Enable serialization for the given type
          * 
@@ -241,6 +247,8 @@ namespace mgm {
          */
         template<typename T>
         void enable_type_serialization(const std::string& unique_identifier, bool enable_as_raw_component = false) {
+            std::unique_lock lock {mutex};
+
             const auto it = serialized_types.find(unique_identifier);
             if (it != serialized_types.end())
                 throw std::runtime_error("Registered type with identifier \"" + unique_identifier + "\" twice");
@@ -329,6 +337,7 @@ namespace mgm {
          */
         template<typename T>
         JObject serialize_component(const MGMecs<>::Entity entity) {
+            std::unique_lock lock {mutex};
             return serialized_types[types_unique_ids[typeid(T).hash_code()]].serialize(entity);
         }
 
@@ -341,6 +350,7 @@ namespace mgm {
          */
         template<typename T>
         void deserialize_component(const MGMecs<>::Entity entity, const JObject& json) {
+            std::unique_lock lock {mutex};
             serialized_types[types_unique_ids[typeid(T).hash_code()]].deserialize(entity, json);
         }
 
@@ -348,6 +358,7 @@ namespace mgm {
          * @brief Get a map of all registered types unique IDs, and their contents
          */
         const std::unordered_map<std::string, SerializedType>& all_serialized_types() const {
+            std::unique_lock lock {mutex};
             return serialized_types;
         }
 
@@ -359,6 +370,7 @@ namespace mgm {
          */
         template<typename T>
         std::string type_unique_identifier() const {
+            std::unique_lock lock {mutex};
             const auto it = types_unique_ids.find(typeid(T).hash_code());
             if (it == types_unique_ids.end())
                 return "";
@@ -372,6 +384,7 @@ namespace mgm {
          * @param entity The entity to add the component to
          */
         void add_component_of_type_to_entity(const std::string& component_type, const MGMecs<>::Entity entity) const {
+            std::unique_lock lock {mutex};
             const auto it = serialized_types.find(component_type);
             if (it == serialized_types.end())
                 throw std::runtime_error("Type \"" + component_type + "\" not enabled for serialization");
@@ -385,6 +398,7 @@ namespace mgm {
          * @param entity The entity to remove the component from
          */
         void remove_component_of_type_from_entity(const std::string& component_type, const MGMecs<>::Entity entity) const {
+            std::unique_lock lock {mutex};
             const auto it = serialized_types.find(component_type);
             if (it == serialized_types.end())
                 throw std::runtime_error("Type \"" + component_type + "\" not enabled for serialization");
@@ -428,6 +442,7 @@ namespace mgm {
 #endif
 
         ~EntityComponentSystem() {
+            std::unique_lock lock {mutex};
             ecs.destroy(root);
             for (const auto& [scene_path, scene_root] : editable_scenes)
                 ecs.destroy(scene_root);

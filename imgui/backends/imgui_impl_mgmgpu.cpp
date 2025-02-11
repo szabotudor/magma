@@ -33,6 +33,9 @@ bool ImGui_ImplMgmGFX_Init(mgm::MgmGPU &backend, const mgm::Path& shader_source_
     ImGui::SetCurrentContext(ctx);
 
     auto& io = ImGui::GetIO();
+    io.IniFilename = nullptr;
+    io.LogFilename = nullptr;
+
     if (io.BackendRendererUserData != nullptr)
         throw std::runtime_error("ImGui backend already initialized");
 
@@ -221,7 +224,7 @@ void ImGui_ImplMgmGFX_RenderDrawData(ExtractedDrawData& draw_data, const mgm::Mg
                 .type = mgm::MgmGPU::DrawCall::Type::DRAW,
                 .shader = data->shader.get().created_shader,
                 .buffers_object = mesh,
-                .textures = {cmd_data.texture == mgm::MgmGPU::INVALID_TEXTURE ? data->font_atlas : cmd_data.texture},
+                .textures = {cmd_data.texture == mgm::MgmGPU::INVALID_TEXTURE ? data->font_atlas : data->font_atlas}, // TODO: This crashes if the texture is deleted on the main thread, because the renderer has time to try to render it after it was destroyed
                 .parameters = {
                     {"Proj", draw_data.proj}
                 }

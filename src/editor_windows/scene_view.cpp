@@ -111,8 +111,30 @@ namespace mgm {
     SceneViewport::~SceneViewport() {
         if (time_since_last_edit < save_interval)
             do_save();
-        if (viewport_texture != MgmGPU::INVALID_TEXTURE)
+        if (viewport_texture != MgmGPU::INVALID_TEXTURE) {
+            auto& renderer = MagmaEngine{}.renderer();
+            std::unique_lock lock{renderer.mutex};
+            if (renderer.settings.canvas == viewport_texture)
+                renderer.settings.canvas = MgmGPU::INVALID_TEXTURE;
             MagmaEngine{}.graphics().destroy_texture(viewport_texture);
+
+
+            auto& ecs = MagmaEngine{}.ecs();
+            const auto ecs_lock = ecs.ecs_lock();
+
+            if (this_viewport_scene_root == current_scene_root) {
+                current_scene_root = MGMecs<>::null;
+                current_scene_path = {};
+            }
+
+            const auto root = this_viewport_scene_root;
+            const auto it = ecs.editable_scenes.find(this_viewport_scene_path);
+            if (it == ecs.editable_scenes.end())
+                return;
+            ecs.editable_scenes.erase(it);
+
+            ecs.ecs.destroy(root);
+        }
     }
 
 

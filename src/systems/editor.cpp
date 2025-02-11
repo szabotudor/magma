@@ -11,6 +11,7 @@
 #include "systems/notifications.hpp"
 #include "systems.hpp"
 #include "systems/input.hpp"
+#include "tools/base64.hpp"
 
 
 namespace mgm {
@@ -18,14 +19,7 @@ namespace mgm {
         if (!open)
             return;
 
-        bool prev_open = open;
         ImGui::Begin(window_name.c_str(), &open);
-
-        if (!open && prev_open && remove_on_close) {
-            ImGui::End();
-            MagmaEngine{}.systems().get<Editor>().remove_window(this);
-            return;
-        }
 
         draw_contents();
         ImGui::End();
@@ -371,6 +365,15 @@ namespace mgm {
                     engine.window().set_size({size_x, size_y});
                     engine.window().set_position({pos_x, pos_y});
                 }
+
+                if (layout.has("imgui")) {
+                    const auto& imgui = layout["imgui"];
+                    if (!imgui.empty()) {
+                        const std::string& data = imgui["ini_data"];
+                        const auto decoded_data = base64::decode_into<std::string>(data);
+                        ImGui::LoadIniSettingsFromMemory(decoded_data.c_str(), decoded_data.size());
+                    }
+                }
             }
         }
         
@@ -400,6 +403,11 @@ namespace mgm {
         window["size_y"] = size.y;
         window["pos_x"] = engine.window().get_position().x;
         window["pos_y"] = engine.window().get_position().y;
+
+        auto& imgui = layout["imgui"];
+        size_t imgui_settings_dump_size{};
+        const auto imgui_settings = ImGui::SaveIniSettingsToMemory(&imgui_settings_dump_size);
+        imgui["ini_data"] = base64::encode_into<std::string>(imgui_settings, imgui_settings + imgui_settings_dump_size);
 
         engine.file_io().write_text("project://.mgm/.layout", layout);
 

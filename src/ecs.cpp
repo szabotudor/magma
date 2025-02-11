@@ -288,7 +288,7 @@ namespace mgm {
         const auto it = editable_scenes.find(path);
         if (it != editable_scenes.end()) {
             engine.notifications().push("Scene at path \"" + path.platform_path() + "\" is already opened");
-            return MGMecs<>::null;
+            return it->second;
         }
 
         const auto new_scene_root = ecs.create();

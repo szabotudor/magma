@@ -66,11 +66,12 @@ namespace mgm {
         const auto use_settings = settings;
         mutex.unlock();
 
-        if (use_settings.canvas != MgmGPU::INVALID_TEXTURE) {
-            draw_calls.emplace_back(MgmGPU::DrawCall{
-                .type = MgmGPU::DrawCall::Type::CLEAR
-            });
-        }
+        if (use_settings.canvas == MgmGPU::INVALID_TEXTURE)
+            return;
+
+        draw_calls.emplace_back(MgmGPU::DrawCall{
+            .type = MgmGPU::DrawCall::Type::CLEAR
+        });
 
         #if defined(ENABLE_EDITOR)
         MGMecs<>::Entity scene{};
