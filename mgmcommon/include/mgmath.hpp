@@ -1694,13 +1694,6 @@ namespace mgm {
                 T(0),                           T(0),                 -(far + near) / (far - near),        -(T(2) * far * near) / (far - near),
                 T(0),                           T(0),                 T(-1), T(0)
             };
-            // T scale = T(1) / std::tan(fov * T(0.5));
-            // return mat<l, c, T>{
-            //     scale, T(0), T(0), T(0),
-            //     T(0), scale, T(0), T(0),
-            //     T(0), T(0), -far / (far - near), T(-1),
-            //     T(0), T(0), -far * near / (far - near), T(0)
-            // };
         }
     };
 

@@ -2,11 +2,14 @@
 #include "built-in_components/renderable.hpp"
 #include "mgmgpu.hpp"
 #include "systems.hpp"
+#include <mutex>
 
 
 namespace mgm {
     class Renderer : public System {
         public:
+        std::mutex mutex{};
+
         MgmGPU::Settings settings{};
         Transform camera{};
         mat4f projection{};

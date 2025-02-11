@@ -1,5 +1,6 @@
 #include "backend.hpp"
 #include "backend_OpenGL.hpp"
+#include "backend_settings.hpp"
 #include "glad/glad.h"
 #include "logging.hpp"
 #include "shaders.hpp"
@@ -150,8 +151,34 @@ namespace mgm {
                     | clear.depth_buffer * GL_DEPTH_BUFFER_BIT
                     | clear.stencil_buffer * GL_STENCIL_BUFFER_BIT;
                 glClearColor(clear.color.x, clear.color.y, clear.color.z, clear.color.w);
-                glClearDepth(1.0);
                 glClearStencil(0);
+                break;
+            }
+            case GPUSettings::StateAttribute::DEPTH: {
+                const auto& depth = *static_cast<const GPUSettings::GPUSettings::Depth*>(data);
+                if (depth.enabled)
+                    glEnable(GL_DEPTH_TEST);
+                else
+                    glDisable(GL_DEPTH_TEST);
+                break;
+            }
+            case GPUSettings::StateAttribute::CULLING: {
+                const auto& culling = *static_cast<const GPUSettings::GPUSettings::Culling*>(data);
+                switch (culling.type) {
+                    case GPUSettings::Culling::Type::NO_CULLING:
+                        glDisable(GL_CULL_FACE);
+                        glCullFace(GL_NONE);
+                        break;
+                    case GPUSettings::Culling::Type::CLOCKWISE:
+                        glEnable(GL_CULL_FACE);
+                        glCullFace(GL_BACK);
+                        break;
+                    case GPUSettings::Culling::Type::COUNTERCLOCKWISE:
+                        glEnable(GL_CULL_FACE);
+                        glCullFace(GL_FRONT);
+                        break;
+                    break;
+                }
                 break;
             }
             case GPUSettings::StateAttribute::BLENDING: {
@@ -222,11 +249,13 @@ namespace mgm {
                 }
                 make_texture_canvas(canvas);
                 glBindFramebuffer(GL_FRAMEBUFFER, canvas->fbo);
+                glBindRenderbuffer(GL_RENDERBUFFER, canvas->rbo);
                 backend->canvas = canvas;
             }
         }
         else if (backend->canvas) {
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
+            glBindRenderbuffer(GL_RENDERBUFFER, 0);
             backend->canvas = nullptr;
         }
     }

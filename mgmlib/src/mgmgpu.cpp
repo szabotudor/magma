@@ -183,6 +183,8 @@ namespace mgm {
         data = new Data{};
         GPUSettings backend_settings{};
         data->settings_offsets.emplace(GPUSettings::StateAttribute::CLEAR, Data::StateAttributeOffset{(size_t)&backend_settings.clear - (size_t)&backend_settings, sizeof(GPUSettings::Clear)});
+        data->settings_offsets.emplace(GPUSettings::StateAttribute::DEPTH, Data::StateAttributeOffset{(size_t)&backend_settings.depth_testing - (size_t)&backend_settings, sizeof(GPUSettings::Depth)});
+        data->settings_offsets.emplace(GPUSettings::StateAttribute::CULLING, Data::StateAttributeOffset{(size_t)&backend_settings.culling - (size_t)&backend_settings, sizeof(GPUSettings::Culling)});
         data->settings_offsets.emplace(GPUSettings::StateAttribute::BLENDING, Data::StateAttributeOffset{(size_t)&backend_settings.blending - (size_t)&backend_settings, sizeof(GPUSettings::Blending)});
         data->settings_offsets.emplace(GPUSettings::StateAttribute::VIEWPORT, Data::StateAttributeOffset{(size_t)&backend_settings.viewport - (size_t)&backend_settings, sizeof(GPUSettings::Viewport)});
         data->settings_offsets.emplace(GPUSettings::StateAttribute::SCISSOR, Data::StateAttributeOffset{(size_t)&backend_settings.scissor - (size_t)&backend_settings, sizeof(GPUSettings::Scissor)});
@@ -291,6 +293,8 @@ namespace mgm {
         data->loaded = true;
 
         data->backend = data->create_backend(window->get_native_window());
+
+        apply_settings(GPUSettings{});
 
         data->log.log("Loaded backend");
     }

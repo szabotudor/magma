@@ -6,10 +6,12 @@
 #include "imgui_impl_mgmgpu.h"
 #include "imgui_stdlib.h"
 #include "json.hpp"
+#include "mgmgpu.hpp"
 #include "systems/notifications.hpp"
 #include "tools/mgmecs.hpp"
 #include "systems/renderer.hpp"
 #include <memory>
+#include <mutex>
 #include <string>
 
 
@@ -55,6 +57,8 @@ namespace mgm {
         auto& renderer = engine.renderer();
         const vec2i32 new_size = {(int32_t)ImGui::GetContentRegionAvail().x, (int32_t)ImGui::GetContentRegionAvail().y};
 
+        static constexpr auto fov_y = std::numbers::pi_v<float> / 2.0f;
+
         if (new_size != old_size) {
             auto& gpu = MagmaEngine{}.graphics();
 
@@ -65,22 +69,28 @@ namespace mgm {
             });
             old_size = new_size;
 
+            std::unique_lock lock{renderer.mutex};
+
             renderer.settings.canvas = viewport_texture;
-            renderer.projection = mat4f::gen_perspective_projection(90.0f, (float)new_size.y / (float)new_size.x, 0.1f, 1000.0f);
+            renderer.projection = mat4f::gen_perspective_projection(fov_y, (float)new_size.x / (float)new_size.y, 0.1f, 1000.0f);
             renderer.settings.backend.viewport.top_left = {0, 0};
             renderer.settings.backend.viewport.bottom_right = new_size;
         }
 
-        ImGui::Image(ImGui::as_imgui_texture(viewport_texture), {(float)new_size.x, (float)new_size.y});
+        ImGui::Image(ImGui::as_imgui_texture(viewport_texture), {(float)new_size.x, (float)new_size.y}, {0, 1}, {1, 0});
 
         if (current_scene_root != this_viewport_scene_root || first_draw) {
             if (ImGui::IsWindowFocused()) {
                 first_draw = false;
                 engine.ecs().current_editing_scene = this_viewport_scene_root;
-                renderer.settings.canvas = viewport_texture;
-                renderer.projection = mat4f::gen_perspective_projection(90.0f, (float)new_size.y / (float)new_size.x, 0.1f, 1000.0f);
-                renderer.settings.backend.viewport.top_left = {0, 0};
-                renderer.settings.backend.viewport.bottom_right = new_size;
+                {
+                    std::unique_lock lock{renderer.mutex};
+
+                    renderer.settings.canvas = viewport_texture;
+                    renderer.projection = mat4f::gen_perspective_projection(fov_y, (float)new_size.x / (float)new_size.y, 0.1f, 1000.0f);
+                    renderer.settings.backend.viewport.top_left = {0, 0};
+                    renderer.settings.backend.viewport.bottom_right = new_size;
+                }
 
                 if (time_since_last_edit < save_interval)
                     do_save();
@@ -101,6 +111,8 @@ namespace mgm {
     SceneViewport::~SceneViewport() {
         if (time_since_last_edit < save_interval)
             do_save();
+        if (viewport_texture != MgmGPU::INVALID_TEXTURE)
+            MagmaEngine{}.graphics().destroy_texture(viewport_texture);
     }
 
 

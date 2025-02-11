@@ -11,6 +11,12 @@ namespace mgm {
             // Clear data
             CLEAR,
 
+            // Depth testing data
+            DEPTH,
+
+            // Face culling data
+            CULLING,
+
             // Blending data
             BLENDING,
 
@@ -27,6 +33,23 @@ namespace mgm {
                 depth_buffer = true,
                 stencil_buffer = true;
         } clear{};
+        
+        struct Depth {
+            bool enabled = false;
+        } depth_testing{};
+
+        struct Culling {
+            enum class Type {
+                // Don't cull any faces
+                NO_CULLING,
+
+                // Cull (skip drawing) faces with vertices going clockwise (usually the back faces)
+                CLOCKWISE,
+
+                // Cull (skip drawing) faces with vertices going counterclockwise (usually the front face)
+                COUNTERCLOCKWISE
+            } type = GPUSettings::Culling::Type::NO_CULLING;
+        } culling{};
 
         struct Blending {
             bool enabled = false;

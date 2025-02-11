@@ -1,4 +1,5 @@
 #include "systems/renderer.hpp"
+#include "backend_settings.hpp"
 #include "built-in_components/renderable.hpp"
 #include "ecs.hpp"
 #include "engine.hpp"
@@ -50,6 +51,8 @@ namespace mgm {
         system_name = "Renderer";
 
         settings.backend.clear.color = {0.0f, 1.0f, 0.0f, 1.0f};
+        settings.backend.depth_testing.enabled = true;
+        settings.backend.culling.type = GPUSettings::Culling::Type::CLOCKWISE;
 
         projection = mat4f::gen_perspective_projection(90.0f, 9.0f/16.0f, 0.1f, 1000.0f);
     }
@@ -59,7 +62,11 @@ namespace mgm {
 
         std::vector<MgmGPU::DrawCall> draw_calls{};
 
-        if (settings.canvas != MgmGPU::INVALID_TEXTURE) {
+        mutex.lock();
+        const auto use_settings = settings;
+        mutex.unlock();
+
+        if (use_settings.canvas != MgmGPU::INVALID_TEXTURE) {
             draw_calls.emplace_back(MgmGPU::DrawCall{
                 .type = MgmGPU::DrawCall::Type::CLEAR
             });
@@ -82,7 +89,7 @@ namespace mgm {
             ecs.ecs.unlock(scene);
         }
 
-        MagmaEngine{}.graphics().draw(draw_calls, settings);
+        MagmaEngine{}.graphics().draw(draw_calls, use_settings);
     }
 
     #if defined(ENABLE_EDITOR)

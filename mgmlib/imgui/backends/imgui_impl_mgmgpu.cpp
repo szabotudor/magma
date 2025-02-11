@@ -50,34 +50,6 @@ bool ImGui_ImplMgmGFX_Init(mgm::MgmGPU &backend, const std::string& shader_sourc
 
     mgm::MgmGPUShaderBuilder shader_builder{};
     shader_builder.build(shader_source);
-
-    // mgm::ShaderCreateInfo fonts_shader_info{};
-    // fonts_shader_info.shader_sources.emplace_back(mgm::ShaderCreateInfo::SingleShaderInfo{
-    //     mgm::ShaderCreateInfo::SingleShaderInfo::Type::VERTEX,
-    //     "#version 460 core\n"
-    //     "layout (location = 0) in vec3 Vert;\n"
-    //     "layout (location = 1) in vec4 VertColor;\n"
-    //     "layout (location = 2) in vec2 TexCoords;\n"
-    //     "uniform mat4 Proj;\n"
-    //     "out vec2 Frag_TexCoords;\n"
-    //     "out vec4 Frag_VertColor;\n"
-    //     "void main() {\n"
-    //     "   Frag_TexCoords = TexCoords;\n"
-    //     "   Frag_VertColor = VertColor;\n"
-    //     "   gl_Position = Proj * vec4(Vert, 1.0f);\n"
-    //     "}\n"
-    // });
-    // fonts_shader_info.shader_sources.emplace_back(mgm::ShaderCreateInfo::SingleShaderInfo{
-    //     mgm::ShaderCreateInfo::SingleShaderInfo::Type::PIXEL,
-    //     "#version 460 core\n"
-    //     "in vec2 Frag_TexCoords;\n"
-    //     "in vec4 Frag_VertColor;\n"
-    //     "uniform sampler2D Texture;\n"
-    //     "out vec4 FragColor;"
-    //     "void main() {\n"
-    //     "   FragColor = Frag_VertColor * texture(Texture, Frag_TexCoords);\n"
-    //     "}\n"
-    // });
     
     const auto fonts_shader = backend.create_shader(shader_builder);
 
