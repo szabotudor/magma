@@ -26,4 +26,4 @@ namespace mgm {
 
         ImGui::EndChild();
     }
-}
+} // namespace mgm

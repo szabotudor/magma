@@ -11,4 +11,4 @@ namespace mgm {
     void Logging::flush() {
         std::cout << std::endl;
     }
-}
+} // namespace mgm

@@ -1,6 +1,6 @@
 #pragma once
-#include "systems/editor.hpp"
 #include "file.hpp"
+#include "systems/editor.hpp"
 
 
 namespace mgm {
@@ -76,11 +76,11 @@ namespace mgm {
         void draw();
         void process_input();
 
-    public:
+      public:
         ScriptEditor(const Path& path, float save_after_inactivity_seconds = 3.0f);
 
         virtual void draw_contents() override;
-        
+
         ~ScriptEditor() override;
     };
-}
+} // namespace mgm

@@ -10,4 +10,4 @@ namespace mgm {
         logger_name.insert(logger_name.end(), name.begin(), name.end());
         logger_name.push_back(']');
     }
-}
+} // namespace mgm

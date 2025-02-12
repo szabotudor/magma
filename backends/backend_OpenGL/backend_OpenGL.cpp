@@ -1,12 +1,12 @@
-#include "backend.hpp"
 #include "backend_OpenGL.hpp"
+#include "backend.hpp"
 #include "backend_settings.hpp"
 #include "glad/glad.h"
 #include "logging.hpp"
 #include "shaders.hpp"
+#include <algorithm>
 #include <atomic>
 #include <mutex>
-#include <algorithm>
 
 
 namespace mgm {
@@ -20,7 +20,7 @@ namespace mgm {
         size_t size = 0;
         size_t data_point_size = 0;
         BuffersObject* connected_to = nullptr;
-        bool is_element_array: 1 = false;
+        bool is_element_array : 1 = false;
 
         ~Buffer() {
             if (buffer)
@@ -29,9 +29,9 @@ namespace mgm {
     };
 
     struct Shader {
-        enum class Type {
-            GRAPHICS, COMPUTE
-        } type = Type::GRAPHICS;
+        enum class Type { GRAPHICS,
+                          COMPUTE } type
+            = Type::GRAPHICS;
         GLuint prog = 0;
         std::unordered_map<std::string, GLint> uniform_locations{};
         std::unordered_map<std::string, bool> buffers_for_vertex_shader{};
@@ -90,7 +90,7 @@ namespace mgm {
         GLuint current_shader = 0;
 
         Texture* canvas = nullptr;
-        
+
         struct DrawCall {
             Shader* shader = nullptr;
             BuffersObject* buffers_object = nullptr;
@@ -105,33 +105,47 @@ namespace mgm {
     std::mutex mutex{};
 
 
-
     //============================
     // Backend graphics functions
     //============================
 
     GLenum gl_blending_factor(GPUSettings::Blending::Factor factor) {
         switch (factor) {
-            case GPUSettings::Blending::Factor::ZERO: return GL_ZERO;
-            case GPUSettings::Blending::Factor::ONE: return GL_ONE;
-            case GPUSettings::Blending::Factor::SRC_COLOR: return GL_SRC_COLOR;
-            case GPUSettings::Blending::Factor::ONE_MINUS_SRC_COLOR: return GL_ONE_MINUS_SRC_COLOR;
-            case GPUSettings::Blending::Factor::DST_COLOR: return GL_DST_COLOR;
-            case GPUSettings::Blending::Factor::ONE_MINUS_DST_COLOR: return GL_ONE_MINUS_DST_COLOR;
-            case GPUSettings::Blending::Factor::SRC_ALPHA: return GL_SRC_ALPHA;
-            case GPUSettings::Blending::Factor::ONE_MINUS_SRC_ALPHA: return GL_ONE_MINUS_SRC_ALPHA;
-            case GPUSettings::Blending::Factor::DST_ALPHA: return GL_DST_ALPHA;
-            case GPUSettings::Blending::Factor::ONE_MINUS_DST_ALPHA: return GL_ONE_MINUS_DST_ALPHA;
+            case GPUSettings::Blending::Factor::ZERO:
+                return GL_ZERO;
+            case GPUSettings::Blending::Factor::ONE:
+                return GL_ONE;
+            case GPUSettings::Blending::Factor::SRC_COLOR:
+                return GL_SRC_COLOR;
+            case GPUSettings::Blending::Factor::ONE_MINUS_SRC_COLOR:
+                return GL_ONE_MINUS_SRC_COLOR;
+            case GPUSettings::Blending::Factor::DST_COLOR:
+                return GL_DST_COLOR;
+            case GPUSettings::Blending::Factor::ONE_MINUS_DST_COLOR:
+                return GL_ONE_MINUS_DST_COLOR;
+            case GPUSettings::Blending::Factor::SRC_ALPHA:
+                return GL_SRC_ALPHA;
+            case GPUSettings::Blending::Factor::ONE_MINUS_SRC_ALPHA:
+                return GL_ONE_MINUS_SRC_ALPHA;
+            case GPUSettings::Blending::Factor::DST_ALPHA:
+                return GL_DST_ALPHA;
+            case GPUSettings::Blending::Factor::ONE_MINUS_DST_ALPHA:
+                return GL_ONE_MINUS_DST_ALPHA;
         }
         return GL_INVALID_ENUM;
     }
     GLenum gl_blending_equation(GPUSettings::Blending::Equation equation) {
         switch (equation) {
-            case GPUSettings::Blending::Equation::ADD: return GL_FUNC_ADD;
-            case GPUSettings::Blending::Equation::SRC_MINUS_DST: return GL_FUNC_SUBTRACT;
-            case GPUSettings::Blending::Equation::DST_MINUS_SRC: return GL_FUNC_REVERSE_SUBTRACT;
-            case GPUSettings::Blending::Equation::MIN: return GL_MIN;
-            case GPUSettings::Blending::Equation::MAX: return GL_MAX;
+            case GPUSettings::Blending::Equation::ADD:
+                return GL_FUNC_ADD;
+            case GPUSettings::Blending::Equation::SRC_MINUS_DST:
+                return GL_FUNC_SUBTRACT;
+            case GPUSettings::Blending::Equation::DST_MINUS_SRC:
+                return GL_FUNC_REVERSE_SUBTRACT;
+            case GPUSettings::Blending::Equation::MIN:
+                return GL_MIN;
+            case GPUSettings::Blending::Equation::MAX:
+                return GL_MAX;
         }
         return GL_INVALID_ENUM;
     }
@@ -147,9 +161,7 @@ namespace mgm {
             case GPUSettings::StateAttribute::CLEAR: {
                 const auto& clear = *static_cast<const GPUSettings::GPUSettings::Clear*>(data);
                 backend->clear_color = clear.color;
-                backend->clear_mask = clear.color_buffer * GL_COLOR_BUFFER_BIT
-                    | clear.depth_buffer * GL_DEPTH_BUFFER_BIT
-                    | clear.stencil_buffer * GL_STENCIL_BUFFER_BIT;
+                backend->clear_mask = clear.color_buffer * GL_COLOR_BUFFER_BIT | clear.depth_buffer * GL_DEPTH_BUFFER_BIT | clear.stencil_buffer * GL_STENCIL_BUFFER_BIT;
                 glClearColor(clear.color.x, clear.color.y, clear.color.z, clear.color.w);
                 glClearStencil(0);
                 break;
@@ -177,7 +189,7 @@ namespace mgm {
                         glEnable(GL_CULL_FACE);
                         glCullFace(GL_FRONT);
                         break;
-                    break;
+                        break;
                 }
                 break;
             }
@@ -186,15 +198,10 @@ namespace mgm {
                 if (blending.enabled) {
                     glEnable(GL_BLEND);
                     glBlendFuncSeparate(
-                        gl_blending_factor(blending.src_color_factor),
-                        gl_blending_factor(blending.dst_color_factor),
-                        gl_blending_factor(blending.src_alpha_factor),
-                        gl_blending_factor(blending.dst_alpha_factor)
+                        gl_blending_factor(blending.src_color_factor), gl_blending_factor(blending.dst_color_factor),
+                        gl_blending_factor(blending.src_alpha_factor), gl_blending_factor(blending.dst_alpha_factor)
                     );
-                    glBlendEquationSeparate(
-                        gl_blending_equation(blending.color_equation),
-                        gl_blending_equation(blending.alpha_equation)
-                    );
+                    glBlendEquationSeparate(gl_blending_equation(blending.color_equation), gl_blending_equation(blending.alpha_equation));
                 }
                 else
                     glDisable(GL_BLEND);
@@ -204,10 +211,7 @@ namespace mgm {
                 const auto& viewport = *static_cast<const GPUSettings::GPUSettings::Viewport*>(data);
                 backend->viewport.pos = viewport.top_left;
                 backend->viewport.size = viewport.bottom_right - viewport.top_left;
-                glViewport(
-                    backend->viewport.pos.x, backend->viewport.pos.y,
-                    backend->viewport.size.x, backend->viewport.size.y
-                );
+                glViewport(backend->viewport.pos.x, backend->viewport.pos.y, backend->viewport.size.x, backend->viewport.size.y);
                 break;
             }
             case GPUSettings::StateAttribute::SCISSOR: {
@@ -218,10 +222,7 @@ namespace mgm {
                     backend->scissor.pos = scissor.top_left;
                     backend->scissor.size = scissor.bottom_right - scissor.top_left;
                     glEnable(GL_SCISSOR_TEST);
-                    glScissor(
-                        backend->scissor.pos.x, backend->scissor.pos.y,
-                        backend->scissor.size.x, backend->scissor.size.y
-                    );
+                    glScissor(backend->scissor.pos.x, backend->scissor.pos.y, backend->scissor.size.x, backend->scissor.size.y);
                 }
                 break;
             }
@@ -239,10 +240,7 @@ namespace mgm {
         if (canvas) {
             if (canvas != backend->canvas) {
                 if (backend->viewport.size.x > canvas->size.x || backend->viewport.size.y > canvas->size.y) {
-                    log.error(
-                        "Viewport size (", std::to_string(backend->viewport.size.x), ", ", std::to_string(backend->viewport.size.y),
-                        ") is larger than canvas size (", std::to_string(canvas->size.x), ", ", std::to_string(canvas->size.y), ")"
-                    );
+                    log.error("Viewport size (", std::to_string(backend->viewport.size.x), ", ", std::to_string(backend->viewport.size.y), ") is larger than canvas size (", std::to_string(canvas->size.x), ", ", std::to_string(canvas->size.y), ")");
                     backend->platform->make_null_current();
                     mutex.unlock();
                     return;
@@ -392,20 +390,20 @@ namespace mgm {
 
     auto gl_type_id(size_t raw_type_id) {
         static const std::unordered_map<size_t, GLint> type_map{
-            {typeid(float).hash_code(), GL_FLOAT},
-            {typeid(double).hash_code(), GL_DOUBLE},
-            {typeid(int).hash_code(), GL_INT},
-            {typeid(unsigned int).hash_code(), GL_UNSIGNED_INT},
-            {typeid(short).hash_code(), GL_SHORT},
+            {typeid(float).hash_code(),          GL_FLOAT         },
+            {typeid(double).hash_code(),         GL_DOUBLE        },
+            {typeid(int).hash_code(),            GL_INT           },
+            {typeid(unsigned int).hash_code(),   GL_UNSIGNED_INT  },
+            {typeid(short).hash_code(),          GL_SHORT         },
             {typeid(unsigned short).hash_code(), GL_UNSIGNED_SHORT},
-            {typeid(char).hash_code(), GL_BYTE},
-            {typeid(unsigned char).hash_code(), GL_UNSIGNED_BYTE},
-            {typeid(vec2f).hash_code(), GL_FLOAT},
-            {typeid(vec3f).hash_code(), GL_FLOAT},
-            {typeid(vec4f).hash_code(), GL_FLOAT},
-            {typeid(mat2f).hash_code(), GL_FLOAT},
-            {typeid(mat3f).hash_code(), GL_FLOAT},
-            {typeid(mat4f).hash_code(), GL_FLOAT}
+            {typeid(char).hash_code(),           GL_BYTE          },
+            {typeid(unsigned char).hash_code(),  GL_UNSIGNED_BYTE },
+            {typeid(vec2f).hash_code(),          GL_FLOAT         },
+            {typeid(vec3f).hash_code(),          GL_FLOAT         },
+            {typeid(vec4f).hash_code(),          GL_FLOAT         },
+            {typeid(mat2f).hash_code(),          GL_FLOAT         },
+            {typeid(mat3f).hash_code(),          GL_FLOAT         },
+            {typeid(mat4f).hash_code(),          GL_FLOAT         }
         };
         const auto it = type_map.find(raw_type_id);
         if (it == type_map.end())
@@ -416,20 +414,20 @@ namespace mgm {
 
     auto gl_type_point_count(size_t raw_type_id) {
         static const std::unordered_map<size_t, size_t> type_map{
-            {typeid(float).hash_code(), 1},
-            {typeid(double).hash_code(), 1},
-            {typeid(int).hash_code(), 1},
-            {typeid(unsigned int).hash_code(), 1},
-            {typeid(short).hash_code(), 1},
-            {typeid(unsigned short).hash_code(), 1},
-            {typeid(char).hash_code(), 1},
-            {typeid(unsigned char).hash_code(), 1},
-            {typeid(vec2f).hash_code(), 2},
-            {typeid(vec3f).hash_code(), 3},
-            {typeid(vec4f).hash_code(), 4},
-            {typeid(mat2f).hash_code(), 4},
-            {typeid(mat3f).hash_code(), 9},
-            {typeid(mat4f).hash_code(), 16}
+            {typeid(float).hash_code(),          1 },
+            {typeid(double).hash_code(),         1 },
+            {typeid(int).hash_code(),            1 },
+            {typeid(unsigned int).hash_code(),   1 },
+            {typeid(short).hash_code(),          1 },
+            {typeid(unsigned short).hash_code(), 1 },
+            {typeid(char).hash_code(),           1 },
+            {typeid(unsigned char).hash_code(),  1 },
+            {typeid(vec2f).hash_code(),          2 },
+            {typeid(vec3f).hash_code(),          3 },
+            {typeid(vec4f).hash_code(),          4 },
+            {typeid(mat2f).hash_code(),          4 },
+            {typeid(mat3f).hash_code(),          9 },
+            {typeid(mat4f).hash_code(),          16}
         };
         const auto it = type_map.find(raw_type_id);
         if (it == type_map.end())
@@ -458,7 +456,7 @@ namespace mgm {
             .data_point_size = info.data_point_size(),
             .is_element_array = info.type() == BufferCreateInfo::Type::INDEX
         };
-        
+
         buffer_data(backend, buffer, info.data(), info.size());
         return buffer;
     }
@@ -555,8 +553,7 @@ namespace mgm {
 
         glGenVertexArrays(1, &buffers_object->vao);
         buffers_object->buffers.clear();
-        for (size_t i = 0; i < count; ++i)
-            buffers_object->buffers.emplace(names[i], buffers[i]);
+        for (size_t i = 0; i < count; ++i) buffers_object->buffers.emplace(names[i], buffers[i]);
 
         backend->platform->make_null_current();
         mutex.unlock();
@@ -672,7 +669,7 @@ namespace mgm {
 
         std::string vertex{"#version 460 core\n\n"};
         std::string fragment{"#version 460 core\n\n"};
-        
+
         const auto vit = builder.functions.find("vertex");
         if (vit != builder.functions.end()) {
             size_t _loc = 0;
@@ -700,7 +697,7 @@ namespace mgm {
 
         for (const auto& [name, texture] : builder.textures)
             fragment += "uniform sampler" + std::to_string(texture.dimensions) + "D " + name + ";\n";
-        
+
         fragment += '\n';
 
         const auto pit = builder.functions.find("pixel");
@@ -722,10 +719,7 @@ namespace mgm {
                 fragment += "void main() {\n" + func_body + "}\n";
         }
 
-        return {
-            .vertex = vertex,
-            .fragment = fragment
-        };
+        return {.vertex = vertex, .fragment = fragment};
     }
 
     EXPORT Shader* create_shader(BackendData* backend, const MgmGPUShaderBuilder& original_builder) {
@@ -799,7 +793,7 @@ namespace mgm {
         shader->prog = prog;
         return shader;
     }
-    
+
     EXPORT void destroy_shader(BackendData* backend, Shader* shader) {
         mutex.lock();
         backend->platform->make_current();
@@ -816,13 +810,21 @@ namespace mgm {
 
         glGenTextures(1, &tex);
         glBindTexture(GL_TEXTURE_2D, tex);
-        
+
         GLint internal_format{};
         switch (info.num_channels) {
-            case 1: internal_format = GL_RED; break;
-            case 2: internal_format = GL_RG; break;
-            case 3: internal_format = GL_RGB; break;
-            case 4: internal_format = GL_RGBA; break;
+            case 1:
+                internal_format = GL_RED;
+                break;
+            case 2:
+                internal_format = GL_RG;
+                break;
+            case 3:
+                internal_format = GL_RGB;
+                break;
+            case 4:
+                internal_format = GL_RGBA;
+                break;
             default: {
                 log.error("Invalid number of channels for texture (must be 1-4)");
                 glDeleteTextures(1, &tex);
@@ -832,9 +834,15 @@ namespace mgm {
         };
         GLint channel_size{};
         switch (info.channel_size_in_bytes) {
-            case 1: channel_size = GL_UNSIGNED_BYTE; break;
-            case 2: channel_size = GL_UNSIGNED_SHORT; break;
-            case 4: channel_size = GL_FLOAT; break;
+            case 1:
+                channel_size = GL_UNSIGNED_BYTE;
+                break;
+            case 2:
+                channel_size = GL_UNSIGNED_SHORT;
+                break;
+            case 4:
+                channel_size = GL_FLOAT;
+                break;
             default: {
                 log.error("Invalid channel size for texture (must be 1, 2, or 4)");
                 glDeleteTextures(1, &tex);
@@ -843,10 +851,7 @@ namespace mgm {
             }
         };
 
-        glTexImage2D(
-            GL_TEXTURE_2D, 0, internal_format, info.size.x, info.size.y, 0,
-            (GLenum)internal_format, (GLenum)channel_size, info.data
-        );
+        glTexImage2D(GL_TEXTURE_2D, 0, internal_format, info.size.x, info.size.y, 0, (GLenum)internal_format, (GLenum)channel_size, info.data);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         glBindTexture(GL_TEXTURE_2D, 0);
@@ -855,11 +860,7 @@ namespace mgm {
         mutex.unlock();
 
         return new Texture{
-            .name = info.name,
-            .tex = tex,
-            .size = info.size,
-            .internal_format = internal_format,
-            .channel_size = channel_size
+            .name = info.name, .tex = tex, .size = info.size, .internal_format = internal_format, .channel_size = channel_size
         };
     }
 
@@ -897,15 +898,11 @@ namespace mgm {
 
     EXPORT void push_draw_call(BackendData* backend, Shader* shader, BuffersObject* buffers_object, Texture** textures, size_t num_textures, const std::unordered_map<std::string, std::any>& parameters) {
         mutex.lock();
-        backend->draw_calls.emplace_back(BackendData::DrawCall{
-            .shader = shader,
-            .buffers_object = buffers_object,
-            .textures = std::vector<Texture*>(textures, textures + num_textures),
-            .parameters = parameters
-        });
+        backend->draw_calls.emplace_back(
+            BackendData::DrawCall{.shader = shader, .buffers_object = buffers_object, .textures = std::vector<Texture*>(textures, textures + num_textures), .parameters = parameters}
+        );
         mutex.unlock();
     }
-
 
 
     //====================================
@@ -926,7 +923,7 @@ namespace mgm {
         data->platform->make_current();
 
         if (!gladLoadGLLoader((GLADloadproc)OpenGLPlatform::proc_address_getter)) {
-	        log.error("Could not load GLAD");
+            log.error("Could not load GLAD");
             delete data->platform;
             delete data;
             return nullptr;
@@ -959,4 +956,4 @@ namespace mgm {
 
         log.log("Destroyed OpenGL Backend");
     }
-}
+} // namespace mgm

@@ -1,9 +1,9 @@
 #pragma once
 #include <any>
 #include <cstddef>
+#include <cstdint>
 #include <stdexcept>
 #include <string>
-#include <cstdint>
 #include <unordered_map>
 #include <variant>
 #include <vector>
@@ -15,7 +15,10 @@
 namespace mgm {
     class JObject {
         enum class PrivateType {
-            NONE, SINGLE, ARRAY, OBJECT
+            NONE,
+            SINGLE,
+            ARRAY,
+            OBJECT
         };
         PrivateType private_type() const;
         PrivateType parsed_data_private_type() const;
@@ -23,31 +26,30 @@ namespace mgm {
         std::any data{};
         mutable std::any parsed_data{};
 
-        public:
-
+      public:
         /**
          * @brief Interpret the JObject as a json object and return it as a map, clearning the original value if not already an object type
          */
-        std::unordered_map<std::string, JObject> &object();
+        std::unordered_map<std::string, JObject>& object();
 
         /**
          * @brief Try to interpret the JObject as a json object and return it as a map, and throw an error if not already an object type
          */
-        const std::unordered_map<std::string, JObject> &object() const;
+        const std::unordered_map<std::string, JObject>& object() const;
 
         /**
          * @brief Interpret the JObject as a json object and return it as a vector, clearning the original value if not already an array type
          */
-        std::vector<JObject> &array();
+        std::vector<JObject>& array();
 
         /**
          * @brief Try to interpret the JObject as a json object and return it as a vector, and throw an error if not already an array type
          */
-        const std::vector<JObject> &array() const;
+        const std::vector<JObject>& array() const;
 
-        private:
-        std::string &single_value();
-        const std::string &single_value() const;
+      private:
+        std::string& single_value();
+        const std::string& single_value() const;
 
         static inline thread_local size_t indent = 1;
 
@@ -59,7 +61,7 @@ namespace mgm {
         void parse();
         void parse() const;
 
-        public:
+      public:
         enum class Type {
             NUMBER,
             STRING,
@@ -70,39 +72,53 @@ namespace mgm {
         };
         Type type() const;
 
-        private:
+      private:
         Type parsed_data_type() const;
 
-        public:
-
+      public:
         JObject() = default;
-        JObject(const JObject& other) : data{other.data} {}
-        JObject(JObject&& other) : data{std::move(other.data)} {}
+        JObject(const JObject& other)
+            : data{other.data} {}
+        JObject(JObject&& other)
+            : data{std::move(other.data)} {}
         JObject& operator=(const JObject& other) {
-            if (this == &other) 
+            if (this == &other)
                 return *this;
             data = other.data;
             return *this;
         }
         JObject& operator=(JObject&& other) {
-            if (this == &other) 
+            if (this == &other)
                 return *this;
             data = std::move(other.data);
             return *this;
         }
 
         JObject(const std::string& str);
-        JObject(const char* str) : JObject{ std::string{str} } {}
-        JObject(const char* begin, const char* end) : JObject{ std::string{begin, end} } {}
-        JObject(const int32_t i) : data{ std::to_string(i) } {}
-        JObject(const uint32_t i) : data{ std::to_string(i) } {}
-        JObject(const int64_t i) : data{ std::to_string(i) } {}
-        JObject(const uint64_t i) : data{ std::to_string(i) } {}
-        JObject(const float f) : data{ std::to_string(f) } {}
-        JObject(const double d) : data{ std::to_string(d) } {}
-        JObject(const bool b) : data{ b ? std::string{"true"} : std::string{"false"} } {}
-        JObject(const std::vector<JObject>& vec) : data{ vec } {}
-        JObject(const std::unordered_map<std::string, JObject>& map) : data{ map } {}
+        JObject(const char* str)
+            : JObject{std::string{str}} {}
+        JObject(const char* begin, const char* end)
+            : JObject{
+                  std::string{begin, end}
+        } {}
+        JObject(const int32_t i)
+            : data{std::to_string(i)} {}
+        JObject(const uint32_t i)
+            : data{std::to_string(i)} {}
+        JObject(const int64_t i)
+            : data{std::to_string(i)} {}
+        JObject(const uint64_t i)
+            : data{std::to_string(i)} {}
+        JObject(const float f)
+            : data{std::to_string(f)} {}
+        JObject(const double d)
+            : data{std::to_string(d)} {}
+        JObject(const bool b)
+            : data{b ? std::string{"true"} : std::string{"false"}} {}
+        JObject(const std::vector<JObject>& vec)
+            : data{vec} {}
+        JObject(const std::unordered_map<std::string, JObject>& map)
+            : data{map} {}
 
         operator std::string() const;
         explicit operator int32_t() const { return std::stoi(single_value()); }
@@ -123,25 +139,25 @@ namespace mgm {
          * @brief Check if this JObject is empty
          */
         bool empty() const;
-        
+
         /**
          * @brief Check if this JObject is a decimal number
-         * 
+         *
          * @return true If the JObject is a number, and is decimal
          */
         bool is_number_decimal();
 
         /**
          * @brief Interpret the JObject as an array, and add a new element to the end
-         * 
+         *
          * @param value The value to add to the array
          * @return JObject& A reference to the new element
          */
-        JObject &emplace_back(const JObject &value);
+        JObject& emplace_back(const JObject& value);
 
         /**
          * @brief Index into the JObject as an array
-         * 
+         *
          * @param index The index to access
          * @return JObject& A reference to the element at the given index
          */
@@ -149,7 +165,7 @@ namespace mgm {
 
         /**
          * @brief Index into the JObject as an array
-         * 
+         *
          * @param index The index to access
          * @return const JObject& A const reference to the element at the given index
          */
@@ -157,7 +173,7 @@ namespace mgm {
 
         /**
          * @brief Index into the JObject as an object
-         * 
+         *
          * @param key The key to access
          * @return JObject& A reference to the element with the given key
          */
@@ -165,7 +181,7 @@ namespace mgm {
 
         /**
          * @brief Index into the JObject as an object
-         * 
+         *
          * @param key The key to access
          * @return const JObject& A const reference to the element with the given key
          */
@@ -173,7 +189,7 @@ namespace mgm {
 
         /**
          * @brief If the JObject is an object, check if it has a key
-         * 
+         *
          * @param key The key to check for
          * @return true If the key exists
          */
@@ -181,7 +197,7 @@ namespace mgm {
 
         /**
          * @brief If the JObject is an array, check if it has an index
-         * 
+         *
          * @param index The index to check for
          * @return true If the index exists
          */
@@ -217,13 +233,17 @@ namespace mgm {
         using difference_type = std::ptrdiff_t;
         using pointer = T*;
         using reference = T&;
-        
+
         pointer obj = nullptr;
         std::variant<MapIterator, size_t> key{};
 
         Iterator() = default;
-        Iterator(pointer object, size_t member_key) : obj{object}, key{member_key} {}
-        Iterator(pointer object, MapIterator member_key) : obj{object}, key{member_key} {}
+        Iterator(pointer object, size_t member_key)
+            : obj{object},
+              key{member_key} {}
+        Iterator(pointer object, MapIterator member_key)
+            : obj{object},
+              key{member_key} {}
 
         struct Deref {
             JObject key;
@@ -275,4 +295,4 @@ namespace mgm {
             return !(*this == other);
         }
     };
-}
+} // namespace mgm

@@ -14,7 +14,7 @@ namespace mgm {
         struct Data;
         std::shared_ptr<Data> data{};
 
-        public:
+      public:
         HierarchyView();
 
         void draw_contents() override;
@@ -29,7 +29,7 @@ namespace mgm {
 
         int current_type_n{};
 
-        public:
+      public:
         InspectorWindow();
 
         void draw_contents() override;
@@ -41,12 +41,12 @@ namespace mgm {
         friend class InspectorWindow;
 
         static inline thread_local MGMecs<>::Entity current_scene_root{};
-        
+
         static inline float time_since_last_edit = 0.0f;
 
         MGMecs<>::Entity this_viewport_scene_root{};
         Path this_viewport_scene_path{};
-        
+
         vec2i32 old_size{};
 
         MgmGPU::TextureHandle viewport_texture{};
@@ -55,11 +55,11 @@ namespace mgm {
 
         void do_save();
 
-        public:
+      public:
         SceneViewport(const Path& scene_path);
 
         void draw_contents() override;
 
         ~SceneViewport() override;
     };
-}
+} // namespace mgm

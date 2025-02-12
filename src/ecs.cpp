@@ -34,7 +34,7 @@ namespace mgm {
             parent_node.child = self;
 
         ++parent_node.num_children;
-        
+
         ecs->unlock(parent);
     }
 
@@ -177,7 +177,7 @@ namespace mgm {
             }
 
             auto it = parent_node.begin();
-            Iterator prev_it {MGMecs<>::null};
+            Iterator prev_it{MGMecs<>::null};
             while (index > 0 && it != parent_node.end()) {
                 prev_it = it++;
                 --index;
@@ -196,7 +196,7 @@ namespace mgm {
 
             return;
         }
-        
+
         if (parent != mgm::MGMecs<>::null) {
             auto& parent_node = ecs.get<HierarchyNode>(parent);
             if (parent_node.child == self) {
@@ -294,7 +294,7 @@ namespace mgm {
         const auto new_scene_root = ecs.create();
         const JObject scene_data = engine.file_io().read_text(path);
         deserialize_node(new_scene_root, scene_data);
-        
+
         editable_scenes[path] = new_scene_root;
         return new_scene_root;
     }
@@ -372,36 +372,36 @@ namespace mgm {
         if (editor.begin_window_here("Scene", editor.is_a_project_loaded())) {
             if (ImGui::SmallButton("Open Scene In Editor")) {
                 editor.add_window<FileBrowser>(true, FileBrowser::Args{
-                    .mode = FileBrowser::Mode::READ,
-                    .type = FileBrowser::Type::FILE,
-                    .callback = [](const Path& path) {
-                        MagmaEngine engine{};
-                        engine.editor().add_window<SceneViewport>(true, path);
+                                                         .mode = FileBrowser::Mode::READ,
+                                                         .type = FileBrowser::Type::FILE,
+                                                         .callback = [](const Path& path) {
+                    MagmaEngine engine{};
+                    engine.editor().add_window<SceneViewport>(true, path);
 
-                        engine.ecs().load_scene_into_new_root(path);
-                        
-                        engine.notifications().push("Opened scene: " + path.platform_path());
-                    },
-                    .allow_paths_outside_project = false,
-                });
+                    engine.ecs().load_scene_into_new_root(path);
+
+                    engine.notifications().push("Opened scene: " + path.platform_path());
+                },
+                                                         .allow_paths_outside_project = false,
+                                                     });
                 editor.end_window_here();
                 return true;
             }
 
             if (ImGui::SmallButton("Create Scene")) {
-                editor.add_window<FileBrowser>(true, FileBrowser::Args{
-                    .mode = FileBrowser::Mode::WRITE,
-                    .type = FileBrowser::Type::FILE,
-                    .callback = [](const Path& path) {
-                        MagmaEngine engine{};
-                        engine.editor().add_window<SceneViewport>(true, path);
+                editor.add_window<FileBrowser>(
+                    true,
+                    FileBrowser::Args{
+                        .mode = FileBrowser::Mode::WRITE, .type = FileBrowser::Type::FILE, .callback = [](const Path& path) {
+                    MagmaEngine engine{};
+                    engine.editor().add_window<SceneViewport>(true, path);
 
-                        engine.ecs().load_scene_into_new_root(path);
+                    engine.ecs().load_scene_into_new_root(path);
 
-                        engine.notifications().push("Created and opened scene: " + path.platform_path());
-                    },
-                    .allow_paths_outside_project = false
-                });
+                    engine.notifications().push("Created and opened scene: " + path.platform_path());
+                }, .allow_paths_outside_project = false
+                    }
+                );
             }
 
             editor.end_window_here();

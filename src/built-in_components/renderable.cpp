@@ -8,7 +8,7 @@
 
 
 #define TINYOBJLOADER_IMPLEMENTATION
-#include "tools/tiny_obj_loader.h"
+#include "tools/tinyobj/tiny_obj_loader.h"
 
 
 namespace mgm {
@@ -27,7 +27,7 @@ namespace mgm {
     }
 
     mat4f Transform::as_matrix() const {
-        const mat4f translate_mat {
+        const mat4f translate_mat{
             1.0f, 0.0f, 0.0f, pos.x,
             0.0f, 1.0f, 0.0f, pos.y,
             0.0f, 0.0f, 1.0f, pos.z,
@@ -36,7 +36,7 @@ namespace mgm {
 
         const mat4f rotation_mat = rot.as_rotation_mat4();
 
-        const mat4f scale_mat {
+        const mat4f scale_mat{
             scale.x, 0.0f, 0.0f, 0.0f,
             0.0f, scale.y, 0.0f, 0.0f,
             0.0f, 0.0f, scale.z, 0.0f,
@@ -84,12 +84,12 @@ namespace mgm {
         }
 
         builder.build(source);
-        
+
         created_shader = gpu.create_shader(builder);
 
         return created_shader != MgmGPU::INVALID_SHADER;
     }
-    
+
     bool Shader::load_from_file(const Path& main_source_file_path) {
         const auto source = MagmaEngine{}.file_io().read_text(main_source_file_path);
         loading_path = main_source_file_path.back();
@@ -112,7 +112,7 @@ namespace mgm {
         const auto& shapes = reader.GetShapes();
 
         std::vector<vec3f> vertices{};
-        
+
         std::vector<vec3f> vert_colors{};
 
         std::vector<vec3f> normals{};
@@ -151,7 +151,7 @@ namespace mgm {
                             attrib.normals[3 * static_cast<size_t>(idx.normal_index) + 1],
                             attrib.normals[3 * static_cast<size_t>(idx.normal_index) + 2]
                         );
-                    
+
                     if (idx.texcoord_index >= 0)
                         tex_coords.emplace_back(
                             attrib.texcoords[2 * static_cast<size_t>(idx.texcoord_index) + 0],
@@ -165,7 +165,7 @@ namespace mgm {
         auto& gpu = MagmaEngine{}.graphics();
 
         std::unordered_map<std::string, MgmGPU::BufferHandle> buffer_names{};
-        
+
         vertex_buffer = gpu.create_buffer(BufferCreateInfo{
             BufferCreateInfo::Type::RAW,
             vertices.data(),
@@ -190,7 +190,7 @@ namespace mgm {
             });
             buffer_names["norms"] = normal_buffer;
         }
-        
+
         if (!tex_coords.empty()) {
             tex_coord_buffer = gpu.create_buffer(BufferCreateInfo{
                 BufferCreateInfo::Type::RAW,
@@ -218,4 +218,4 @@ namespace mgm {
         gpu.destroy_buffer(normal_buffer);
         gpu.destroy_buffer(tex_coord_buffer);
     }
-}
+} // namespace mgm

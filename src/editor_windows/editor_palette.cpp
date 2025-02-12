@@ -1,8 +1,8 @@
-#include "systems/editor.hpp"
+#include "editor_windows/file_browser.hpp"
 #include "editor_windows/settings.hpp"
 #include "engine.hpp"
 #include "imgui.h"
-#include "editor_windows/file_browser.hpp"
+#include "systems/editor.hpp"
 
 
 namespace mgm {
@@ -18,16 +18,16 @@ namespace mgm {
                 palette_open = false;
                 add_window<FileBrowser>(
                     true,
-                    FileBrowser::Args {
+                    FileBrowser::Args{
                         .mode = FileBrowser::Mode::WRITE,
                         .type = FileBrowser::Type::FOLDER,
                         .callback = [](const Path path) {
-                            if (location_contains_project(path)) {
-                                Logging{"Editor"}.error("A project already exists in this location: \"", path.platform_path(), "\"");
-                                return;
-                            }
-                            initialize_project(path);
-                        },
+                    if (location_contains_project(path)) {
+                        Logging{"Editor"}.error("A project already exists in this location: \"", path.platform_path(), "\"");
+                        return;
+                    }
+                    initialize_project(path);
+                },
                         .allow_paths_outside_project = true
                     }
                 );
@@ -37,16 +37,16 @@ namespace mgm {
                 palette_open = false;
                 add_window<FileBrowser>(
                     true,
-                    FileBrowser::Args {
+                    FileBrowser::Args{
                         .mode = FileBrowser::Mode::READ,
                         .type = FileBrowser::Type::FOLDER,
                         .callback = [](const Path path) {
-                            if (!location_contains_project(path)) {
-                                Logging{"Editor"}.error("No project to open at location: \"", path.platform_path(), "\"");
-                                return;
-                            }
-                            load_project(path);
-                        }
+                    if (!location_contains_project(path)) {
+                        Logging{"Editor"}.error("No project to open at location: \"", path.platform_path(), "\"");
+                        return;
+                    }
+                    load_project(path);
+                }
                     }
                 );
             }
@@ -91,4 +91,4 @@ namespace mgm {
 
         return something_selected;
     }
-}
+} // namespace mgm

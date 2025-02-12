@@ -1,8 +1,8 @@
 #pragma once
 #include "systems.hpp"
 #include <string>
-#include <vector>
 #include <unordered_map>
+#include <vector>
 
 
 namespace mgm {
@@ -18,7 +18,7 @@ namespace mgm {
 
         float pos = 0.0f;
 
-        public:
+      public:
         Notifications() {
             system_name = "Notifications";
         }
@@ -40,7 +40,7 @@ namespace mgm {
 
         /**
          * @brief Push a notification to the screen (or renew an existing one with the same message)
-         * 
+         *
          * @param message The message to display
          * @param color The color of the message
          * @param timeout The time in seconds before the message disappears after the last push of the same message
@@ -54,4 +54,4 @@ namespace mgm {
 
         ~Notifications() override = default;
     };
-}
+} // namespace mgm

@@ -8,7 +8,7 @@ namespace mgm {
         return std::hash<std::string>{}(str);
     }
 
-    void Notifications::push(const std::string &message, const vec4f& color, float timeout) {
+    void Notifications::push(const std::string& message, const vec4f& color, float timeout) {
         if (message.size() > message_length_limit) {
             Logging{"Notifications"}.warning("Message exceeds length limit: ", std::to_string(message.size()), " > ", std::to_string(message_length_limit));
             if (truncate_over_length) {
@@ -36,16 +36,17 @@ namespace mgm {
 
     void Notifications::update(float delta) {
         ImGui::SetNextWindowPos(ImVec2{0.0f, 0.0f});
-        ImGui::Begin("Notifications", nullptr,
+        ImGui::Begin(
+            "Notifications", nullptr,
             ImGuiWindowFlags_NoTitleBar
-            | ImGuiWindowFlags_NoResize
-            | ImGuiWindowFlags_NoMove
-            | ImGuiWindowFlags_NoSavedSettings
-            | ImGuiWindowFlags_AlwaysAutoResize
-            | ImGuiWindowFlags_NoFocusOnAppearing
-            | ImGuiWindowFlags_NoNav
-            | ImGuiWindowFlags_NoBackground
-            | ImGuiWindowFlags_NoDocking
+                | ImGuiWindowFlags_NoResize
+                | ImGuiWindowFlags_NoMove
+                | ImGuiWindowFlags_NoSavedSettings
+                | ImGuiWindowFlags_AlwaysAutoResize
+                | ImGuiWindowFlags_NoFocusOnAppearing
+                | ImGuiWindowFlags_NoNav
+                | ImGuiWindowFlags_NoBackground
+                | ImGuiWindowFlags_NoDocking
         );
 
         ImGui::SetCursorPosY(pos);
@@ -79,4 +80,4 @@ namespace mgm {
 
         ImGui::End();
     }
-}
+} // namespace mgm

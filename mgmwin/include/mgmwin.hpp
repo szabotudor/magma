@@ -1,14 +1,14 @@
 #pragma once
 #include "logging.hpp"
 #include "mgmath.hpp"
+#include <algorithm>
 #include <functional>
 #include <vector>
-#include <algorithm>
 
 
 namespace mgm {
     class MgmWindow {
-        public:
+      public:
         enum class Mode {
             NORMAL,
             BORDERLESS,
@@ -17,27 +17,120 @@ namespace mgm {
 
         enum class InputInterface {
             NONE,
-            Key_A, Key_B, Key_C, Key_D, Key_E, Key_F, Key_G, Key_H, Key_I, Key_J, Key_K, Key_L, Key_M,
-            Key_N, Key_O, Key_P, Key_Q, Key_R, Key_S, Key_T, Key_U, Key_V, Key_W, Key_X, Key_Y, Key_Z,
-            Key_0, Key_1, Key_2, Key_3, Key_4, Key_5, Key_6, Key_7, Key_8, Key_9,
-            Key_META, Key_CAPSLOCK, Key_NUMLOCK, Key_SCROLLLOCK,
-            Key_SPACE, Key_ENTER, Key_TAB, Key_SHIFT, Key_CTRL, Key_ALT, Key_ESC, Key_BACKSPACE,
-            Key_DELETE, Key_INSERT, Key_HOME, Key_END, Key_PAGEUP, Key_PAGEDOWN,
-            Key_ARROW_UP, Key_ARROW_DOWN, Key_ARROW_LEFT, Key_ARROW_RIGHT,
-            Key_F1, Key_F2, Key_F3, Key_F4, Key_F5, Key_F6, Key_F7, Key_F8, Key_F9, Key_F10, Key_F11, Key_F12,
-            Key_PLUS, Key_MINUS, Key_ASTERISK, Key_EQUAL, Key_COMMA, Key_PERIOD,
-            Key_COLON, Key_SEMICOLON, Key_APOSTROPHE, Key_QUOTE, Key_OPEN_BRACKET, Key_CLOSE_BRACKET, Key_OPEN_CURLY_BRACKET, Key_CLOSE_CURLY_BRACKET,
-            Key_BACKSLASH, Key_FORWARD_SLASH, Key_QUESTION_MARK, Key_EXCLAMATION_MARK,
-            Key_AT, Key_HASH, Key_DOLLAR, Key_PERCENT, Key_CARET, Key_LESS, Key_GREATER, Key_AMPERSAND,
-            Key_OPEN_PARENTHESIS, Key_CLOSE_PARENTHESIS, Key_UNDERSCORE, Key_GRAVE,
-            Key_TILDE, Key_VERTICAL_LINE,
+            Key_A,
+            Key_B,
+            Key_C,
+            Key_D,
+            Key_E,
+            Key_F,
+            Key_G,
+            Key_H,
+            Key_I,
+            Key_J,
+            Key_K,
+            Key_L,
+            Key_M,
+            Key_N,
+            Key_O,
+            Key_P,
+            Key_Q,
+            Key_R,
+            Key_S,
+            Key_T,
+            Key_U,
+            Key_V,
+            Key_W,
+            Key_X,
+            Key_Y,
+            Key_Z,
+            Key_0,
+            Key_1,
+            Key_2,
+            Key_3,
+            Key_4,
+            Key_5,
+            Key_6,
+            Key_7,
+            Key_8,
+            Key_9,
+            Key_META,
+            Key_CAPSLOCK,
+            Key_NUMLOCK,
+            Key_SCROLLLOCK,
+            Key_SPACE,
+            Key_ENTER,
+            Key_TAB,
+            Key_SHIFT,
+            Key_CTRL,
+            Key_ALT,
+            Key_ESC,
+            Key_BACKSPACE,
+            Key_DELETE,
+            Key_INSERT,
+            Key_HOME,
+            Key_END,
+            Key_PAGEUP,
+            Key_PAGEDOWN,
+            Key_ARROW_UP,
+            Key_ARROW_DOWN,
+            Key_ARROW_LEFT,
+            Key_ARROW_RIGHT,
+            Key_F1,
+            Key_F2,
+            Key_F3,
+            Key_F4,
+            Key_F5,
+            Key_F6,
+            Key_F7,
+            Key_F8,
+            Key_F9,
+            Key_F10,
+            Key_F11,
+            Key_F12,
+            Key_PLUS,
+            Key_MINUS,
+            Key_ASTERISK,
+            Key_EQUAL,
+            Key_COMMA,
+            Key_PERIOD,
+            Key_COLON,
+            Key_SEMICOLON,
+            Key_APOSTROPHE,
+            Key_QUOTE,
+            Key_OPEN_BRACKET,
+            Key_CLOSE_BRACKET,
+            Key_OPEN_CURLY_BRACKET,
+            Key_CLOSE_CURLY_BRACKET,
+            Key_BACKSLASH,
+            Key_FORWARD_SLASH,
+            Key_QUESTION_MARK,
+            Key_EXCLAMATION_MARK,
+            Key_AT,
+            Key_HASH,
+            Key_DOLLAR,
+            Key_PERCENT,
+            Key_CARET,
+            Key_LESS,
+            Key_GREATER,
+            Key_AMPERSAND,
+            Key_OPEN_PARENTHESIS,
+            Key_CLOSE_PARENTHESIS,
+            Key_UNDERSCORE,
+            Key_GRAVE,
+            Key_TILDE,
+            Key_VERTICAL_LINE,
 
-            Mouse_LEFT, Mouse_RIGHT, Mouse_MIDDLE, Mouse_SCROLL_UP, Mouse_SCROLL_DOWN,
-            Mouse_POS_X, Mouse_POS_Y,
+            Mouse_LEFT,
+            Mouse_RIGHT,
+            Mouse_MIDDLE,
+            Mouse_SCROLL_UP,
+            Mouse_SCROLL_DOWN,
+            Mouse_POS_X,
+            Mouse_POS_Y,
 
             _NUM_INPUT_INTERFACES
         };
-        static inline const std::vector<std::string> input_interface_names {
+        static inline const std::vector<std::string> input_interface_names{
             "NONE",
             "Key_A", "Key_B", "Key_C", "Key_D", "Key_E", "Key_F", "Key_G", "Key_H", "Key_I", "Key_J", "Key_K", "Key_L", "Key_M",
             "Key_N", "Key_O", "Key_P", "Key_Q", "Key_R", "Key_S", "Key_T", "Key_U", "Key_V", "Key_W", "Key_X", "Key_Y", "Key_Z",
@@ -127,8 +220,17 @@ namespace mgm {
         }
 
         struct InputEvent {
-            enum class Mode { NONE, PRESS, RELEASE, OTHER };
-            enum class From { NONE, KEYBOARD, MOUSE };
+            enum class Mode {
+                NONE,
+                PRESS,
+                RELEASE,
+                OTHER
+            };
+            enum class From {
+                NONE,
+                KEYBOARD,
+                MOUSE
+            };
 
             InputInterface input{};
             float value{};
@@ -136,13 +238,13 @@ namespace mgm {
             From from{};
         };
 
-        private:
+      private:
         std::vector<InputEvent> input_events_since_last_update{};
         std::string text_input_since_last_update{};
 
         std::vector<std::vector<std::function<void(InputEvent)>>> callbacks{};
 
-        public:
+      public:
         /**
          * @brief Get the input events since the last update
          *
@@ -164,7 +266,7 @@ namespace mgm {
             return callbacks[(size_t)ii];
         }
 
-        private:
+      private:
         struct NativeWindow* data = nullptr;
         friend struct NativeWindow;
         Mode window_mode = Mode::NORMAL, nonfullscreen_window_mode = Mode::NORMAL;
@@ -175,7 +277,7 @@ namespace mgm {
 
         Logging log;
 
-        public:
+      public:
         MgmWindow(const MgmWindow&) = delete;
         MgmWindow(MgmWindow&&) = delete;
         MgmWindow& operator=(const MgmWindow&) = delete;
@@ -183,8 +285,8 @@ namespace mgm {
 
         NativeWindow* get_native_window() { return data; }
 
-        MgmWindow(const char* name = "Window", vec2u32 size = vec2u32(800, 600), Mode mode = Mode::NORMAL, vec2i32 pos = vec2i32(-1, -1)):
-        log{(std::string("Window \"") + name + '\"').c_str()} {
+        MgmWindow(const char* name = "Window", vec2u32 size = vec2u32(800, 600), Mode mode = Mode::NORMAL, vec2i32 pos = vec2i32(-1, -1))
+            : log{(std::string("Window \"") + name + '\"').c_str()} {
             input_interfaces = new float[(size_t)InputInterface::_NUM_INPUT_INTERFACES * 2]{};
             callbacks.resize((size_t)InputInterface::_NUM_INPUT_INTERFACES);
             open(name, size, mode, pos);
@@ -311,4 +413,4 @@ namespace mgm {
 
         ~MgmWindow();
     };
-}
+} // namespace mgm

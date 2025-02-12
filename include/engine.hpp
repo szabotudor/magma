@@ -1,8 +1,8 @@
 #pragma once
 #include <atomic>
 #include <mutex>
-#include <vector>
 #include <string>
+#include <vector>
 
 
 struct ImDrawData;
@@ -38,7 +38,7 @@ namespace mgm {
 
         float current_dt = 0.0f;
 
-        public:
+      public:
         FileIO& file_io();
         MgmWindow& window();
         ResourceManager& resource_manager();
@@ -71,4 +71,4 @@ namespace mgm {
 
         ~MagmaEngine();
     };
-}
+} // namespace mgm

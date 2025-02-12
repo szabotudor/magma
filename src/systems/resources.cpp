@@ -23,4 +23,4 @@ namespace mgm {
 
         to_destroy.clear();
     }
-}
+} // namespace mgm

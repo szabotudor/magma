@@ -1,9 +1,9 @@
 #pragma once
 #include "file.hpp"
 #include "systems.hpp"
-#include <vector>
 #include <algorithm>
 #include <type_traits>
+#include <vector>
 
 
 namespace mgm {
@@ -13,25 +13,29 @@ namespace mgm {
 
         bool remove_on_close = false;
 
-        public:
+      public:
         std::string window_name = "EditorWindow";
         bool open = true;
 
         EditorWindow() = default;
 
         /**
-         * @brief Called while the window is open. Default implementation opens a resizable window with a close button. Override to change the default behavior of drawing the window frame/container
+         * @brief Called while the window is open. Default implementation opens a resizable window with a close button. Override
+         * to change the default behavior of drawing the window frame/container
          */
         virtual void draw_window();
 
         /**
          * @brief Called when drawing window contents. Override to add contents to your window
          */
-        virtual void draw_contents() {};
+        virtual void draw_contents() {}
 
         void close_window() { open = false; }
 
-        void close_and_remove_window() { remove_on_close = true; open = false; }
+        void close_and_remove_window() {
+            remove_on_close = true;
+            open = false;
+        }
 
         virtual ~EditorWindow() = default;
     };
@@ -53,12 +57,12 @@ namespace mgm {
         std::string project_name = "";
         Path main_scene_path = "";
 
-        public:
+      public:
         bool palette_open = false;
 
         Editor();
 
-        private:
+      private:
         struct HoveredVectorInfo {
             std::string name{};
             float window_height = 0.0f;
@@ -66,11 +70,11 @@ namespace mgm {
         std::vector<HoveredVectorInfo> hovered_vector_names{};
         size_t vector_depth = 0, max_vector_depth = 0;
 
-        public:
-
+      public:
         /**
-         * @brief Draw a button, and open a window when said button is hovered. Remember to call "end_window_here" after you finish drawing the contents
-         * 
+         * @brief Draw a button, and open a window when said button is hovered. Remember to call "end_window_here" after you
+         * finish drawing the contents
+         *
          * @param name The name of the button, and the window
          * @param has_elements Whether the window has elements, or if the button should appear disabled
          * @return true If the window is open
@@ -84,7 +88,7 @@ namespace mgm {
 
         /**
          * @brief Check if the game is running
-         * 
+         *
          * @return true If the game is running in the editor
          * @return false If the editor is open and the game isn't being played
          */
@@ -106,7 +110,7 @@ namespace mgm {
         static void unload_project();
 
         template<typename T, typename... Ts>
-        requires std::is_base_of_v<EditorWindow, T> && std::is_constructible_v<T, Ts...>
+            requires std::is_base_of_v<EditorWindow, T> && std::is_constructible_v<T, Ts...>
         T* add_window(bool remove_on_close = false, Ts&&... args) {
             auto window = new T{std::forward<Ts>(args)...};
             window->remove_on_close = remove_on_close;
@@ -128,4 +132,4 @@ namespace mgm {
 
         ~Editor() override;
     };
-}
+} // namespace mgm

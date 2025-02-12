@@ -3,13 +3,13 @@
 #include "ecs.hpp"
 #include "engine.hpp"
 #include "imgui.h"
-#include "imgui_impl_mgmgpu.h"
 #include "imgui_stdlib.h"
 #include "json.hpp"
 #include "mgmgpu.hpp"
 #include "systems/notifications.hpp"
-#include "tools/mgmecs.hpp"
 #include "systems/renderer.hpp"
+#include "tools/imgui_impl_mgmgpu.h"
+#include "tools/mgmecs.hpp"
 #include <memory>
 #include <mutex>
 #include <string>
@@ -23,7 +23,7 @@ namespace mgm {
         JObject selected_serialized_data{};
 
         MGMecs<>::Entity last_drawn_entity{};
-        bool selection_came_from_navigating_with_down_arrow: 1 = false;
+        bool selection_came_from_navigating_with_down_arrow : 1 = false;
     };
 
 
@@ -65,10 +65,7 @@ namespace mgm {
             std::unique_lock lock{renderer.mutex};
 
             gpu.destroy_texture(viewport_texture);
-            viewport_texture = gpu.create_texture(TextureCreateInfo{
-                .name = "Texture",
-                .size = new_size
-            });
+            viewport_texture = gpu.create_texture(TextureCreateInfo{.name = "Texture", .size = new_size});
             old_size = new_size;
 
             renderer.settings.canvas = viewport_texture;
@@ -138,9 +135,8 @@ namespace mgm {
     }
 
 
-    HierarchyView::HierarchyView() : data{std::make_shared<Data>()} {
-        window_name = "Hierarchy";
-    }
+    HierarchyView::HierarchyView()
+        : data{std::make_shared<Data>()} { window_name = "Hierarchy"; }
 
     void HierarchyView::draw_contents() {
         auto engine = MagmaEngine{};
@@ -149,7 +145,7 @@ namespace mgm {
             close_window();
             return;
         }
-        
+
         auto& ecs = engine.ecs().ecs;
 
         const auto name_entity = [&](const MGMecs<>::Entity new_parent, std::string name) {
@@ -192,16 +188,15 @@ namespace mgm {
         ImGui::Separator();
 
         std::function<void(const MGMecs<>::Entity)> draw_parent_and_children;
-        
-        draw_parent_and_children = [&] (const MGMecs<>::Entity parent) {
+
+        draw_parent_and_children = [&](const MGMecs<>::Entity parent) {
             if (parent == MGMecs<>::null)
                 return;
 
             const auto& node = ecs.get<HierarchyNode>(parent);
 
             if (node.is_root()) {
-                for (const auto child : node)
-                    draw_parent_and_children(child);
+                for (const auto child : node) draw_parent_and_children(child);
                 return;
             }
 
@@ -213,7 +208,7 @@ namespace mgm {
                     ImGui::Text("%s", node.name.c_str());
                     ImGui::EndDragDropSource();
                 }
-                
+
                 auto payload = ImGui::GetDragDropPayload();
                 if (!payload || !payload->IsDataType("HIERARCHY_NODE"))
                     return;
@@ -240,14 +235,12 @@ namespace mgm {
 
                     if (cursor_pos.y < top)
                         ImGui::GetWindowDrawList()->AddRectFilled(
-                            {item_start.x, item_start.y - sixth},
-                            {window_end, item_start.y + sixth},
+                            {item_start.x, item_start.y - sixth}, {window_end, item_start.y + sixth},
                             ImGui::ColorConvertFloat4ToU32(ImGui::GetStyleColorVec4(ImGuiCol_DragDropTarget))
                         );
                     else if (cursor_pos.y > bottom)
                         ImGui::GetWindowDrawList()->AddRectFilled(
-                            {item_start.x, item_end.y - sixth},
-                            {window_end, item_end.y + sixth},
+                            {item_start.x, item_end.y - sixth}, {window_end, item_end.y + sixth},
                             ImGui::ColorConvertFloat4ToU32(ImGui::GetStyleColorVec4(ImGuiCol_DragDropTarget))
                         );
 
@@ -272,7 +265,7 @@ namespace mgm {
                             entity_node.name = name_entity(parent, entity_node.name);
                             entity_node.reparent(parent);
                         }
-                        
+
                         SceneViewport::time_since_last_edit = 0.0f;
                     }
                     ImGui::EndDragDropTarget();
@@ -322,8 +315,7 @@ namespace mgm {
                 do_drag_drop();
 
                 if (node_open) {
-                    for (const auto entity : node)
-                        draw_parent_and_children(entity);
+                    for (const auto entity : node) draw_parent_and_children(entity);
 
                     ImGui::TreePop();
                 }
@@ -339,7 +331,7 @@ namespace mgm {
                     do_down_arrow_not_open();
                     data->selection_came_from_navigating_with_down_arrow = true;
                 }
-                
+
                 if (ImGui::IsItemClicked())
                     data->selected = parent;
 
@@ -362,15 +354,13 @@ namespace mgm {
 
         if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGui::IsAnyItemHovered() && ImGui::IsWindowHovered())
             data->selected = MGMecs<>::null;
-        
+
         if (selected_initially != data->selected && data->selected != MGMecs<>::null)
             data->selected_serialized_data = engine.ecs().serialize_entity_components(data->selected);
     }
 
 
-    InspectorWindow::InspectorWindow() {
-        window_name = "Inspector";
-    }
+    InspectorWindow::InspectorWindow() { window_name = "Inspector"; }
 
     void InspectorWindow::draw_contents() {
         auto engine = MagmaEngine{};
@@ -386,7 +376,7 @@ namespace mgm {
             ImGui::PopStyleColor();
             return;
         }
-        
+
         std::function<bool(const std::string& type_id, JObject& json)> inspect_func{};
         inspect_func = [&](const std::string& type_id, JObject& json) {
             const auto func = engine.ecs().all_serialized_types().find(type_id);
@@ -483,12 +473,14 @@ namespace mgm {
 
         ImGui::ListBox("Component Type", &current_type_n, type_ids.data(), static_cast<int>(type_ids.size()));
 
-        if (!current_type_n) ImGui::BeginDisabled();
+        if (!current_type_n)
+            ImGui::BeginDisabled();
         if (ImGui::Button("Add Component +", {ImGui::GetContentRegionAvail().x, 0.0f})) {
             engine.ecs().add_component_of_type_to_entity(type_ids[static_cast<size_t>(current_type_n)], data->selected);
             data->selected_serialized_data = engine.ecs().serialize_entity_components(data->selected);
             SceneViewport::time_since_last_edit = 0.0f;
         }
-        if (!current_type_n) ImGui::EndDisabled();
+        if (!current_type_n)
+            ImGui::EndDisabled();
     }
 } // namespace mgm

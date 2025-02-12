@@ -1,7 +1,7 @@
-#include <fstream>
-#include <ios>
 #include "file.hpp"
 #include "logging.hpp"
+#include <fstream>
+#include <ios>
 
 
 namespace mgm {
@@ -18,7 +18,7 @@ namespace mgm {
         platform_data = new Data{};
     }
 
-    std::string FileIO::read_text(const Path &path) {
+    std::string FileIO::read_text(const Path& path) {
         CHECK_PATH(path, "");
 
         const auto path_str = path.platform_path();
@@ -40,7 +40,7 @@ namespace mgm {
         }
         return result;
     }
-    void FileIO::write_text(const Path &path, const std::string &text) {
+    void FileIO::write_text(const Path& path, const std::string& text) {
         CHECK_PATH(path, );
 
         const auto path_str = path.platform_path();
@@ -53,7 +53,7 @@ namespace mgm {
         file << text;
     }
 
-    std::vector<uint8_t> FileIO::read_binary(const Path &path) {
+    std::vector<uint8_t> FileIO::read_binary(const Path& path) {
         CHECK_PATH(path, {});
 
         const auto path_str = path.platform_path();
@@ -65,7 +65,7 @@ namespace mgm {
 
         return std::vector<uint8_t>{std::istreambuf_iterator<char>{file}, std::istreambuf_iterator<char>{}};
     }
-    void FileIO::write_binary(const Path &path, const std::vector<uint8_t> &data) {
+    void FileIO::write_binary(const Path& path, const std::vector<uint8_t>& data) {
         CHECK_PATH(path, );
 
         const auto path_str = path.platform_path();
@@ -78,7 +78,7 @@ namespace mgm {
         file.write(reinterpret_cast<const char*>(data.data()), (std::streamsize)data.size());
     }
 
-    void FileIO::delete_file(const Path &path) {
+    void FileIO::delete_file(const Path& path) {
         CHECK_PATH(path, );
 
         const auto path_str = path.platform_path();
@@ -87,7 +87,7 @@ namespace mgm {
     }
 
 
-    void FileIO::begin_read_stream(const Path &path) {
+    void FileIO::begin_read_stream(const Path& path) {
         CHECK_PATH(path, );
 
         auto& read_file = platform_data->read_files.emplace_back();
@@ -98,7 +98,7 @@ namespace mgm {
             Logging{"FileIO"}.error("Failed to open file: ", path_str);
         }
     }
-    void FileIO::read_stream(std::vector<uint8_t> &dst, size_t size) {
+    void FileIO::read_stream(std::vector<uint8_t>& dst, size_t size) {
         if (platform_data->read_files.empty()) {
             Logging{"FileIO"}.error("No file open for reading. Call begin_read_stream first");
             return;
@@ -110,7 +110,7 @@ namespace mgm {
         read_file.read(reinterpret_cast<char*>(dst.data() + start), (std::streamsize)size);
     }
 
-    void FileIO::begin_write_stream(const Path &path) {
+    void FileIO::begin_write_stream(const Path& path) {
         CHECK_PATH(path, );
 
         auto& write_file = platform_data->write_files.emplace_back();
@@ -121,7 +121,7 @@ namespace mgm {
             Logging{"FileIO"}.error("Failed to open file: ", path_str);
         }
     }
-    void FileIO::write_stream(const std::vector<uint8_t> &data) {
+    void FileIO::write_stream(const std::vector<uint8_t>& data) {
         if (this->platform_data->write_files.empty()) {
             Logging{"FileIO"}.error("No file open for writing. Call begin_write_stream first");
             return;

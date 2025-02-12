@@ -1,11 +1,11 @@
 #pragma once
-#include "editor_windows/file_browser.hpp"
-#include "systems/editor.hpp"
-#include "tools/base64.hpp"
 #include "ecs.hpp"
+#include "editor_windows/file_browser.hpp"
 #include "engine.hpp"
 #include "file.hpp"
 #include "systems.hpp"
+#include "systems/editor.hpp"
+#include "tools/base64/base64.hpp"
 #include "tools/mgmecs.hpp"
 
 #if defined(ENABLE_EDITOR)
@@ -15,11 +15,11 @@
 #include <mutex>
 #include <stdexcept>
 #include <string>
+#include <type_traits>
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
 #include <vector>
-#include <type_traits>
 
 
 namespace mgm {
@@ -30,11 +30,10 @@ namespace mgm {
         friend class ResourceManager;
         mutable std::mutex mutex{};
 
-        public:
-
+      public:
         /**
          * @brief Create a lock on the resource (tells the Resource Manager not to touch it until it is unlocked)
-         * 
+         *
          * @return std::unique_lock<std::mutex> A lock on the resource
          */
         std::unique_lock<std::mutex> lock_resource() const { return std::unique_lock{mutex}; }
@@ -43,7 +42,7 @@ namespace mgm {
 
         /**
          * @brief Load this resource from raw data provided as bytes (has the lowest presidence, behind "load_from_text" and "load_from_file", so will not be called if one of them is implemented)
-         * 
+         *
          * @param bytes A vector containing the raw data
          *
          * @return true If loading was successful
@@ -53,7 +52,7 @@ namespace mgm {
 
         /**
          * @brief Load this resource from some text provided as a string (has presidence above "load_from_bytes", but "load_from_file" has presidence over this, so if "load_from_file" is implemented, this will not be called)
-         * 
+         *
          * @param text A string containing the text
          *
          * @return true If loading was successful
@@ -63,7 +62,7 @@ namespace mgm {
 
         /**
          * @brief Load this resource from the file at the given path (has presidence above "load_from_bytes" and "load_from_text", so if this is implemented, the others will not be called)
-         * 
+         *
          * @param file_path The path to the file that the resource should be loaded from
          *
          * @return true If loading was successful
@@ -74,21 +73,21 @@ namespace mgm {
 
         /**
          * @brief Dump the contents of this resource into bytes (presidence rules same as "load_from_bytes")
-         * 
+         *
          * @return std::vector<uint8_t> A vector containing the raw data
          */
         virtual std::vector<uint8_t> save_to_bytes() const { return {}; }
 
         /**
          * @brief Dump the contents of this resource into some text (presidence rules same as "load_from_text")
-         * 
+         *
          * @return std::string A string containing the dumped text
          */
         virtual std::string save_to_text() const { return {}; }
 
         /**
          * @brief Dump the contents of this resource into a file at the given path (presidence rules same as "load_from_file")
-         * 
+         *
          * @param file_path The path to the file that the data should be dumped into
          *
          * @return true If saving was successful
@@ -98,7 +97,7 @@ namespace mgm {
 
         virtual ~Resource() {}
     };
-    
+
 
     struct ResourceContainer {
         Resource* resource = nullptr;
@@ -130,13 +129,13 @@ namespace mgm {
         // If this resource is not associated with a file, the first reference becomes the original
         mutable bool is_original = false;
 
-        ResourceReference(ResourceContainer* known_good_container) : container(known_good_container) {
+        ResourceReference(ResourceContainer* known_good_container)
+            : container(known_good_container) {
             const auto lock = container->resource->lock_resource();
             ++container->refs;
         }
 
-        public:
-
+      public:
         ResourceReference() = default;
 
         ResourceReference(const std::string& identifier);
@@ -196,7 +195,7 @@ namespace mgm {
         friend class ResourceReference;
 
         std::unordered_map<std::string, ResourceContainer*> resources{};
-        
+
         std::unordered_set<std::string> to_destroy{};
 
         struct ResourceTypeInfo {
@@ -204,29 +203,30 @@ namespace mgm {
         };
         std::unordered_map<size_t, ResourceTypeInfo> resource_types{};
 
-        public:
-
+      public:
         ResourceManager();
 
 
         /**
          * @brief Asociate a resource type with a certain file extension
-         * 
+         *
          * @tparam T The resource type
          * @param extension The file extension without the '.' before it
          */
-        template<typename T> requires std::is_base_of_v<Resource, T>
+        template<typename T>
+            requires std::is_base_of_v<Resource, T>
         void asociate_resource_with_file_extension(const std::string& extension) {
             resource_types[typeid(T).hash_code()].ext = extension;
         }
 
         /**
          * @brief Get the file extension asociated with the given resource type
-         * 
+         *
          * @tparam T The resource type
          * @return std::string The extension without the '.' before it
          */
-        template<typename T> requires std::is_base_of_v<Resource, T>
+        template<typename T>
+            requires std::is_base_of_v<Resource, T>
         std::string get_resource_asociated_file_extension() const {
             const auto it = resource_types.find(typeid(T).hash_code());
             if (it == resource_types.end())
@@ -236,7 +236,7 @@ namespace mgm {
 
         /**
          * @brief Change the identifier of a resource with another
-         * 
+         *
          * @param identifier The identifier of the resource to rename
          * @param new_identifier The new identifier to use for the resource. If this is a valid path to a file, the resource will be associated with that file
          */
@@ -261,17 +261,18 @@ namespace mgm {
 
         /**
          * @brief Create a resource of the given type
-         * 
+         *
          * @tparam T The resource type
          * @param identifier The identifier of the new resource
          * @param args Arguments to forward to the constructor
          * @return ResourceReference<T> A shared pointer to the resource
          */
-        template<typename T, typename... Ts> requires std::is_base_of_v<Resource, T> && std::is_constructible_v<T, Ts...>
+        template<typename T, typename... Ts>
+            requires std::is_base_of_v<Resource, T> && std::is_constructible_v<T, Ts...>
         ResourceReference<T> create(const std::string& identifier, Ts&&... args) {
             resources.emplace(
                 identifier,
-                new ResourceContainer {
+                new ResourceContainer{
                     .resource = new T{std::forward<Ts>(args)...},
                     .ident = identifier,
                     .type = typeid(T).hash_code(),
@@ -285,26 +286,28 @@ namespace mgm {
 
         /**
          * @brief Get the resource with the given identifier
-         * 
+         *
          * @tparam T The resource type
          * @param identifier The identifier of the existing resource to get
          * @return ResourceReference<T> A shared pointer to the resource
          */
-        template<typename T> requires std::is_base_of_v<Resource, T>
+        template<typename T>
+            requires std::is_base_of_v<Resource, T>
         ResourceReference<T> get(const std::string& identifier) {
             return ResourceReference<T>{identifier};
         }
 
         /**
          * @brief Get the resource with the given identifier, or create it if it doesn't exist yet forwarding the arguments to the constructor
-         * 
+         *
          * @tparam T The type of the resource
          * @tparam Ts Argument types for the constructor's arguments
          * @param identifier The resource's unique identifier
          * @param args Arguments for the constructor of the resource
          * @return ResourceReference<T> A shared pointer to the resource
          */
-        template<typename T, typename... Ts> requires std::is_base_of_v<Resource, T> && std::is_constructible_v<T, Ts...>
+        template<typename T, typename... Ts>
+            requires std::is_base_of_v<Resource, T> && std::is_constructible_v<T, Ts...>
         ResourceReference<T> get_or_create(const std::string& identifier, Ts&&... args) {
             const auto it = resources.find(identifier);
             if (it == resources.end())
@@ -315,13 +318,14 @@ namespace mgm {
 
         /**
          * @brief Get the resource with the given identifier, or load it from the given raw data
-         * 
+         *
          * @tparam T The type of the resource
          * @param identifier The identifier of the resource
          * @param data A vector of bytes to send to "load_from_text" if the resource doesn't already exist
          * @return ResourceReference<T> A shared pointer to the resource
          */
-        template<typename T> requires std::is_default_constructible_v<T> && std::is_same_v<decltype(&T::load_from_bytes), bool(T::*)(const std::vector<uint8_t>&)>
+        template<typename T>
+            requires std::is_default_constructible_v<T> && std::is_same_v<decltype(&T::load_from_bytes), bool (T::*)(const std::vector<uint8_t>&)>
         ResourceReference<T> get_or_load_from_bytes(const std::string& identifier, const std::vector<uint8_t>& data) {
             const auto it = resources.find(identifier);
             if (it != resources.end())
@@ -336,13 +340,14 @@ namespace mgm {
 
         /**
          * @brief Get the resource with the given identifier, or load it from the given string
-         * 
+         *
          * @tparam T The type of the resource
          * @param identifier The identifier of the resource
          * @param text A string to send to "load_from_text" if the resource doesn't already exist
          * @return ResourceReference<T> A shared pointer to the resource
          */
-        template<typename T> requires std::is_default_constructible_v<T> && std::is_same_v<decltype(&T::load_from_text), bool(T::*)(const std::string&)>
+        template<typename T>
+            requires std::is_default_constructible_v<T> && std::is_same_v<decltype(&T::load_from_text), bool (T::*)(const std::string&)>
         ResourceReference<T> get_or_load_from_text(const std::string& identifier, const std::string& text) {
             const auto it = resources.find(identifier);
             if (it != resources.end())
@@ -358,12 +363,13 @@ namespace mgm {
 
         /**
          * @brief Load the resource from the given path, or return the existing one if it has already been loaded once
-         * 
+         *
          * @tparam T The type of the resource
          * @param file_path Path to the file the resource should be loaded from
          * @return ResourceReference<T> A shared pointer to the resource
          */
-        template<typename T> requires std::is_default_constructible_v<T>
+        template<typename T>
+            requires std::is_default_constructible_v<T>
         ResourceReference<T> get_or_load(const Path& file_path) {
             const auto identifier = file_path.as_platform_independent().data;
 
@@ -377,16 +383,16 @@ namespace mgm {
 
             bool success = false;
 
-            if constexpr (std::is_same_v<decltype(&T::load_from_file), bool(T::*)(const Path&)>)
+            if constexpr (std::is_same_v<decltype(&T::load_from_file), bool (T::*)(const Path&)>)
                 success = resource.get_mutable().load_from_file(file_path);
-            if constexpr (std::is_same_v<decltype(&T::load_from_text), bool(T::*)(const std::string&)>) {
+            if constexpr (std::is_same_v<decltype(&T::load_from_text), bool (T::*)(const std::string&)>) {
                 if (!success) {
                     const auto text = MagmaEngine{}.file_io().read_text(file_path);
                     if (!text.empty())
                         success = resource.get_mutable().load_from_text(text);
                 }
             }
-            if constexpr (std::is_same_v<decltype(&T::load_from_bytes), bool(T::*)(const std::vector<uint8_t>&)>) {
+            if constexpr (std::is_same_v<decltype(&T::load_from_bytes), bool (T::*)(const std::vector<uint8_t>&)>) {
                 if (!success) {
                     const auto bin = MagmaEngine{}.file_io().read_binary(file_path);
                     if (!bin.empty())
@@ -424,11 +430,14 @@ namespace mgm {
     }
 
     template<typename T>
-    ResourceReference<T>::ResourceReference(ResourceReference<T>&& other) : container(other.container), is_original(other.is_original) {
+    ResourceReference<T>::ResourceReference(ResourceReference<T>&& other)
+        : container(other.container),
+          is_original(other.is_original) {
         other.container = nullptr;
     }
     template<typename T>
-    ResourceReference<T>::ResourceReference(const ResourceReference<T>& other) : container(other.container) {
+    ResourceReference<T>::ResourceReference(const ResourceReference<T>& other)
+        : container(other.container) {
         const auto lock = container->resource->lock_resource();
         ++container->refs;
     }
@@ -509,12 +518,12 @@ namespace mgm {
             if (container->probably_modified) {
                 bool success = false;
 
-                if constexpr (std::is_same_v<decltype(&T::save_to_file), void(T::*)(const Path& file_path) const>) {
+                if constexpr (std::is_same_v<decltype(&T::save_to_file), void (T::*)(const Path& file_path) const>) {
                     success = container->resource->save_to_file(container->ident);
                     if (success)
                         res["is_direct"] = true;
                 }
-                if constexpr (std::is_same_v<decltype(&T::save_to_text), std::string(T::*)() const>) {
+                if constexpr (std::is_same_v<decltype(&T::save_to_text), std::string (T::*)() const>) {
                     if (!success) {
                         const auto text = container->resource->save_to_text();
                         if (!text.empty()) {
@@ -524,7 +533,7 @@ namespace mgm {
                         }
                     }
                 }
-                if constexpr (std::is_same_v<decltype(&T::save_to_bytes), std::vector<uint8_t>(T::*)() const>) {
+                if constexpr (std::is_same_v<decltype(&T::save_to_bytes), std::vector<uint8_t> (T::*)() const>) {
                     if (!success) {
                         const auto bytes = container->resource->save_to_bytes();
                         if (!bytes.empty()) {
@@ -548,7 +557,7 @@ namespace mgm {
 
             if (is_original) {
                 bool success = false;
-                if constexpr (std::is_same_v<decltype(&T::save_to_text), std::string(T::*)() const>) {
+                if constexpr (std::is_same_v<decltype(&T::save_to_text), std::string (T::*)() const>) {
                     if (!success) {
                         const auto text = container->resource->save_to_text();
                         if (!text.empty()) {
@@ -557,7 +566,7 @@ namespace mgm {
                         }
                     }
                 }
-                if constexpr (std::is_same_v<decltype(&T::save_to_bytes), std::vector<uint8_t>(T::*)() const>) {
+                if constexpr (std::is_same_v<decltype(&T::save_to_bytes), std::vector<uint8_t> (T::*)() const>) {
                     if (!success) {
                         const auto bytes = container->resource->save_to_bytes();
                         if (!bytes.empty()) {
@@ -583,14 +592,14 @@ namespace mgm {
         }
         else if (data.has("identifier")) {
             if (data.has("text")) {
-                if constexpr (std::is_same_v<decltype(&T::load_from_text), bool(T::*)(const std::string&)>) {
+                if constexpr (std::is_same_v<decltype(&T::load_from_text), bool (T::*)(const std::string&)>) {
                     const auto text = data["text"];
                     if (!text.empty())
                         *this = MagmaEngine{}.resource_manager().get_or_load_from_text<T>(std::string(data["identifier"]), std::string(text));
                 }
             }
             else if (data.has("bytes")) {
-                if constexpr (std::is_same_v<decltype(&T::load_from_bytes), bool(T::*)(const std::vector<uint8_t>&)>) {
+                if constexpr (std::is_same_v<decltype(&T::load_from_bytes), bool (T::*)(const std::vector<uint8_t>&)>) {
                     const auto bytes = base64::decode_into<std::vector<uint8_t>>(std::string(data["bytes"]));
                     if (!bytes.empty())
                         *this = MagmaEngine{}.resource_manager().get_or_load_from_bytes<T>(std::string(data["identifier"]), bytes);
@@ -621,25 +630,19 @@ namespace mgm {
             ImGui::Text("Empty Resource");
             ImGui::PopStyleColor();
 
-            if constexpr (std::is_same_v<decltype(&T::load_from_file), bool(T::*)(const Path&)>
-            || std::is_same_v<decltype(&T::load_from_bytes), bool(T::*)(const std::vector<uint8_t>&)>
-            || std::is_same_v<decltype(&T::load_from_text), bool(T::*)(const std::string&)>) {
+            if constexpr (std::is_same_v<decltype(&T::load_from_file), bool (T::*)(const Path&)>
+                          || std::is_same_v<decltype(&T::load_from_bytes), bool (T::*)(const std::vector<uint8_t>&)>
+                          || std::is_same_v<decltype(&T::load_from_text), bool (T::*)(const std::string&)>) {
                 if (ImGui::Button("Open")) {
-                    MagmaEngine{}.editor().add_window<FileBrowser>(true, FileBrowser::Args{
-                        .mode = FileBrowser::Mode::READ,
-                        .type = FileBrowser::Type::FILE,
-                        .callback = [e](const Path path) {
-                            auto& self = MagmaEngine{}.ecs().ecs.get<ResourceReference<T>>(e);
-                            self = MagmaEngine{}.resource_manager().get_or_load<T>(path);
-                            if (!self.valid()) {
-                                const auto name = MagmaEngine{}.ecs().type_unique_identifier<ResourceReference<T>>();
-                                Logging{"Resource Manager"}.error("Failed to load ", name, " from path \"", path.as_platform_independent().data, "\"");
-                                self.invalidate();
-                            }
-                        },
-                        .default_file_extension = MagmaEngine{}.resource_manager().get_resource_asociated_file_extension<T>(),
-                        .only_show_files_with_proper_extension = true
-                    });
+                    MagmaEngine{}.editor().add_window<FileBrowser>(true, FileBrowser::Args{.mode = FileBrowser::Mode::READ, .type = FileBrowser::Type::FILE, .callback = [e](const Path path) {
+                        auto& self = MagmaEngine{}.ecs().ecs.get<ResourceReference<T>>(e);
+                        self = MagmaEngine{}.resource_manager().get_or_load<T>(path);
+                        if (!self.valid()) {
+                            const auto name = MagmaEngine{}.ecs().type_unique_identifier<ResourceReference<T>>();
+                            Logging{"Resource Manager"}.error("Failed to load ", name, " from path \"", path.as_platform_independent().data, "\"");
+                            self.invalidate();
+                        }
+                    }, .default_file_extension = MagmaEngine{}.resource_manager().get_resource_asociated_file_extension<T>(), .only_show_files_with_proper_extension = true});
                 }
             }
 
@@ -676,4 +679,4 @@ namespace mgm {
     ResourceReference<T>::~ResourceReference() {
         invalidate();
     }
-}
+} // namespace mgm

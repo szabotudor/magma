@@ -1,20 +1,20 @@
 #include "mgmwin.hpp"
 #include "mgmath.hpp"
 #include "native_window.hpp"
-#include <X11/X.h>
-#include <X11/Xlib.h>
-#include <X11/XKBlib.h>
 #include <bits/chrono.h>
 #include <chrono>
 #include <string>
+#include <X11/X.h>
+#include <X11/XKBlib.h>
+#include <X11/Xlib.h>
 
 
 namespace mgm {
     constexpr uint32_t WM_HINT_FUNCTIONS = 0x1,
-        WM_HINT_BORDER = 0x2;
-        // Unused for now
-        // WM_HINT_INPUT_MODE = 0x3,
-        // WM_HINT_INPUT_STATUS = 0x4;
+                       WM_HINT_BORDER = 0x2;
+    // Unused for now
+    // WM_HINT_INPUT_MODE = 0x3,
+    // WM_HINT_INPUT_STATUS = 0x4;
     struct MwmHints {
         unsigned long flags = 0;
         // 0(no resize + no close), 1(), 2(no close), 3(no resize)
@@ -61,16 +61,16 @@ namespace mgm {
         XSelectInput(
             data->display, data->window,
             StructureNotifyMask
-            | ButtonPressMask | ButtonReleaseMask
-            | PointerMotionMask
-            | KeyPressMask | KeyReleaseMask
-            | KeymapStateMask
+                | ButtonPressMask | ButtonReleaseMask
+                | PointerMotionMask
+                | KeyPressMask | KeyReleaseMask
+                | KeymapStateMask
         );
 
         data->wm_destroy = XInternAtom(data->display, "WM_DELETE_WINDOW", True);
         data->wm_hints = XInternAtom(data->display, "_MOTIF_WM_HINTS", True);
         XSetWMProtocols(data->display, data->window, &data->wm_destroy, 1);
-        
+
         XClearWindow(data->display, data->window);
         XMapWindow(data->display, data->window);
         set_position(pos);
@@ -92,7 +92,7 @@ namespace mgm {
 
         switch (mode) {
             case Mode::NORMAL: {
-                MwmHints hints {
+                MwmHints hints{
                     .flags = WM_HINT_BORDER,
                     .border = 1
                 };
@@ -101,7 +101,7 @@ namespace mgm {
                 break;
             }
             case Mode::BORDERLESS: {
-                MwmHints hints {
+                MwmHints hints{
                     .flags = WM_HINT_BORDER,
                     .border = 0
                 };
@@ -206,32 +206,58 @@ namespace mgm {
 
     MgmWindow::InputInterface convert_x11_key(KeySym keysym) {
         switch (keysym) {
-            case XK_A: case XK_a: return MgmWindow::InputInterface::Key_A;
-            case XK_B: case XK_b: return MgmWindow::InputInterface::Key_B;
-            case XK_C: case XK_c: return MgmWindow::InputInterface::Key_C;
-            case XK_D: case XK_d: return MgmWindow::InputInterface::Key_D;
-            case XK_E: case XK_e: return MgmWindow::InputInterface::Key_E;
-            case XK_F: case XK_f: return MgmWindow::InputInterface::Key_F;
-            case XK_G: case XK_g: return MgmWindow::InputInterface::Key_G;
-            case XK_H: case XK_h: return MgmWindow::InputInterface::Key_H;
-            case XK_I: case XK_i: return MgmWindow::InputInterface::Key_I;
-            case XK_J: case XK_j: return MgmWindow::InputInterface::Key_J;
-            case XK_K: case XK_k: return MgmWindow::InputInterface::Key_K;
-            case XK_L: case XK_l: return MgmWindow::InputInterface::Key_L;
-            case XK_M: case XK_m: return MgmWindow::InputInterface::Key_M;
-            case XK_N: case XK_n: return MgmWindow::InputInterface::Key_N;
-            case XK_O: case XK_o: return MgmWindow::InputInterface::Key_O;
-            case XK_P: case XK_p: return MgmWindow::InputInterface::Key_P;
-            case XK_Q: case XK_q: return MgmWindow::InputInterface::Key_Q;
-            case XK_R: case XK_r: return MgmWindow::InputInterface::Key_R;
-            case XK_S: case XK_s: return MgmWindow::InputInterface::Key_S;
-            case XK_T: case XK_t: return MgmWindow::InputInterface::Key_T;
-            case XK_U: case XK_u: return MgmWindow::InputInterface::Key_U;
-            case XK_V: case XK_v: return MgmWindow::InputInterface::Key_V;
-            case XK_W: case XK_w: return MgmWindow::InputInterface::Key_W;
-            case XK_X: case XK_x: return MgmWindow::InputInterface::Key_X;
-            case XK_Y: case XK_y: return MgmWindow::InputInterface::Key_Y;
-            case XK_Z: case XK_z: return MgmWindow::InputInterface::Key_Z;
+            case XK_A:
+            case XK_a: return MgmWindow::InputInterface::Key_A;
+            case XK_B:
+            case XK_b: return MgmWindow::InputInterface::Key_B;
+            case XK_C:
+            case XK_c: return MgmWindow::InputInterface::Key_C;
+            case XK_D:
+            case XK_d: return MgmWindow::InputInterface::Key_D;
+            case XK_E:
+            case XK_e: return MgmWindow::InputInterface::Key_E;
+            case XK_F:
+            case XK_f: return MgmWindow::InputInterface::Key_F;
+            case XK_G:
+            case XK_g: return MgmWindow::InputInterface::Key_G;
+            case XK_H:
+            case XK_h: return MgmWindow::InputInterface::Key_H;
+            case XK_I:
+            case XK_i: return MgmWindow::InputInterface::Key_I;
+            case XK_J:
+            case XK_j: return MgmWindow::InputInterface::Key_J;
+            case XK_K:
+            case XK_k: return MgmWindow::InputInterface::Key_K;
+            case XK_L:
+            case XK_l: return MgmWindow::InputInterface::Key_L;
+            case XK_M:
+            case XK_m: return MgmWindow::InputInterface::Key_M;
+            case XK_N:
+            case XK_n: return MgmWindow::InputInterface::Key_N;
+            case XK_O:
+            case XK_o: return MgmWindow::InputInterface::Key_O;
+            case XK_P:
+            case XK_p: return MgmWindow::InputInterface::Key_P;
+            case XK_Q:
+            case XK_q: return MgmWindow::InputInterface::Key_Q;
+            case XK_R:
+            case XK_r: return MgmWindow::InputInterface::Key_R;
+            case XK_S:
+            case XK_s: return MgmWindow::InputInterface::Key_S;
+            case XK_T:
+            case XK_t: return MgmWindow::InputInterface::Key_T;
+            case XK_U:
+            case XK_u: return MgmWindow::InputInterface::Key_U;
+            case XK_V:
+            case XK_v: return MgmWindow::InputInterface::Key_V;
+            case XK_W:
+            case XK_w: return MgmWindow::InputInterface::Key_W;
+            case XK_X:
+            case XK_x: return MgmWindow::InputInterface::Key_X;
+            case XK_Y:
+            case XK_y: return MgmWindow::InputInterface::Key_Y;
+            case XK_Z:
+            case XK_z: return MgmWindow::InputInterface::Key_Z;
             case XK_0: return MgmWindow::InputInterface::Key_0;
             case XK_1: return MgmWindow::InputInterface::Key_1;
             case XK_2: return MgmWindow::InputInterface::Key_2;
@@ -242,16 +268,20 @@ namespace mgm {
             case XK_7: return MgmWindow::InputInterface::Key_7;
             case XK_8: return MgmWindow::InputInterface::Key_8;
             case XK_9: return MgmWindow::InputInterface::Key_9;
-            case XK_Meta_L: case XK_Meta_R: return MgmWindow::InputInterface::Key_META;
+            case XK_Meta_L:
+            case XK_Meta_R: return MgmWindow::InputInterface::Key_META;
             case XK_Caps_Lock: return MgmWindow::InputInterface::Key_CAPSLOCK;
             case XK_Num_Lock: return MgmWindow::InputInterface::Key_NUMLOCK;
             case XK_Scroll_Lock: return MgmWindow::InputInterface::Key_SCROLLLOCK;
             case XK_space: return MgmWindow::InputInterface::Key_SPACE;
             case XK_Return: return MgmWindow::InputInterface::Key_ENTER;
             case XK_Tab: return MgmWindow::InputInterface::Key_TAB;
-            case XK_Shift_L: case XK_Shift_R: return MgmWindow::InputInterface::Key_SHIFT;
-            case XK_Control_L: case XK_Control_R: return MgmWindow::InputInterface::Key_CTRL;
-            case XK_Alt_L: case XK_Alt_R: return MgmWindow::InputInterface::Key_ALT;
+            case XK_Shift_L:
+            case XK_Shift_R: return MgmWindow::InputInterface::Key_SHIFT;
+            case XK_Control_L:
+            case XK_Control_R: return MgmWindow::InputInterface::Key_CTRL;
+            case XK_Alt_L:
+            case XK_Alt_R: return MgmWindow::InputInterface::Key_ALT;
             case XK_Escape: return MgmWindow::InputInterface::Key_ESC;
             case XK_BackSpace: return MgmWindow::InputInterface::Key_BACKSPACE;
             case XK_Delete: return MgmWindow::InputInterface::Key_DELETE;
@@ -444,4 +474,4 @@ namespace mgm {
         delete data;
         delete input_interfaces;
     }
-}
+} // namespace mgm

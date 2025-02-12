@@ -1,14 +1,15 @@
 #pragma once
-#include "systems/editor.hpp"
 #include "engine.hpp"
 #include "file.hpp"
+#include "systems/editor.hpp"
 #include <functional>
 
 
 namespace mgm {
     class FileBrowser : public EditorWindow {
         std::vector<uint8_t> default_contents{};
-        public:
+
+      public:
         std::string file_name = "new_script";
         std::string file_extension = "";
         Path file_path = "project://";
@@ -45,8 +46,14 @@ namespace mgm {
         };
 
         FileBrowser(const Args& args)
-        : default_contents{args.default_file_contents}, file_name{args.default_file_name}, file_extension{args.default_file_extension}, callback{args.callback},
-        allow_platform_paths{args.allow_paths_outside_project}, only_good_extensions{args.only_show_files_with_proper_extension}, mode{args.mode}, type{args.type} {
+            : default_contents{args.default_file_contents},
+              file_name{args.default_file_name},
+              file_extension{args.default_file_extension},
+              callback{args.callback},
+              allow_platform_paths{args.allow_paths_outside_project},
+              only_good_extensions{args.only_show_files_with_proper_extension},
+              mode{args.mode},
+              type{args.type} {
             window_name = "File Browser";
 
             folders_here = MagmaEngine{}.file_io().list_folders(file_path);
@@ -57,4 +64,4 @@ namespace mgm {
 
         virtual ~FileBrowser() override {}
     };
-}
+} // namespace mgm

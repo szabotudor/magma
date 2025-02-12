@@ -7,7 +7,7 @@
 
 namespace mgm {
     class Renderer : public System {
-        public:
+      public:
         std::mutex mutex{};
 
         MgmGPU::Settings settings{};
@@ -16,15 +16,15 @@ namespace mgm {
 
         Renderer();
 
-        private:
-        void gen_draw_calls(EntityComponentSystem& ecs, std::vector<MgmGPU::DrawCall>& draw_calls, MGMecs<>::Entity entity, const Transform& parent_transform = {});
+      private:
+        void gen_draw_calls(EntityComponentSystem& ecs, std::vector<MgmGPU::DrawCall>& draw_calls, MGMecs<>::Entity entity,
+                            const Transform& parent_transform = {});
 
-        public:
-
+      public:
         void graphics_update() override;
 
-        #if defined(ENABLE_EDITOR)
+#if defined(ENABLE_EDITOR)
         void draw_settings_window_contents() override;
-        #endif
+#endif
     };
-}
+} // namespace mgm

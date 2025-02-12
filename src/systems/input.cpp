@@ -1,15 +1,15 @@
 #include "systems/input.hpp"
-#include "systems/notifications.hpp"
-#include "file.hpp"
 #include "engine.hpp"
+#include "file.hpp"
 #include "imgui.h"
 #include "imgui_stdlib.h"
 #include "json.hpp"
 #include "mgmwin.hpp"
+#include "systems/notifications.hpp"
 
 
 namespace mgm {
-    void Input::register_input_action(const std::string &name, MgmWindow::InputInterface input, const std::vector<MgmWindow::InputInterface> &modifiers, bool overwrite) {
+    void Input::register_input_action(const std::string& name, MgmWindow::InputInterface input, const std::vector<MgmWindow::InputInterface>& modifiers, bool overwrite) {
         auto& action = input_actions[name];
         if (action.inputs.empty()) {
             if (input != MgmWindow::InputInterface::NONE) {
@@ -30,7 +30,7 @@ namespace mgm {
         }
     }
 
-    void Input::auto_register_input_action(const std::string &name) {
+    void Input::auto_register_input_action(const std::string& name) {
         auto_register_queue.insert(name);
     }
 
@@ -38,7 +38,7 @@ namespace mgm {
         return input_actions.find(name) != input_actions.end();
     }
 
-    bool Input::is_action_pressed(const std::string &name) const {
+    bool Input::is_action_pressed(const std::string& name) const {
         const auto it = input_actions.find(name);
         if (it == input_actions.end()) {
             Logging{"Input"}.error("Action \"", name, "\" does not exist");
@@ -47,7 +47,7 @@ namespace mgm {
         const auto& action = it->second;
         return action.pressed;
     }
-    bool Input::is_action_released(const std::string &name) const {
+    bool Input::is_action_released(const std::string& name) const {
         const auto it = input_actions.find(name);
         if (it == input_actions.end()) {
             Logging{"Input"}.error("Action \"", name, "\" does not exist");
@@ -57,7 +57,7 @@ namespace mgm {
         return !action.pressed;
     }
 
-    bool Input::is_action_just_pressed(const std::string &name) const {
+    bool Input::is_action_just_pressed(const std::string& name) const {
         const auto it = input_actions.find(name);
         if (it == input_actions.end()) {
             Logging{"Input"}.error("Action \"", name, "\" does not exist");
@@ -66,7 +66,7 @@ namespace mgm {
         const auto& action = it->second;
         return action.pressed && !action.previously_pressed;
     }
-    bool Input::is_action_just_released(const std::string &name) const {
+    bool Input::is_action_just_released(const std::string& name) const {
         const auto it = input_actions.find(name);
         if (it == input_actions.end()) {
             Logging{"Input"}.error("Action \"", name, "\" does not exist");
@@ -76,7 +76,7 @@ namespace mgm {
         return !action.pressed && action.previously_pressed;
     }
 
-    float Input::get_action_value(const std::string &name) const {
+    float Input::get_action_value(const std::string& name) const {
         const auto it = input_actions.find(name);
         if (it == input_actions.end()) {
             Logging{"Input"}.error("Action \"", name, "\" does not exist");
@@ -88,7 +88,7 @@ namespace mgm {
         return action.value;
     }
 
-    std::vector<Input::Callback>& Input::press_callbacks(const std::string &name) {
+    std::vector<Input::Callback>& Input::press_callbacks(const std::string& name) {
         const auto it = input_actions.find(name);
         if (it == input_actions.end()) {
             Logging{"Input"}.error("Action \"", name, "\" does not exist, returning __none_action__ press callback");
@@ -96,7 +96,7 @@ namespace mgm {
         }
         return it->second.press_callbacks;
     }
-    const std::vector<Input::Callback>& Input::press_callbacks(const std::string &name) const {
+    const std::vector<Input::Callback>& Input::press_callbacks(const std::string& name) const {
         const auto it = input_actions.find(name);
         if (it == input_actions.end()) {
             Logging{"Input"}.error("Action \"", name, "\" does not exist, returning __none_action__ press callback");
@@ -105,7 +105,7 @@ namespace mgm {
         return it->second.press_callbacks;
     }
 
-    std::vector<Input::Callback>& Input::release_callbacks(const std::string &name) {
+    std::vector<Input::Callback>& Input::release_callbacks(const std::string& name) {
         const auto it = input_actions.find(name);
         if (it == input_actions.end()) {
             Logging{"Input"}.error("Action \"", name, "\" does not exist, returning __none_action__ release callback");
@@ -113,7 +113,7 @@ namespace mgm {
         }
         return it->second.release_callbacks;
     }
-    const std::vector<Input::Callback>& Input::release_callbacks(const std::string &name) const {
+    const std::vector<Input::Callback>& Input::release_callbacks(const std::string& name) const {
         const auto it = input_actions.find(name);
         if (it == input_actions.end()) {
             Logging{"Input"}.error("Action \"", name, "\" does not exist, returning __none_action__ release callback");
@@ -280,4 +280,4 @@ namespace mgm {
 
         engine.file_io().write_text("data://inputs.json", json);
     }
-}
+} // namespace mgm

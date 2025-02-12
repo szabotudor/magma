@@ -1,17 +1,17 @@
 #include "engine.hpp"
 #include "built-in_components/renderable.hpp"
 #include "ecs.hpp"
+#include "file.hpp"
 #include "imgui.h"
-#include "imgui_impl_mgmgpu.h"
-#include "mgmath.hpp"
-#include "systems/input.hpp"
 #include "logging.hpp"
+#include "mgmath.hpp"
 #include "mgmgpu.hpp"
 #include "mgmwin.hpp"
+#include "systems/input.hpp"
 #include "systems/notifications.hpp"
-#include "file.hpp"
-#include "systems/resources.hpp"
 #include "systems/renderer.hpp"
+#include "systems/resources.hpp"
+#include "tools/imgui_impl_mgmgpu.h"
 
 #if defined(ENABLE_EDITOR)
 #include "systems/editor.hpp"
@@ -48,8 +48,7 @@ namespace mgm {
             graphics().draw(data->basic_draw_list, settings);
 
             std::unique_lock lock{systems().mutex};
-            for (auto& system : systems().systems)
-                system.second->graphics_update();
+            for (auto& system : systems().systems) system.second->graphics_update();
             lock.unlock();
 
             imgui_mutex.lock();
@@ -88,11 +87,7 @@ namespace mgm {
             return;
 
         data = new Data{};
-        Path::setup_project_dirs(
-            FileIO::exe_dir().data,
-            FileIO::exe_dir().data + "/assets",
-            FileIO::exe_dir().data + "/data"
-        );
+        Path::setup_project_dirs(FileIO::exe_dir().data, FileIO::exe_dir().data + "/assets", FileIO::exe_dir().data + "/data");
 
         data->imgui_draw_data = new ExtractedDrawData{};
 
@@ -102,26 +97,30 @@ namespace mgm {
 
         if (std::find(args.begin(), args.end(), "--help") != args.end()) {
             std::cout << "Usage: " << Path::project_dir.file_name() << " [options]\n"
-                << "Options:\n"
-                << "\t--help\t\tShow this help message\n"
+                      << "Options:\n"
+                      << "\t--help\t\tShow this help message\n"
 #if defined(ENABLE_EDITOR)
-                << "\t--editor\tStart the editor\n"
+                      << "\t--editor\tStart the editor\n"
 #endif
-            ;
+                ;
             help_called = true;
         }
 
-        if (help_called) return;
+        if (help_called)
+            return;
 
 
-        data->window = new MgmWindow{"Magma", vec2u32{800, 600}, MgmWindow::Mode::NORMAL};
+        data->window = new MgmWindow{
+            "Magma", vec2u32{800, 600},
+            MgmWindow::Mode::NORMAL
+        };
         data->graphics = new MgmGPU{};
         graphics().connect_to_window(&window());
 
 #if !defined(EMBED_BACKEND)
 #if defined(__linux__)
         graphics().load_backend("exe://shared/libbackend_OpenGL.so");
-#elif defined (WIN32) || defined(_WIN32)
+#elif defined(WIN32) || defined(_WIN32)
         if (file_io().exists("exe://shared/backend_OpenGL.dll"))
             graphics().load_backend("exe://shared/backend_OpenGL.dll");
         else
@@ -133,9 +132,7 @@ namespace mgm {
         data->graphics_settings.backend.viewport.top_left = {0, 0};
         data->graphics_settings.backend.viewport.bottom_right = vec2i32{static_cast<int>(window().get_size().x), static_cast<int>(window().get_size().y)};
 
-        data->basic_draw_list.emplace_back(MgmGPU::DrawCall{
-            .type = MgmGPU::DrawCall::Type::CLEAR
-        });
+        data->basic_draw_list.emplace_back(MgmGPU::DrawCall{.type = MgmGPU::DrawCall::Type::CLEAR});
 
         systems().create<ResourceManager>();
 
@@ -178,21 +175,21 @@ namespace mgm {
             return;
         }
 
-        if (!file_io().exists(Path::assets_dir)) file_io().create_folder(Path::assets_dir);
-        if (!file_io().exists(Path::game_data_dir)) file_io().create_folder(Path::game_data_dir);
+        if (!file_io().exists(Path::assets_dir))
+            file_io().create_folder(Path::assets_dir);
+        if (!file_io().exists(Path::game_data_dir))
+            file_io().create_folder(Path::game_data_dir);
 
         auto start = std::chrono::high_resolution_clock::now();
 
         std::unique_lock lock{systems().mutex};
 #if defined(ENABLE_EDITOR)
         if (!systems().try_get<Editor>())
-            for (const auto& [id, sys] : systems().systems)
-                sys->on_begin_play();
+            for (const auto& [id, sys] : systems().systems) sys->on_begin_play();
         else
             systems().get<Editor>().on_begin_play();
 #else
-        for (const auto& [id, sys] : systems.systems)
-            sys->on_begin_play();
+        for (const auto& [id, sys] : systems.systems) sys->on_begin_play();
 #endif
         lock.unlock();
 
@@ -223,12 +220,10 @@ namespace mgm {
             if (const auto editor_ptr = systems().try_get<Editor>())
                 editor_ptr->update(delta);
             else {
-                for (const auto& [id, sys] : systems().systems)
-                    sys->update(delta);
+                for (const auto& [id, sys] : systems().systems) sys->update(delta);
             }
 #else
-            for (const auto& [id, sys] : systems().systems)
-                sys->update(delta);
+            for (const auto& [id, sys] : systems().systems) sys->update(delta);
 #endif
             lock.unlock();
 
@@ -266,8 +261,7 @@ namespace mgm {
 #if defined(ENABLE_EDITOR)
         if (!systems().try_get<Editor>())
 #endif
-            for (const auto& [id, sys] : systems().systems)
-                sys->on_end_play();
+            for (const auto& [id, sys] : systems().systems) sys->on_end_play();
 #if defined(ENABLE_EDITOR)
         else
             systems().destroy<Editor>();
@@ -275,14 +269,14 @@ namespace mgm {
         lock.unlock();
     }
 
-    float MagmaEngine::delta_time() const {
-        return data->current_dt;
-    }
+    float MagmaEngine::delta_time() const { return data->current_dt; }
 
     MagmaEngine::~MagmaEngine() {
-        if (!initialized) return;
+        if (!initialized)
+            return;
 
-        if (!initialized) return;
+        if (!initialized)
+            return;
         delete data->file_io;
         delete data->graphics;
         delete data->window;
@@ -291,4 +285,4 @@ namespace mgm {
         delete data;
         data = nullptr;
     }
-}
+} // namespace mgm

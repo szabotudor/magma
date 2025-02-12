@@ -9,8 +9,7 @@
 
 namespace mgm {
     class MgmGPUShaderBuilder {
-        public:
-
+      public:
         struct Error {
             size_t pos{};
             size_t line{}, column{};
@@ -86,7 +85,7 @@ namespace mgm {
             // A vector of function parameter names and type names, in the order that they were found in the source
             std::vector<FunctionParameter> function_parameters{};
 
-            static inline const std::vector<std::vector<std::string>> ops {
+            static inline const std::vector<std::vector<std::string>> ops{
                 {","},
                 {"="},
                 {"==", "!=", "+=", "-=", "<=", ">=", "<", ">"},
@@ -95,7 +94,7 @@ namespace mgm {
                 {"."},
                 {"[]"}
             };
-            static inline const std::vector<std::string> all_ops {
+            static inline const std::vector<std::string> all_ops{
                 "=", "==", "!=", "+=", "-=", "<=", ">=", "<", ">", "+", "-", "*", "/", ".", "[]", "()"
             };
         };
@@ -118,30 +117,29 @@ namespace mgm {
 
         /**
          * @brief Provide a function that loads a secondary source file using only relative paths, or returns an empty string to signal that the file doesn't exist
-         * 
+         *
          * @param func The function to call
          */
         void set_load_function(const LoadFunc& func) { load_func = func; }
 
         /**
          * @brief Build shader source into source information
-         * 
+         *
          * @param source The shader source code
          */
         void build(const std::string& source);
 
-        private:
-
+      private:
         Line parse_word_list(const std::string& name, const std::vector<std::string>& words);
 
         Line parse_line(const std::string& name, const std::string& line);
 
         /**
          * @brief Build the body of the given function into
-         * 
+         *
          * @param name The name of the function
          * @param body The body of the function
          */
         std::vector<Line> build_function_contents(const std::string& name, const std::string& body);
     };
-}
+} // namespace mgm

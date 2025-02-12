@@ -6,7 +6,9 @@
 
 
 namespace mgm {
-    ScriptEditor::ScriptEditor(const Path& script_path, float save_after_inactive_for_seconds) : path{script_path}, max_inactivity_time{save_after_inactive_for_seconds} {
+    ScriptEditor::ScriptEditor(const Path& script_path, float save_after_inactive_for_seconds)
+        : path{script_path},
+          max_inactivity_time{save_after_inactive_for_seconds} {
         window_name = script_path.file_name();
 
         MagmaEngine engine{};
@@ -40,8 +42,8 @@ namespace mgm {
         lines.emplace_back(Line{}); // First line
         for (int64_t i = 0; i < content_size(); i++)
             if (content_get(i) == '\n')
-                lines.emplace_back(Line{ .start = i + 1 });
-        lines.emplace_back(Line{ .start = content_size() });
+                lines.emplace_back(Line{.start = i + 1});
+        lines.emplace_back(Line{.start = content_size()});
     }
 
     void ScriptEditor::draw() {
@@ -59,7 +61,7 @@ namespace mgm {
         const auto line_height_no_spacing = ImGui::GetTextLineHeight();
         const auto window_height = ImGui::GetWindowHeight();
         const auto line_start = static_cast<int64_t>(scroll / line_height);
-        ImGui::Dummy({ 0.0f, (float)line_start * line_height });
+        ImGui::Dummy({0.0f, (float)line_start * line_height});
 
         const int64_t line_end = std::min(line_count(), line_start + static_cast<int64_t>(window_height / line_height) + 2) - 1;
 
@@ -75,23 +77,23 @@ namespace mgm {
             else {
                 ImGui::TextUnformatted(std::to_string(l).c_str());
                 ImGui::SameLine();
-                ImGui::Dummy({ max_line_num_width - ImGui::GetCursorPosX(), line_height_no_spacing });
+                ImGui::Dummy({max_line_num_width - ImGui::GetCursorPosX(), line_height_no_spacing});
                 ImGui::SameLine();
                 ImGui::TextUnformatted(content.c_str() + last, content.c_str() + line);
             }
             if ((float)(l - line_start) * line_height > window_height - line_height * 2.0f) {
-                ImGui::Dummy({ 0.0f, (float)(line_count() - l - 1) * line_height - (line_height - line_height_no_spacing) * (l == static_cast<int64_t>(lines.size() - 1) ? 3.0f : 1.0f) });
+                ImGui::Dummy({0.0f, (float)(line_count() - l - 1) * line_height - (line_height - line_height_no_spacing) * (l == static_cast<int64_t>(lines.size() - 1) ? 3.0f : 1.0f)});
                 break;
             }
         }
-        ImGui::Dummy({ 0.0f, window_height - line_height_no_spacing * 3.0f });
+        ImGui::Dummy({0.0f, window_height - line_height_no_spacing * 3.0f});
 
         // Process input code in draw cause it's easier, and it's not really input processing, just setting the cursor position
         const bool window_hovered = ImGui::IsWindowHovered()
-            && ImGui::IsMouseHoveringRect(
-                start_pos + ImVec2{0.0f, scroll},
-                start_pos + ImVec2{ImGui::GetWindowWidth(), ImGui::GetWindowHeight() + scroll}
-            );
+                                    && ImGui::IsMouseHoveringRect(
+                                        start_pos + ImVec2{0.0f, scroll},
+                                        start_pos + ImVec2{ImGui::GetWindowWidth(), ImGui::GetWindowHeight() + scroll}
+                                    );
         if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && window_hovered) {
             time_since_last_edit = 0.0f;
             auto mouse = ImGui::GetMousePos() - start_pos - ImVec2{max_line_num_width, 0.0f};
@@ -111,7 +113,7 @@ namespace mgm {
             if (cursor_pos.x > 0)
                 if (content_get(get_line(cursor_pos.y).start + cursor_pos.x - 1) == '\n')
                     cursor_pos.x--;
-            
+
             old_cursor_x = cursor_pos.x;
             place_real_cursor();
         }
@@ -121,7 +123,8 @@ namespace mgm {
                 ImGui::CalcTextSize(
                     content.c_str() + get_line(cursor_pos.y).start,
                     content.c_str() + get_line(cursor_pos.y).start + cursor_pos.x
-                ).x,
+                )
+                    .x,
                 line_height * (float)cursor_pos.y
             };
             ImVec2 pos_b = {
@@ -254,4 +257,4 @@ namespace mgm {
         if (!file_saved)
             MagmaEngine{}.file_io().write_text(path, content);
     }
-}
+} // namespace mgm

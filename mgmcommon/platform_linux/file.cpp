@@ -4,14 +4,16 @@
 
 
 namespace mgm {
-    Path::Path(const std::string& path) : data{path} {}
-    Path::Path(const char* path) : data{path} {}
+    Path::Path(const std::string& path)
+        : data{path} {}
+    Path::Path(const char* path)
+        : data{path} {}
 
     std::string Path::platform_path() const {
         return parse_prefix();
     }
 
-    Path Path::from_platform_path(const std::string &path) {
+    Path Path::from_platform_path(const std::string& path) {
         return Path{path};
     }
 
@@ -24,4 +26,4 @@ namespace mgm {
         executablePath.pop_back();
         return executablePath;
     }
-}
+} // namespace mgm

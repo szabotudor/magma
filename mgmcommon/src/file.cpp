@@ -114,4 +114,4 @@ namespace mgm {
         else
             return res.substr(last_slash + 1);
     }
-}
+} // namespace mgm

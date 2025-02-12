@@ -44,7 +44,7 @@ namespace mgm {
         else
             eglBindAPI(EGL_OPENGL_API);
 
-        data->attrib = new EGLint[] {
+        data->attrib = new EGLint[]{
             EGL_RED_SIZE, 8,
             EGL_GREEN_SIZE, 8,
             EGL_BLUE_SIZE, 8,
@@ -73,7 +73,7 @@ namespace mgm {
 
         data->init = true;
 
-        data->context_attrib = new EGLint[] {
+        data->context_attrib = new EGLint[]{
             EGL_CONTEXT_MAJOR_VERSION, ver_major,
             EGL_CONTEXT_MINOR_VERSION, ver_minor,
             EGL_NONE
@@ -121,4 +121,4 @@ namespace mgm {
         delete[] data->attrib;
         data->attrib = nullptr;
     }
-}
+} // namespace mgm

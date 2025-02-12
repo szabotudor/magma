@@ -98,7 +98,7 @@ namespace mgm {
         }
         if (ImGui::IsItemHovered())
             ImGui::SetTooltip("Go up one folder");
-        
+
         if (type == Type::FOLDER) {
             if (ImGui::Selectable("<< Use This Folder >>", selected_file == (size_t)-2)) {
                 if (selected_file == (size_t)-2) {

@@ -23,7 +23,7 @@ namespace mgm {
         mutable std::recursive_mutex mutex{};
         bool registering_type = false;
 
-        public:
+      public:
         LuaVM();
 
         LuaVM(const LuaVM&) = delete;
@@ -62,17 +62,16 @@ namespace mgm {
 
         void script(const std::string& script);
 
-        private:
+      private:
         struct RegisteredType {
-        private:
+          private:
             friend class LuaVM;
 
             std::string name{};
             std::unordered_map<std::string, std::function<void(LuaVM& vm, void* _obj)>> indexers{};
             std::unordered_map<std::string, std::function<void(LuaVM& vm, void* _obj)>> newindexers{};
 
-        public:
-
+          public:
         };
         std::unordered_map<size_t, RegisteredType> registered_types{};
 
@@ -83,12 +82,12 @@ namespace mgm {
         }
 
         template<typename Return, typename... Args, std::size_t... Is>
-        Return call_function(Return(*func)(Args...), std::index_sequence<Is...>) {
+        Return call_function(Return (*func)(Args...), std::index_sequence<Is...>) {
             return func(lua_checkvar<Args>(Is + 1)...);
         }
 
         template<typename T, typename C, typename Return, typename... Args>
-        requires std::is_same_v<T, Return (C::*)(Args...)>
+            requires std::is_same_v<T, Return (C::*)(Args...)>
         void lua_pushvar(Return (C::*field)(Args...)) {
             std::lock_guard lock{mutex};
 
@@ -103,7 +102,7 @@ namespace mgm {
                 const auto argc = lua_gettop(L);
                 if (argc != sizeof...(Args) + 1)
                     return luaL_error(L, "Expected %d arguments, got %d", sizeof...(Args), argc - 1);
-                
+
                 lua_getglobal(L, "__LuaVM");
                 LuaVM* vm = static_cast<LuaVM*>(lua_touserdata(L, -1));
                 lua_pop(L, 1);
@@ -114,7 +113,7 @@ namespace mgm {
                 std::memcpy(&field_offset, args.data(), sizeof(V));
 
                 C* obj = nullptr;
-                
+
                 const auto it = vm->registered_types.find(typeid(C).hash_code());
                 if (it == vm->registered_types.end())
                     obj = static_cast<C*>(lua_touserdata(L, 1));
@@ -133,11 +132,11 @@ namespace mgm {
         }
 
         template<typename T, typename Return, typename... Args>
-        requires std::is_same_v<Return(*)(Args...), T>
-        void lua_pushvar(Return(*function)(Args...)) {
+            requires std::is_same_v<Return (*)(Args...), T>
+        void lua_pushvar(Return (*function)(Args...)) {
             std::lock_guard lock{mutex};
 
-            using V = Return(*)(Args...);
+            using V = Return (*)(Args...);
 
             std::array<uint8_t, sizeof(V)> arr{};
             std::memcpy(arr.data(), &function, sizeof(V));
@@ -148,7 +147,7 @@ namespace mgm {
                 const auto argc = lua_gettop(L);
                 if (argc != sizeof...(Args))
                     return luaL_error(L, "Expected %d arguments, got %d", sizeof...(Args), argc);
-                
+
                 lua_getglobal(L, "__LuaVM");
                 LuaVM* vm = static_cast<LuaVM*>(lua_touserdata(L, -1));
                 lua_pop(L, 1);
@@ -170,14 +169,14 @@ namespace mgm {
         }
 
         template<typename T, typename... Ts>
-        requires (std::is_constructible_v<T, Ts...> && !std::is_function_v<T> && !std::is_member_function_pointer_v<T> && !std::is_member_object_pointer_v<T> && !std::is_pointer_v<T> && !std::is_reference_v<T>)
+            requires(std::is_constructible_v<T, Ts...> && !std::is_function_v<T> && !std::is_member_function_pointer_v<T> && !std::is_member_object_pointer_v<T> && !std::is_pointer_v<T> && !std::is_reference_v<T>)
         void lua_pushvar(Ts&&... args) {
             std::lock_guard lock{mutex};
 
             if constexpr (std::is_same_v<T, uint8_t> || std::is_same_v<T, int8_t>
-            || std::is_same_v<T, uint16_t> || std::is_same_v<T, int16_t>
-            || std::is_same_v<T, uint32_t> || std::is_same_v<T, int32_t>
-            || std::is_same_v<T, uint64_t> || std::is_same_v<T, int64_t>)
+                          || std::is_same_v<T, uint16_t> || std::is_same_v<T, int16_t>
+                          || std::is_same_v<T, uint32_t> || std::is_same_v<T, int32_t>
+                          || std::is_same_v<T, uint64_t> || std::is_same_v<T, int64_t>)
                 lua_pushinteger(state, lua_Integer(args...));
 
             else if constexpr (std::is_same_v<T, float> || std::is_same_v<T, double> || std::is_same_v<T, long double>)
@@ -214,9 +213,9 @@ namespace mgm {
             std::lock_guard lock{mutex};
 
             if constexpr (std::is_same_v<T, uint8_t> || std::is_same_v<T, int8_t>
-            || std::is_same_v<T, uint16_t> || std::is_same_v<T, int16_t>
-            || std::is_same_v<T, uint32_t> || std::is_same_v<T, int32_t>
-            || std::is_same_v<T, uint64_t> || std::is_same_v<T, int64_t>)
+                          || std::is_same_v<T, uint16_t> || std::is_same_v<T, int16_t>
+                          || std::is_same_v<T, uint32_t> || std::is_same_v<T, int32_t>
+                          || std::is_same_v<T, uint64_t> || std::is_same_v<T, int64_t>)
                 return static_cast<T>(luaL_checkinteger(state, idx));
 
             else if constexpr (std::is_same_v<T, float> || std::is_same_v<T, double> || std::is_same_v<T, long double>)
@@ -230,8 +229,7 @@ namespace mgm {
             else if constexpr (std::is_same_v<T, std::string>)
                 return std::string(luaL_checkstring(state, idx));
 
-            else
-            {
+            else {
                 const auto it = registered_types.find(typeid(T).hash_code());
                 if (it == registered_types.end())
                     return *static_cast<T*>(lua_touserdata(state, idx));
@@ -256,16 +254,16 @@ namespace mgm {
             register_member_for_type<T>(field_name, field);
         }
 
-    public:
+      public:
         template<typename T, typename U>
-        void register_member_for_type(const std::string& field_name, U T::* field_offset) {
+        void register_member_for_type(const std::string& field_name, U T::*field_offset) {
             std::lock_guard lock{mutex};
-            
+
             auto& type = registered_types[typeid(T).hash_code()];
 
             if (!registering_type)
                 lua_getglobal(state, type.name.c_str());
-            
+
             type.indexers.emplace(field_name, [field_name, field_offset](LuaVM& vm, void* _obj) {
                 T* obj = static_cast<T*>(_obj);
                 vm.lua_pushvar<U>(obj->*field_offset);
@@ -304,7 +302,7 @@ namespace mgm {
                 registering_type = false;
                 return luaL_error(state, "Failed to create metatable for type %s", type_name.c_str());
             }
-            
+
             lua_pushstring(state, type_name.c_str());
             lua_setfield(state, -2, "__name");
 
@@ -422,14 +420,14 @@ namespace mgm {
                     return T{};
                 }
             }
-            
+
             auto res = lua_checkvar<T>(-1);
             lua_pop(state, count);
             return res;
         }
 
         template<typename T, typename... Ts>
-        requires std::is_constructible_v<T, Ts...>
+            requires std::is_constructible_v<T, Ts...>
         void set_var(const std::string& variable_path, Ts&&... args) {
             std::lock_guard lock{mutex};
 
@@ -510,15 +508,17 @@ namespace mgm {
 
         template<typename VM_t>
         struct LuaRef {
-        private:
+          private:
             friend class LuaVM;
 
             VM_t& vm;
             std::string var_path{};
 
-            LuaRef(VM_t& lua_vm, const std::string& variable_path) : vm{lua_vm}, var_path{variable_path} {}
+            LuaRef(VM_t& lua_vm, const std::string& variable_path)
+                : vm{lua_vm},
+                  var_path{variable_path} {}
 
-        public:
+          public:
             LuaRef<VM_t> operator[](const std::string& field) const {
                 return LuaRef<VM_t>{vm, var_path + "." + field};
             }
@@ -531,7 +531,7 @@ namespace mgm {
             }
 
             template<typename T, typename VM = VM_t>
-            requires (!std::is_const_v<VM>)
+                requires(!std::is_const_v<VM>)
             LuaRef<VM_t>& operator=(T&& value) {
                 vm.template set_var<T>(var_path, std::forward<T>(value));
                 return *this;
@@ -560,4 +560,4 @@ namespace mgm {
 
         ~LuaVM();
     };
-}
+} // namespace mgm

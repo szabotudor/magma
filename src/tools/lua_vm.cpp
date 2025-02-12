@@ -14,7 +14,7 @@ namespace mgm {
             reset_state();
 
         state = luaL_newstate();
-        
+
         luaL_openlibs(state);
 
         lua_pushlightuserdata(state, this);
@@ -42,4 +42,4 @@ namespace mgm {
     LuaVM::~LuaVM() {
         reset_state();
     }
-}
+} // namespace mgm

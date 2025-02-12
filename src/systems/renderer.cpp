@@ -35,9 +35,7 @@ namespace mgm {
                 .buffers_object = mesh->get().buffers_object,
                 .textures = {}, // TODO: Add textures in meshes
                 .parameters = {
-                    {"transform", local_transform.as_matrix()},
-                    {"camera", current_cam_transform},
-                    {"proj", projection}
+                             {"transform", local_transform.as_matrix()}, {"camera", current_cam_transform}, {"proj", projection}
                 }
             });
 
@@ -54,7 +52,7 @@ namespace mgm {
         settings.backend.depth_testing.enabled = true;
         settings.backend.culling.type = GPUSettings::Culling::Type::CLOCKWISE;
 
-        projection = mat4f::gen_perspective_projection(90.0f, 9.0f/16.0f, 0.1f, 1000.0f);
+        projection = mat4f::gen_perspective_projection(90.0f, 9.0f / 16.0f, 0.1f, 1000.0f);
     }
 
     void Renderer::graphics_update() {
@@ -69,19 +67,17 @@ namespace mgm {
         if (use_settings.canvas == MgmGPU::INVALID_TEXTURE || !MagmaEngine{}.graphics().is_valid(use_settings.canvas))
             return;
 
-        draw_calls.emplace_back(MgmGPU::DrawCall{
-            .type = MgmGPU::DrawCall::Type::CLEAR
-        });
+        draw_calls.emplace_back(MgmGPU::DrawCall{.type = MgmGPU::DrawCall::Type::CLEAR});
 
-        #if defined(ENABLE_EDITOR)
+#if defined(ENABLE_EDITOR)
         MGMecs<>::Entity scene{};
         if (MagmaEngine{}.editor().is_running())
             scene = ecs.root;
         else
             scene = ecs.current_editing_scene;
-        #else
+#else
         const auto scene = ecs.root;
-        #endif
+#endif
 
         if (scene != MGMecs<>::null) {
             ecs.ecs.wait_and_lock(scene);
@@ -93,9 +89,9 @@ namespace mgm {
         MagmaEngine{}.graphics().draw(draw_calls, use_settings);
     }
 
-    #if defined(ENABLE_EDITOR)
+#if defined(ENABLE_EDITOR)
     void Renderer::draw_settings_window_contents() {
         ImGui::Text("Renderer Settings"); // TODO: Implement settings
     }
-    #endif
-}
+#endif
+} // namespace mgm

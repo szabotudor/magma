@@ -1,9 +1,9 @@
 #pragma once
 #include "X11/X.h"
-#include <X11/Xlib.h>
-#include <X11/Xutil.h>
 #include <chrono>
 #include <cstdint>
+#include <X11/Xlib.h>
+#include <X11/Xutil.h>
 
 
 namespace mgm {
@@ -16,4 +16,4 @@ namespace mgm {
         uint32_t functions = 0x0;
         std::chrono::steady_clock::time_point last_mouse_query_time{};
     };
-}
+} // namespace mgm

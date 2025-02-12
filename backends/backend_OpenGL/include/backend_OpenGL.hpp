@@ -13,8 +13,7 @@ namespace mgm {
         Logging log{"OpenGL Platform"};
         GLBackendData* data = nullptr;
 
-        public:
-
+      public:
         static void* proc_address_getter(const char*);
 
         OpenGLPlatform(const OpenGLPlatform&) = delete;
@@ -36,4 +35,4 @@ namespace mgm {
 
         ~OpenGLPlatform();
     };
-}
+} // namespace mgm

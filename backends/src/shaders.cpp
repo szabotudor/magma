@@ -20,7 +20,7 @@ namespace mgm {
         inline bool is_sym(char c) {
             return !is_alphanum(c) && !is_whitespace(c);
         }
-    }
+    } // namespace shader_char_help
     using namespace shader_char_help;
 
     std::string first_word_at(const std::string& str, size_t& i) {
@@ -113,7 +113,7 @@ namespace mgm {
                 }
                 return std::string{start_c};
             }
-            
+
             size_t count = 1;
             ++i;
             while (count) {
@@ -153,17 +153,23 @@ namespace mgm {
     }
 
     enum class WordType {
-        NONE, NUMBER, NAME, NUMBERED_NAME, BRACE, STRING, SYMBOL
+        NONE,
+        NUMBER,
+        NAME,
+        NUMBERED_NAME,
+        BRACE,
+        STRING,
+        SYMBOL
     };
     WordType get_word_type(const std::string& str) {
         if (str.empty())
             return WordType::NONE;
         if ((str.starts_with('(') && str.ends_with(')'))
-        || (str.starts_with('[') && str.ends_with(']'))
-        || (str.starts_with('{') && str.ends_with('}'))
-        || (str.starts_with('<') && str.ends_with('>')))
+            || (str.starts_with('[') && str.ends_with(']'))
+            || (str.starts_with('{') && str.ends_with('}'))
+            || (str.starts_with('<') && str.ends_with('>')))
             return WordType::BRACE;
-        
+
         if (str.starts_with('"') && str.ends_with('"'))
             return WordType::STRING;
 
@@ -207,7 +213,7 @@ namespace mgm {
 
     std::vector<std::string> build_mode(const std::vector<WordType>& word_sequence, const std::vector<std::string>& error_messages, std::vector<MgmGPUShaderBuilder::Error>& errors, const std::string& str, size_t& i) {
         std::vector<std::string> words{};
-        
+
         for (size_t w = 0; w < word_sequence.size(); ++w) {
             const auto start_i = i;
             const auto word = first_word_at(str, i);
@@ -229,7 +235,9 @@ namespace mgm {
     }
 
 
-    MgmGPUShaderBuilder::Error::Error(size_t i, std::string error_message, const std::string& original_str) : pos(i), message(error_message) {
+    MgmGPUShaderBuilder::Error::Error(size_t i, std::string error_message, const std::string& original_str)
+        : pos(i),
+          message(error_message) {
         i = std::min(i, original_str.size());
         for (size_t j = 0; j < i; ++j) {
             ++column;
@@ -270,12 +278,12 @@ namespace mgm {
     }
 
 
-    // Something went wrong, because there is no word
-    // Word variable instead has error message
-    #define HANDLE_BROKEN_WORD(start, end, word) \
-    if (end == start) { \
+// Something went wrong, because there is no word
+// Word variable instead has error message
+#define HANDLE_BROKEN_WORD(start, end, word)      \
+    if (end == start) {                           \
         errors.emplace_back(start, word, source); \
-        return; \
+        return;                                   \
     }
 
 
@@ -298,9 +306,8 @@ namespace mgm {
             if (word == "struct") {
                 const auto words = build_mode(
                     {WordType::NAME, WordType::BRACE},
-                    {
-                        "Expected name of struct",
-                        "Expected struct body"
+                    {"Expected name of struct",
+                     "Expected struct body"
                     },
                     errors,
                     source,
@@ -319,9 +326,8 @@ namespace mgm {
             else if (word == "buffer") {
                 const auto words = build_mode(
                     {WordType::NAME, WordType::NAME},
-                    {
-                        "Expected a type name after `buffer`",
-                        "Expected buffer name after type"
+                    {"Expected a type name after `buffer`",
+                     "Expected buffer name after type"
                     },
                     errors,
                     source,
@@ -341,9 +347,8 @@ namespace mgm {
             else if (word == "parameter") {
                 const auto words = build_mode(
                     {WordType::NAME, WordType::NAME},
-                    {
-                        "Expected a type after `parameter`",
-                        "Expected parameter name after type"
+                    {"Expected a type after `parameter`",
+                     "Expected parameter name after type"
                     },
                     errors,
                     source,
@@ -359,9 +364,8 @@ namespace mgm {
             else if (word == "texture") {
                 const auto words = build_mode(
                     {WordType::BRACE, WordType::NAME},
-                    {
-                        "Expected dimension and location specifiers after `texture`",
-                        "Expected texture name"
+                    {"Expected dimension and location specifiers after `texture`",
+                     "Expected texture name"
                     },
                     errors,
                     source,
@@ -376,14 +380,13 @@ namespace mgm {
                 size_t j = 0;
                 const auto specs_words = build_mode(
                     {WordType::NUMBERED_NAME},
-                    {
-                        "Expected dimensions (2D/3D)"
+                    {"Expected dimensions (2D/3D)"
                     },
                     errors,
                     specs,
                     j
                 );
-                
+
                 if (specs_words.empty())
                     continue;
 
@@ -400,11 +403,10 @@ namespace mgm {
             else if (word == "func") {
                 const auto words = build_mode(
                     {WordType::NAME, WordType::NAME, WordType::BRACE, WordType::BRACE},
-                    {
-                        "Expected return type after `func`",
-                        "Expected function name after return type",
-                        "Expected function parameters after function name",
-                        "Expected function body after the parameters"
+                    {"Expected return type after `func`",
+                     "Expected function name after return type",
+                     "Expected function parameters after function name",
+                     "Expected function body after the parameters"
                     },
                     errors,
                     source,
@@ -426,9 +428,8 @@ namespace mgm {
                     while (true) {
                         const auto params_words = build_mode(
                             {WordType::NAME, WordType::NAME},
-                            {
-                                "Expected parameter type",
-                                "Expected parameter name after type"
+                            {"Expected parameter type",
+                             "Expected parameter name after type"
                             },
                             errors,
                             params,
@@ -484,7 +485,7 @@ namespace mgm {
 
 
     thread_local size_t lcount = 0;
-    
+
     MgmGPUShaderBuilder::Line MgmGPUShaderBuilder::parse_word_list(const std::string& name, const std::vector<std::string>& words) {
         if (words.empty())
             return {};
@@ -508,7 +509,7 @@ namespace mgm {
             group_content.operations.emplace_back("()");
             return group_content;
         }
-        
+
         Line res{};
 
         for (const auto& priority : Function::ops) {
@@ -520,7 +521,7 @@ namespace mgm {
                     continue;
 
                 while (last_it != words.end()) {
-                    std::vector<std::string> left {last_it, it};
+                    std::vector<std::string> left{last_it, it};
 
                     for (const auto& rw : parse_word_list(name, left).operations)
                         res.operations.emplace_back(rw);
@@ -633,8 +634,8 @@ namespace mgm {
             lcount = 0;
 
             bool declaring_var = false,
-                expecting_conditional_body = false;
-            
+                 expecting_conditional_body = false;
+
             auto type = get_word_type(word);
             while (true) {
                 const auto next_word = first_word_at(body, i);
@@ -650,8 +651,8 @@ namespace mgm {
                     case WordType::NUMBERED_NAME:
                     case WordType::STRING: {
                         if (!(next_type == WordType::SYMBOL || next_type == WordType::BRACE
-                        || word == "return" || word == "var" || declaring_var
-                        || word == "if" || word == "while" || expecting_conditional_body)) {
+                              || word == "return" || word == "var" || declaring_var
+                              || word == "if" || word == "while" || expecting_conditional_body)) {
                             word = next_word;
                             goto after;
                         }
@@ -666,7 +667,7 @@ namespace mgm {
                                     word = next_word;
                                     goto after;
                                 }
-                                    break;
+                                break;
                             }
                             case WordType::SYMBOL: {
                                 break;
@@ -693,7 +694,7 @@ namespace mgm {
                 type = next_type;
             }
 
-            after:
+after:
 
             Line parsed_line{};
             if (line.starts_with("return ")) {
@@ -710,4 +711,4 @@ namespace mgm {
 
         return commands;
     }
-}
+} // namespace mgm

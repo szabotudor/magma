@@ -3,15 +3,15 @@
 #include "engine.hpp"
 #include "file.hpp"
 #include "helpers.hpp"
+#include "imgui.h"
+#include "imgui_stdlib.h"
 #include "json.hpp"
 #include "logging.hpp"
 #include "mgmwin.hpp"
-#include "imgui.h"
-#include "imgui_stdlib.h"
-#include "systems/notifications.hpp"
 #include "systems.hpp"
 #include "systems/input.hpp"
-#include "tools/base64.hpp"
+#include "systems/notifications.hpp"
+#include "tools/base64/base64.hpp"
 
 
 namespace mgm {
@@ -30,14 +30,12 @@ namespace mgm {
         system_name = "Editor";
 
         ImGuiIO& io = ImGui::GetIO();
-        static const ImWchar ranges[] = {
-            0x0020, 0x00FF, // Basic Latin + Latin Supplement
-            0x25A0, 0x25FF, // Geometric Shapes
-            0x2700, 0x27BF, // Dingbats
-            0
-        };
+        static const ImWchar ranges[] = {0x0020, 0x00FF, // Basic Latin + Latin Supplement
+                                         0x25A0, 0x25FF, // Geometric Shapes
+                                         0x2700, 0x27BF, // Dingbats
+                                         0};
         font_id = io.Fonts->AddFontFromFileTTF(Path("resources://fonts/Hack-Regular.ttf").platform_path().c_str(), 20.0f, nullptr, ranges);
-        
+
         auto engine = MagmaEngine{};
 
         Logging{"Editor"}.log("Editor initialized");
@@ -58,8 +56,7 @@ namespace mgm {
         if (vector_depth == 0)
             max_vector_depth = 0;
 
-        while (hovered_vector_names.size() <= vector_depth)
-            hovered_vector_names.emplace_back();
+        while (hovered_vector_names.size() <= vector_depth) hovered_vector_names.emplace_back();
 
         if (!has_elements) {
             ImGui::BeginDisabled();
@@ -88,20 +85,12 @@ namespace mgm {
 
         if (start_window) {
             std::string window_name{};
-            for (size_t i = 0; i <= vector_depth; ++i)
-                window_name += hovered_vector_names[i].name + ":";
+            for (size_t i = 0; i <= vector_depth; ++i) window_name += hovered_vector_names[i].name + ":";
 
             ImGui::SetNextWindowPos(ImVec2{ImGui::GetWindowPos().x + ImGui::GetWindowSize().x - 1.0f, pos.y});
             ImGui::SetNextWindowSize(ImVec2{-1.0f, hovered_vector_names[vector_depth].window_height});
 
-            ImGui::Begin((window_name).c_str(), nullptr,
-                ImGuiWindowFlags_NoTitleBar
-                | ImGuiWindowFlags_NoResize
-                | ImGuiWindowFlags_NoMove
-                | ImGuiWindowFlags_NoSavedSettings
-                | ImGuiWindowFlags_NoScrollbar
-                | ImGuiWindowFlags_NoDocking
-            );
+            ImGui::Begin((window_name).c_str(), nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoDocking);
         }
 
         if (start_window) {
@@ -114,17 +103,19 @@ namespace mgm {
 
     void Editor::end_window_here() {
         if (vector_depth == 0) {
-            Logging{"Inspector"}.error("end_window_here called without a matching begin_window_here, or called when begin_window_here returned false.\n\tSkipping end_window_here call.");
+            Logging{"Inspector"}.error("end_window_here called without a matching begin_window_here, or called when "
+                                       "begin_window_here returned false.\n\tSkipping end_window_here call.");
             return;
         }
         --vector_depth;
         const auto max_height = ImGui::GetCursorPosY();
-        hovered_vector_names[vector_depth].window_height = std::lerp_with_delta(hovered_vector_names[vector_depth].window_height, max_height, 50.0f, MagmaEngine{}.delta_time());
+        hovered_vector_names[vector_depth].window_height = std::lerp_with_delta(
+            hovered_vector_names[vector_depth].window_height, max_height, 50.0f, MagmaEngine{}.delta_time()
+        );
         ImGui::End();
 
         if (vector_depth == 0 && hovered_vector_names.size() > max_vector_depth) {
-            while (hovered_vector_names.size() > max_vector_depth)
-                hovered_vector_names.pop_back();
+            while (hovered_vector_names.size() > max_vector_depth) hovered_vector_names.pop_back();
             max_vector_depth = 0;
         }
     }
@@ -132,7 +123,7 @@ namespace mgm {
     bool Editor::is_running() const {
         return false; // TODO: Implement running the game in the editor, for now just return false
     }
-    
+
     void Editor::draw_settings_window_contents() {
         static std::string section_name = "";
 
@@ -171,16 +162,16 @@ namespace mgm {
 
             if (ImGui::Button("Browse")) {
                 add_window<FileBrowser>(true, FileBrowser::Args{
-                    .mode = FileBrowser::Mode::READ,
-                    .type = FileBrowser::Type::FILE,
-                    .callback = [&](const Path& path) {
-                        main_scene_path = path;
-                        save_current_project();
-                    },
-                    .allow_paths_outside_project = false,
-                    .default_file_name = "New Scene",
-                    .default_file_extension = ".lua",
-                });
+                                                  .mode = FileBrowser::Mode::READ,
+                                                  .type = FileBrowser::Type::FILE,
+                                                  .callback = [&](const Path& path) {
+                    main_scene_path = path;
+                    save_current_project();
+                },
+                                                  .allow_paths_outside_project = false,
+                                                  .default_file_name = "New Scene",
+                                                  .default_file_extension = ".lua",
+                                              });
             }
         }
 
@@ -214,10 +205,11 @@ namespace mgm {
         auto engine = MagmaEngine{};
 
         if (!project_initialized)
-            engine.notifications().push("Welcome to MagmaEngine. Press 'ctrl+space' to open the editor palette and start editing your project.");
+            engine.notifications().push(
+                "Welcome to MagmaEngine. Press 'ctrl+space' to open the editor palette and start editing your project."
+            );
 
-        for (const auto& [type_id, system] : engine.systems().systems)
-            system->in_editor_update(delta);
+        for (const auto& [type_id, system] : engine.systems().systems) system->in_editor_update(delta);
 
         vec2i32 mouse_pos{-1, -1};
 
@@ -226,10 +218,7 @@ namespace mgm {
             palette_open = !palette_open;
             if (!project_initialized)
                 project_initialized = true;
-            mouse_pos = {
-                static_cast<int>((engine.window().get_input_interface(MgmWindow::InputInterface::Mouse_POS_X) + 1.0f) * 0.5f * (float)engine.window().get_size().x),
-                static_cast<int>((engine.window().get_input_interface(MgmWindow::InputInterface::Mouse_POS_Y) + 1.0f) * 0.5f * (float)engine.window().get_size().y)
-            };
+            mouse_pos = {static_cast<int>((engine.window().get_input_interface(MgmWindow::InputInterface::Mouse_POS_X) + 1.0f) * 0.5f * (float)engine.window().get_size().x), static_cast<int>((engine.window().get_input_interface(MgmWindow::InputInterface::Mouse_POS_Y) + 1.0f) * 0.5f * (float)engine.window().get_size().y)};
             if (palette_open) {
                 ImGui::SetNextWindowPos(ImVec2{static_cast<float>(mouse_pos.x + 16), static_cast<float>(mouse_pos.y)});
                 ImGui::SetNextWindowSize(ImVec2{-1.0f, 1.0f});
@@ -250,14 +239,7 @@ namespace mgm {
 
         ImGui::SetNextWindowSize(ImVec2{-1.0f, palette_window_height});
 
-        ImGui::Begin("Palette", nullptr,
-            ImGuiWindowFlags_NoTitleBar
-            | ImGuiWindowFlags_NoResize
-            | ImGuiWindowFlags_NoMove
-            | ImGuiWindowFlags_NoSavedSettings
-            | ImGuiWindowFlags_NoScrollbar
-            | ImGuiWindowFlags_NoDocking
-        );
+        ImGui::Begin("Palette", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoDocking);
 
         ImGui::Text("Palette");
         ImGui::Separator();
@@ -292,13 +274,9 @@ namespace mgm {
         return false;
     }
 
-    Path Editor::currently_loaded_project() {
-        return Path::project_dir;
-    }
+    Path Editor::currently_loaded_project() { return Path::project_dir; }
 
-    bool Editor::is_a_project_loaded() {
-        return currently_loaded_project().platform_path() != FileIO::exe_dir().data;
-    }
+    bool Editor::is_a_project_loaded() { return currently_loaded_project().platform_path() != FileIO::exe_dir().data; }
 
     void Editor::load_project(const Path& project_path) {
         MagmaEngine engine{};
@@ -323,10 +301,9 @@ namespace mgm {
                 const JObject recents_json = engine.file_io().read_text("data://recents.json");
                 recents_json_list = recents_json["recents"];
             }
-            
+
             editor.recent_project_dirs.clear();
-            for (const auto& r : recents_json_list)
-                editor.recent_project_dirs.emplace_back(r);
+            for (const auto& r : recents_json_list) editor.recent_project_dirs.emplace_back(r);
 
             const auto it = std::find(editor.recent_project_dirs.begin(), editor.recent_project_dirs.end(), project_path);
             if (it != editor.recent_project_dirs.end())
@@ -338,13 +315,12 @@ namespace mgm {
                 editor.recent_project_dirs.pop_back();
 
             recents_json_list.clear();
-            for (const auto& r : editor.recent_project_dirs)
-                recents_json_list.emplace_back(JObject{r.platform_path()});
+            for (const auto& r : editor.recent_project_dirs) recents_json_list.emplace_back(JObject{r.platform_path()});
             JObject recents_json{};
             recents_json["recents"] = recents_json_list;
             engine.file_io().write_text("data://recents.json", recents_json);
         }
-        
+
         if (!engine.file_io().exists(project_path / "assets"))
             engine.file_io().create_folder(project_path / "assets");
         if (!engine.file_io().exists(project_path / "data"))
@@ -376,7 +352,7 @@ namespace mgm {
                 }
             }
         }
-        
+
         const auto message = "Loaded project from: \"" + project_path.platform_path() + "\"";
         engine.notifications().push(message);
         Logging{"Editor"}.log(message);
@@ -390,12 +366,12 @@ namespace mgm {
     void Editor::save_current_project() {
         if (!is_a_project_loaded())
             return;
-        
+
         MagmaEngine engine{};
 
         if (!engine.file_io().exists("project://.mgm"))
             engine.file_io().create_folder("project://.mgm");
-        
+
         JObject layout{};
         const auto size = engine.window().get_size();
         auto& window = layout["window"];
@@ -432,11 +408,11 @@ namespace mgm {
         project["main_scene_path"] = "";
 
         engine.file_io().write_text(project_path / ".magma", project);
-        
+
         const auto message = "Created new project at: \"" + project_path.platform_path() + "\"";
         engine.notifications().push(message);
         Logging{"Editor"}.log(message);
-        
+
         engine.file_io().create_folder(project_path / "assets");
         engine.file_io().create_folder(project_path / "data");
 
@@ -445,8 +421,7 @@ namespace mgm {
 
     void Editor::unload_project() {
         auto& editor = MagmaEngine{}.editor();
-        for (const auto window : editor.windows)
-            delete window;
+        for (const auto window : editor.windows) delete window;
         editor.windows.clear();
 
         Path::setup_project_dirs(FileIO::exe_dir().platform_path(), (FileIO::exe_dir() / "assets").platform_path(), (FileIO::exe_dir() / "data").platform_path());
@@ -456,8 +431,7 @@ namespace mgm {
 
     Editor::~Editor() {
         save_current_project();
-        for (const auto window : windows)
-            delete window;
+        for (const auto window : windows) delete window;
         Logging{"Editor"}.log("Editor closed");
     }
 } // namespace mgm

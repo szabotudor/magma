@@ -8,9 +8,10 @@
 
 namespace mgm {
     class Input : public System {
-        public:
+      public:
         enum class CallbackType {
-            PRESS, RELEASE
+            PRESS,
+            RELEASE
         };
         using Callback = std::function<void()>;
 
@@ -26,19 +27,19 @@ namespace mgm {
             std::vector<MgmWindow::InputInterface> inputs{};
         };
 
-        private:
+      private:
         std::unordered_map<std::string, Action> input_actions{};
         std::unordered_set<std::string> auto_register_queue{};
 
         std::vector<MgmWindow::InputInterface> input_stack{};
 
 
-        public:
+      public:
         Input();
 
         /**
          * @brief Register an input action
-         * 
+         *
          * @param name The name of the action
          * @param input The input to check for
          * @param modifiers A list of inputs that must be pressed for the action to be considered pressed
@@ -48,21 +49,21 @@ namespace mgm {
 
         /**
          * @brief Wait for some key combination to be pressed, then register it as an input action
-         * 
+         *
          * @param name The name of the action
          */
         void auto_register_input_action(const std::string& name);
 
         /**
          * @brief Check if an action exists
-         * 
+         *
          * @param name The name of the action
          */
         bool action_exists(const std::string& name) const;
 
         /**
          * @brief Check if an action is pressed
-         * 
+         *
          * @param name The name of the action
          * @return true If the action is pressed
          * @return false If the action is not pressed, or if it doesn't exist
@@ -71,7 +72,7 @@ namespace mgm {
 
         /**
          * @brief Check if an action is released
-         * 
+         *
          * @param name The name of the action
          * @return true If the action is released
          * @return false If the action is not released, or if it doesn't exist
@@ -80,7 +81,7 @@ namespace mgm {
 
         /**
          * @brief Check if an action was just pressed
-         * 
+         *
          * @param name The name of the action
          * @return true If the action was just pressed
          * @return false If the action was not just pressed, or if it doesn't exist
@@ -89,7 +90,7 @@ namespace mgm {
 
         /**
          * @brief Check if an action was just released
-         * 
+         *
          * @param name The name of the action
          * @return true If the action was just released
          * @return false If the action was not just released, or if it doesn't exist
@@ -98,7 +99,7 @@ namespace mgm {
 
         /**
          * @brief Get the value of an action
-         * 
+         *
          * @param name The name of the action
          * @return float The value of the action
          */
@@ -106,7 +107,7 @@ namespace mgm {
 
         /**
          * @brief Get the list of callbacks associated with an action
-         * 
+         *
          * @param name The name of the action
          * @return std::vector<Callback>& A reference to the list of callbacks
          */
@@ -114,7 +115,7 @@ namespace mgm {
 
         /**
          * @brief Get the list of callbacks associated with an action
-         * 
+         *
          * @param name The name of the action
          * @return const std::vector<Callback>& A const reference to the list of callbacks
          */
@@ -122,7 +123,7 @@ namespace mgm {
 
         /**
          * @brief Get the list of callbacks associated with an action
-         * 
+         *
          * @param name The name of the action
          * @return std::vector<Callback>& A reference to the list of callbacks
          */
@@ -130,7 +131,7 @@ namespace mgm {
 
         /**
          * @brief Get the list of callbacks associated with an action
-         * 
+         *
          * @param name The name of the action
          * @return const std::vector<Callback>& A const reference to the list of callbacks
          */
@@ -145,4 +146,4 @@ namespace mgm {
 
         ~Input() override;
     };
-}
+} // namespace mgm

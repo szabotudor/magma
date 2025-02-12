@@ -64,7 +64,7 @@ set(
         ${CMAKE_CURRENT_SOURCE_DIR}/imgui/imgui_widgets.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/imgui/imgui.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/imgui/imgui_stdlib.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/imgui/backends/imgui_impl_mgmgpu.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/tools/imgui_impl_mgmgpu.cpp
 )
 set(
     IMGUI_HEADERS
@@ -75,7 +75,7 @@ set(
         ${CMAKE_CURRENT_SOURCE_DIR}/imgui/imstb_rectpack.h
         ${CMAKE_CURRENT_SOURCE_DIR}/imgui/imstb_textedit.h
         ${CMAKE_CURRENT_SOURCE_DIR}/imgui/imstb_truetype.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/imgui/backends/imgui_impl_mgmgpu.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/tools/imgui_impl_mgmgpu.h
 )
 ignore_warnings_for_files(
     ${IMGUI_SOURCES}
@@ -119,8 +119,8 @@ add_library(
         ${CMAKE_CURRENT_SOURCE_DIR}/include/systems/resources.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/include/systems/renderer.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/include/systems.hpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/tools/base64.hpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/tools/tiny_obj_loader.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/tools/base64/base64.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/tools/tinyobj/tiny_obj_loader.h
         #${CMAKE_CURRENT_SOURCE_DIR}/include/tools/lua_vm.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/include/tools/mgmecs.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/include/built-in_components/renderable.hpp

@@ -2,8 +2,8 @@
 #include "ecs.hpp"
 #include "file.hpp"
 #include "mgmath.hpp"
-#include "systems/resources.hpp"
 #include "mgmgpu.hpp"
+#include "systems/resources.hpp"
 
 
 namespace mgm {
@@ -59,7 +59,7 @@ namespace mgm {
 
 
     class Shader : public Resource {
-        public:
+      public:
         MgmGPU::ShaderHandle created_shader = MgmGPU::INVALID_SHADER;
 
         Path loading_path{};
@@ -75,15 +75,15 @@ namespace mgm {
 
 
     class Mesh : public Resource {
-        public:
+      public:
         MgmGPU::BufferHandle vertex_buffer{}, color_buffer{}, normal_buffer{}, tex_coord_buffer{};
         MgmGPU::BuffersObjectHandle buffers_object{};
         ResourceReference<Shader> shader{};
 
         Mesh() = default;
-        
+
         bool load_from_text(const std::string& obj) override;
 
         ~Mesh();
     };
-}
+} // namespace mgm
