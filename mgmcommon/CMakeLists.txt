@@ -44,7 +44,7 @@ add_library(
         ${CMAKE_CURRENT_SOURCE_DIR}/include/helpers.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/include/json.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/include/logging.hpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/mgmath.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/mgmath/mgmath.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/include/types.hpp
 )
 enable_warnings(mgmcommon)
@@ -55,6 +55,7 @@ target_include_directories(
     mgmcommon
         PUBLIC
             ${CMAKE_CURRENT_SOURCE_DIR}/include
+            ${CMAKE_CURRENT_SOURCE_DIR}/include/mgmath
 )
 
 if (UNIX AND NOT APPLE)
