@@ -15,8 +15,9 @@
 #define ASSURE_SIZE(SIZE) size_t VectorSize = S, typename std::enable_if<VectorSize >= SIZE, bool>::type = true
 #define ASSURE_EXACT_SIZE(SIZE) size_t VectorSize = S, typename std::enable_if<VectorSize == SIZE, bool>::type = true
 
-
 namespace mgm {
+    static inline constexpr auto mgmath_pi = 3.141592653589;
+    static inline constexpr auto mgmath_pif = 3.141592653589f;
 
     //=========
     // VECTORS
@@ -1840,10 +1841,10 @@ namespace mgm {
             if (angle == T(0))
                 return quat<T>{T(0), T(0), T(0), T(1)};
 
-            if (angle > std::numbers::pi * T(2))
-                angle = angle - std::numbers::pi * T(2) * std::floor(angle / (std::numbers::pi * T(2)));
-            else if (angle < -std::numbers::pi * T(2))
-                angle = angle + std::numbers::pi * T(2) * std::ceil(angle / (std::numbers::pi * T(2)));
+            if (angle > T(mgmath_pi) * T(2))
+                angle = angle - T(mgmath_pi) * T(2) * std::floor(angle / (T(mgmath_pi) * T(2)));
+            else if (angle < -T(mgmath_pi) * T(2))
+                angle = angle + T(mgmath_pi) * T(2) * std::ceil(angle / (T(mgmath_pi) * T(2)));
 
             const auto ha = angle / T(2);
             const auto s = std::sin(ha);

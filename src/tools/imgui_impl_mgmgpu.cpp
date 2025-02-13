@@ -518,7 +518,11 @@ void ImGui_ImplMgmGFX_ProcessInput(mgm::MgmWindow& window) {
 
 namespace ImGui {
     ImTextureID as_imgui_texture(const mgm::MgmGPU::TextureHandle& texture) {
+        #if defined(_WIN32)
+        return reinterpret_cast<ImTextureID>(static_cast<uintptr_t>(texture.id));
+        #else
         return reinterpret_cast<ImTextureID>(reinterpret_cast<uintptr_t>(texture.id));
+        #endif
     }
     mgm::MgmGPU::TextureHandle as_mgmgpu_texture(const ImTextureID& texture) {
         return mgm::MgmGPU::TextureHandle{reinterpret_cast<uintptr_t>(texture)};

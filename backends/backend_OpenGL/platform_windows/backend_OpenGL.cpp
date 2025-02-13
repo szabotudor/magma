@@ -1,8 +1,12 @@
 #include "backend_OpenGL.hpp"
-#include "glad/glad.h"
 #include "native_window.hpp"
+
+// Windows macros are breaking my includes
+// DO NOT CHANGE INCLUDE ORDER OF THESE 3 FILES
+#include <windows.h>
+#include "glad/glad.h"
 #include "wglext.h"
-#include <minwindef.h>
+// ============================================
 
 
 namespace mgm {

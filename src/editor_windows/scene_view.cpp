@@ -57,7 +57,7 @@ namespace mgm {
         auto& renderer = engine.renderer();
         const vec2i32 new_size = {(int32_t)ImGui::GetContentRegionAvail().x, (int32_t)ImGui::GetContentRegionAvail().y};
 
-        static constexpr auto fov_y = std::numbers::pi_v<float> / 2.0f;
+        static constexpr auto fov_y = mgmath_pif / 2.0f;
 
         if (new_size != old_size) {
             auto& gpu = MagmaEngine{}.graphics();
