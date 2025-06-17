@@ -88,7 +88,8 @@ namespace mgm {
          * @return T& A reference to the new system
          */
         template<typename T, typename... Ts>
-        requires std::is_constructible_v<T, Ts...>&& std::is_base_of_v<System, T> T& create(Ts&&... args) {
+            requires std::is_constructible_v<T, Ts...> && std::is_base_of_v<System, T>
+        T& create(Ts&&... args) {
             std::unique_lock lock{mutex};
             auto id = typeid(T).hash_code();
             const auto it = systems.find(id);
@@ -111,7 +112,8 @@ namespace mgm {
          * @tparam T The type of the system to get
          * @return T& A reference to the system
          */
-        template<typename T> T& get() {
+        template<typename T>
+        T& get() {
             const auto sys = try_get<T>();
             if (sys == nullptr)
                 return create<T>();
@@ -124,7 +126,8 @@ namespace mgm {
          * @tparam T The type of the system to get
          * @return const T& A const reference to the system
          */
-        template<typename T> const T& get() const {
+        template<typename T>
+        const T& get() const {
             const auto sys = try_get<T>();
             if (sys == nullptr)
                 throw std::runtime_error{"System does not exist"};
@@ -137,7 +140,8 @@ namespace mgm {
          * @tparam T The type of the system to get
          * @return T* A pointer to the system, or nullptr if the system doesn't exist
          */
-        template<typename T> T* try_get() {
+        template<typename T>
+        T* try_get() {
             auto id = typeid(T).hash_code();
             auto it = systems.find(id);
             if (it == systems.end()) {
@@ -158,7 +162,8 @@ namespace mgm {
          * @tparam T The type of the system to get
          * @return T* A const pointer to the system, or nullptr if the system doesn't exist
          */
-        template<typename T> const T* try_get() const {
+        template<typename T>
+        const T* try_get() const {
             auto id = typeid(T).hash_code();
             const auto it = systems.find(id);
             if (it == systems.end()) {
@@ -172,7 +177,8 @@ namespace mgm {
          *
          * @tparam T The type of the system to destroy
          */
-        template<typename T> void destroy() {
+        template<typename T>
+        void destroy() {
             std::unique_lock lock{mutex};
             auto id = typeid(T).hash_code();
             const auto it = systems.find(id);
@@ -194,7 +200,8 @@ namespace mgm {
          * @return T& A reference to the new system
          */
         template<typename ExistingSystem, typename T>
-        requires std::is_base_of_v<ExistingSystem, T>&& std::is_constructible_v<T, ExistingSystem&&> T& replace() {
+            requires std::is_base_of_v<ExistingSystem, T> && std::is_constructible_v<T, ExistingSystem&&>
+        T& replace() {
             std::unique_lock lock{mutex};
 
             auto nid = typeid(T).hash_code();
