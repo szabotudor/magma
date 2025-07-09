@@ -2,7 +2,4 @@
 
 
 namespace mgm {
-    MgmWindow MgmWindowCreator::create() const {
-        return MgmWindow{};
-    }
 } // namespace mgm
