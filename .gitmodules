@@ -1,9 +1,9 @@
-[submodule "libs/internal/mgmath"]
-	path = libs/internal/mgmath
-	url = https://github.com/szabotudor/mgmath.git
 [submodule "libs/external/luajit"]
 	path = libs/external/luajit
 	url = https://luajit.org/git/luajit.git
 [submodule "libs/external/glfw"]
 	path = libs/external/glfw
 	url = https://github.com/glfw/glfw.git
+[submodule "libs/internal/mgmstd/mgmath"]
+	path = libs/internal/mgmstd/mgmath
+	url = https://github.com/szabotudor/mgmath.git

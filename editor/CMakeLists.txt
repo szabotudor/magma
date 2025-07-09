@@ -10,5 +10,11 @@ add_executable(
         ${CMAKE_CURRENT_SOURCE_DIR}/src/editor.cpp
 )
 
+target_include_directories(
+    MagmaEditor
+        PUBLIC
+            ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
 
 target_link_libraries(MagmaEditor PUBLIC MagmaEngine)
