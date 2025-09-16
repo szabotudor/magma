@@ -1,0 +1,10 @@
+.cache/
+.vs/
+.vscode/
+build/
+doxy_website/
+
+imgui.ini
+compile_commands.json
+
+*.pdb
